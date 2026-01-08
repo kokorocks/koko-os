@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Glassmorphism Lock Screen</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+
+<style>
+    :root {
+        --font-main: 'Outfit', sans-serif;
+        --glass-high: rgba(255, 255, 255, 0.25);
+        --glass-med: rgba(255, 255, 255, 0.15);
+        --glass-low: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.2);
+        --blur-amount: 25px;
+        --shadow-soft: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        --accent: #a2d2ff;
+    }
+
+    * { box-sizing: border-box; user-select: none; outline: none; -webkit-tap-highlight-color: transparent; }
+
+    body {
+        margin: 0; height: 100vh;
+        display: flex; justify-content: center; align-items: center;
+        background: #eef2f3;
+        font-family: var(--font-main);
+        overflow: hidden;
+    }
+
+    /* --- Phone Hardware --- */
+    .phone-chassis {
+        width: 360px; height: 760px;
+        background: #1a1a1a;
+        border-radius: 48px;
+        padding: 10px;
+        box-shadow: 0 30px 60px -10px rgba(0,0,0,0.6), inset 0 0 0 2px #333;
+        position: relative;
+    }
+
+    /* Buttons on side (visual only) */
+    .btn-side { position: absolute; background: #222; border-radius: 4px; left: -4px; }
+    .vol-up { top: 120px; height: 40px; width: 4px; }
+    .vol-down { top: 170px; height: 40px; width: 4px; }
+    .pwr-side { top: 240px; height: 60px; width: 4px; right: -4px; left: auto; background: #333; }
+
+    .screen {
+        width: 100%; height: 100%;
+        background: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2670&auto=format&fit=crop') center/cover no-repeat;
+        border-radius: 40px;
+        position: relative;
+        overflow: hidden;
+        color: white;
+    }
+
+    /* Dark Overlay for readability */
+    .screen::before {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.4));
+        pointer-events: none;
+    }
+
+    /* --- UI Layer --- */
+    .ui-layer {
+        position: relative; z-index: 10;
+        height: 100%; width: 100%;
+        display: flex; flex-direction: column; align-items: center;
+        padding-top: 45px;
+    }
+
+
+    /* Clock */
+    .clock-container { text-align: center; margin-bottom: 20px; transition: 0.3s; }
+    .time-huge { font-size: 86px; font-weight: 200; line-height: 1; letter-spacing: -3px; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .date-text { font-size: 18px; font-weight: 400; opacity: 0.9; margin-top: 5px; }
+
+    /* Notification Stack on Lock Screen */
+    .notification-stack {
+        width: 90%;
+        display: flex; flex-direction: column; gap: 10px;
+        perspective: 1000px;
+    }
+
+    /* Glass Notification Card */
+    .glass-card {
+        background: var(--glass-med);
+        backdrop-filter: blur(var(--blur-amount));
+        -webkit-backdrop-filter: blur(var(--blur-amount));
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 14px;
+        display: flex; gap: 12px;
+        color: white;
+        box-shadow: var(--shadow-soft);
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        margin-bottom: 0;
+    }
+    .glass-card:active { transform: scale(0.98); background: var(--glass-high); }
+
+    .app-icon {
+        width: 38px; height: 38px; border-radius: 10px;
+        background: white; display: flex; align-items: center; justify-content: center;
+        font-size: 18px; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .content-box { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .card-header { display: flex; justify-content: space-between; font-size: 12px; opacity: 0.8; margin-bottom: 2px; }
+    .card-title { font-weight: 600; font-size: 15px; }
+    .card-msg { font-size: 13px; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+    /* View All Button */
+    .view-all-btn {
+        margin-top: 10px;
+        padding: 8px 20px;
+        background: var(--glass-low);
+        border: 1px solid var(--glass-border);
+        border-radius: 30px;
+        font-size: 12px;
+        backdrop-filter: blur(10px);
+        cursor: pointer;
+    }
+
+    /* Bottom Area */
+    .bottom-area {
+        margin-top: auto; margin-bottom: 25px;
+        width: 100%;
+        display: flex; justify-content: space-between; padding: 0 40px; align-items: center;
+    }
+    .circle-btn {
+        width: 35px; height: 35px;
+        border-radius: 25%;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(5px);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; color: white; transition: 0.2s;
+    }
+    
+    .circle-btn:active { background: rgba(255,255,255,0.2); }
+
+    .home-bar {
+        width: 130px; height: 5px; background: white; border-radius: 10px;
+        position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    }
+
+    /* Hint Animation */
+    .swipe-hint {
+        font-size: 12px; opacity: 0.6; position: absolute; bottom: 80px; width: 100%; text-align: center;
+        animation: breathe 3s infinite ease-in-out;
+    }
+    @keyframes breathe { 0%, 100% { opacity: 0.3; transform: translateY(0); } 50% { opacity: 0.8; transform: translateY(-5px); } }
+
+    /* --- Notification Center (Menu) --- */
+    .notif-center {
+        position: absolute; inset: 0;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(40px);
+        z-index: 50;
+        transform: translateY(100%);
+        transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+        padding: 60px 20px 20px 20px;
+        display: flex; flex-direction: column;
+    }
+    .notif-center.active { transform: translateY(0); }
+    
+    .nc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .nc-title { font-size: 24px; font-weight: 700; }
+    .nc-clear { font-size: 12px; padding: 6px 12px; background: rgba(255,255,255,0.2); border-radius: 15px; cursor: pointer; }
+    
+    .nc-list {
+        flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+        padding-bottom: 40px;
+    }
+    /* Hide scrollbar */
+    .nc-list::-webkit-scrollbar { display: none; }
+    .nc-close {
+        align-self: center; margin-top: 10px;
+        width: 40px; height: 40px; border-radius: 50%; background: white; color: black;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+
+    /* --- Security Layer --- */
+    .security-layer {
+        position: absolute; inset: 0;
+        background: rgba(10, 10, 15, 0.3);
+        backdrop-filter: blur(30px);
+        z-index: 60;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.3s;
+    }
+    .security-layer.active { opacity: 1; pointer-events: all; }
+
+    .switch-auth { display: flex; gap: 15px; margin-bottom: 30px; }
+    .auth-tab { opacity: 0.5; padding-bottom: 5px; cursor: pointer; font-size: 14px; }
+    .auth-tab.active { opacity: 1; border-bottom: 2px solid var(--accent); }
+
+    /* PIN */
+    .pin-wrapper { display: none; flex-direction: column; align-items: center; }
+    .pin-wrapper.show { display: flex; }
+    .pin-dots { display: flex; gap: 20px; margin-bottom: 40px; }
+    .dot { width: 12px; height: 12px; border: 1px solid white; border-radius: 50%; transition: 0.2s; }
+    .dot.filled { background: white; box-shadow: 0 0 10px white; }
+    
+    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+    .num {
+        width: 70px; height: 70px; border-radius: 50%;
+        background: rgba(255,255,255,0.1);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px; cursor: pointer; transition: 0.2s;
+    }
+    .num:active { background: rgba(255,255,255,0.3); }
+
+    /* Pattern */
+    .pattern-wrapper { display: none; flex-direction: column; align-items: center; }
+    .pattern-wrapper.show { display: flex; }
+    canvas { touch-action: none; }
+
+</style>
+</head>
+<body>
+
+<div class="phone-chassis">
+    <div class="btn-side vol-up"></div>
+    <div class="btn-side vol-down"></div>
+    <div class="btn-side pwr-side"></div>
+
+    <div class="screen" id="mainScreen">
+        <div class="notch"></div>
+
+        <div class="ui-layer" id="lockUI">
+            <div class="clock-container">
+                <i class="fas fa-lock" style="font-size:14px; opacity:0.7; margin-bottom:10px;"></i>
+                <div class="date-text" id="dateText">Monday, Jan 1</div>
+                <div class="time-huge" id="timeText">10:45</div>
+            </div>
+
+            <div class="notification-stack" id="previewStack">
+                </div>
+
+            <div class="view-all-btn" id="viewAllBtn" onclick="openNotificationCenter()">
+                View All Notifications
+            </div>
+
+            <div class="swipe-hint">Swipe up to unlock</div>
+
+            <div class="bottom-area">
+                <div class="circle-btn" onclick="alert('Flashlight Toggled')"><i class="fas fa-flashlight"></i></div>
+                <div class="circle-btn" onclick="alert('Camera Opened')"><i class="fas fa-camera"></i></div>
+            </div>
+            
+            <div class="home-bar"></div>
+        </div>
+
+        <div class="notif-center" id="notifCenter">
+            <div class="nc-header">
+                <div class="nc-title">Notifications</div>
+                <div class="nc-clear" onclick="clearNotifications()">Clear All</div>
+            </div>
+            <div class="nc-list" id="ncList">
+                </div>
+            <div class="nc-close" onclick="closeNotificationCenter()">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <div class="security-layer" id="securityLayer">
+            <div class="switch-auth">
+                <div class="auth-tab active" id="tabPin" onclick="setAuthMode('pin')">PIN</div>
+                <div class="auth-tab" id="tabPat" onclick="setAuthMode('pattern')">Pattern</div>
+            </div>
+
+            <div class="pin-wrapper show" id="pinUI">
+                <div style="margin-bottom:20px; opacity:0.7;">Enter PIN (1234)</div>
+                <div class="pin-dots" id="pinDots">
+                    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                </div>
+                <div class="numpad">
+                    <div class="num" onclick="enterPin(1)">1</div>
+                    <div class="num" onclick="enterPin(2)">2</div>
+                    <div class="num" onclick="enterPin(3)">3</div>
+                    <div class="num" onclick="enterPin(4)">4</div>
+                    <div class="num" onclick="enterPin(5)">5</div>
+                    <div class="num" onclick="enterPin(6)">6</div>
+                    <div class="num" onclick="enterPin(7)">7</div>
+                    <div class="num" onclick="enterPin(8)">8</div>
+                    <div class="num" onclick="enterPin(9)">9</div>
+                    <div class="num" style="background:transparent"></div>
+                    <div class="num" onclick="enterPin(0)">0</div>
+                    <div class="num" onclick="enterPin('del')"><i class="fas fa-backspace" style="font-size:18px"></i></div>
+                </div>
+            </div>
+
+            <div class="pattern-wrapper" id="patUI">
+                <div style="margin-bottom:10px; opacity:0.7;">Draw 'Z' Pattern</div>
+                <canvas id="patternCanvas" width="300" height="300"></canvas>
+            </div>
+
+            <div class="nc-close" style="margin-top:30px; background:rgba(255,255,255,0.2); color:white" onclick="closeSecurity()">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    /* ----------------------------------------------------------------
+       1. DATA & STATE MANAGEMENT
+    ---------------------------------------------------------------- */
+    // Initial Notification Data
+    let notifications = [
+        { id: 101, app: 'Message', icon: 'fa-comment', color: '#4caf50', title: 'Tim Cook', msg: 'Check out my new $3500 movie goggles', time: 'Now' },
+        { id: 102, app: 'Mail', icon: 'fa-envelope', color: '#2196f3', title: 'Craig Federighi', msg: 'Subject: Hair Products meeting moved to 4PM.', time: '2m' },
+        { id: 103, app: 'Instagram', icon: 'fa-camera-retro', color: '#e1306c', title: 'Mark Z.', msg: 'liked your photo: "Metaverse is cool!"', time: '15m' },
+        { id: 104, app: 'Bank', icon: 'fa-university', color: '#ff9800', title: 'Chase', msg: 'Large purchase detected: $9.99', time: '1h' },
+        { id: 105, app: 'Home', icon: 'fa-home', color: '#ffc107', title: 'Smart Lock', msg: 'Front door unlocked.', time: '2h' }
+    ];
+
+    /* ----------------------------------------------------------------
+       2. RENDERING LOGIC
+    ---------------------------------------------------------------- */
+    const previewStack = document.getElementById('previewStack');
+    const ncList = document.getElementById('ncList');
+    const viewAllBtn = document.getElementById('viewAllBtn');
+
+    function renderNotifications() {
+        // Clear current HTML
+        previewStack.innerHTML = '';
+        ncList.innerHTML = '';
+
+        if(notifications.length === 0) {
+            viewAllBtn.style.display = 'none';
+            ncList.innerHTML = '<div style="text-align:center; opacity:0.5; margin-top:50px;">No Notifications</div>';
+            return;
+        }
+        if(notifications.length > 1)
+        viewAllBtn.style.display = 'block';
+        viewAllBtn.innerText = `View All (${notifications.length})`;}
+
+        // Render Loop
+        notifications.forEach((notif, index) => {
+            const html = `
+                <div class="glass-card" onclick="alert('Opening ${notif.app}: ${notif.msg}')">
+                    <div class="app-icon" style="color:${notif.color}"><i class="fas ${notif.icon}"></i></div>
+                    <div class="content-box">
+                        <div class="card-header">
+                            <span>${notif.app}</span>
+                            <span>${notif.time}</span>
+                        </div>
+                        <div class="card-title">${notif.title}</div>
+                        <div class="card-msg">${notif.msg}</div>
+                    </div>
+                </div>
+            `;
+
+            // Add to Notification Center (All)
+            ncList.innerHTML += html;
+
+            // Add to Lock Screen Preview (First 2 only)
+            if(index < 2) {
+                previewStack.innerHTML += html;
+            }
+        });
+    }
+
+    function clearNotifications() {
+        notifications = [];
+        renderNotifications();
+        closeNotificationCenter();
+    }
+
+    // Initial Render
+    renderNotifications();
+
+    /* ----------------------------------------------------------------
+       3. INTERACTION & ANIMATION
+    ---------------------------------------------------------------- */
+    // Time Logic
+    function updateClock() {
+        const d = new Date();
+        const hr = d.getHours();
+        const min = String(d.getMinutes()).padStart(2,'0');
+        const timeStr = `${hr % 12 || 12}:${min}`;
+        
+        const options = { weekday: 'long', month: 'short', day: 'numeric' };
+        
+        document.getElementById('timeText').innerText = timeStr;
+        document.getElementById('dateText').innerText = d.toLocaleDateString('en-US', options);
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Notification Center Toggles
+    const notifCenter = document.getElementById('notifCenter');
+    
+    function openNotificationCenter() {
+        notifCenter.classList.add('active');
+    }
+    function closeNotificationCenter() {
+        notifCenter.classList.remove('active');
+    }
+
+    /* ----------------------------------------------------------------
+       4. SECURITY & GESTURES
+    ---------------------------------------------------------------- */
+    const lockUI = document.getElementById('lockUI');
+    const securityLayer = document.getElementById('securityLayer');
+    
+    // Hammer.js Swipe Up
+    const hammer = new Hammer(lockUI);
+    hammer.get('swipe').set({ direction: Hammer.DIRECTION_VERTICAL });
+    
+    hammer.on('swipeup', () => {
+        securityLayer.classList.add('active');
+    });
+
+    function closeSecurity() {
+        securityLayer.classList.remove('active');
+        // Reset Inputs
+        currentPin = "";
+        updatePinDots();
+        points = [];
+        drawGrid();
+    }
+
+    // Auth Switcher
+    function setAuthMode(mode) {
+        document.getElementById('tabPin').classList.toggle('active', mode === 'pin');
+        document.getElementById('tabPat').classList.toggle('active', mode === 'pattern');
+        document.getElementById('pinUI').classList.toggle('show', mode === 'pin');
+        document.getElementById('patUI').classList.toggle('show', mode === 'pattern');
+        if(mode === 'pattern') drawGrid();
+    }
+
+    // --- PIN LOGIC ---
+    let currentPin = "";
+    const correctPin = "1234";
+
+    function enterPin(val) {
+        if(val === 'del') {
+            currentPin = currentPin.slice(0, -1);
+        } else if (currentPin.length < 4) {
+            currentPin += val;
+        }
+        updatePinDots();
+
+        if(currentPin.length === 4) {
+            setTimeout(() => {
+                if(currentPin === correctPin) {
+                    alert("DEVICE UNLOCKED");
+                    closeSecurity();
+                } else {
+                    alert("Incorrect PIN");
+                    currentPin = "";
+                    updatePinDots();
+                }
+            }, 200);
+        }
+    }
+
+    function updatePinDots() {
+        const dots = document.querySelectorAll('.dot');
+        dots.forEach((d, i) => {
+            if(i < currentPin.length) d.classList.add('filled');
+            else d.classList.remove('filled');
+        });
+    }
+
+    // --- PATTERN LOGIC ---
+    const canvas = document.getElementById('patternCanvas');
+    const ctx = canvas.getContext('2d');
+    const grid = [
+        {x: 50, y: 50}, {x: 150, y: 50}, {x: 250, y: 50},
+        {x: 50, y: 150}, {x: 150, y: 150}, {x: 250, y: 150},
+        {x: 50, y: 250}, {x: 150, y: 250}, {x: 250, y: 250}
+    ];
+    let isDrawing = false;
+    let points = [];
+
+    function drawGrid() {
+        ctx.clearRect(0,0,300,300);
+        
+        // Draw Lines
+        if(points.length > 1) {
+            ctx.beginPath();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'white';
+            
+            const start = grid[points[0]];
+            ctx.moveTo(start.x, start.y);
+            for(let i=1; i<points.length; i++) {
+                const p = grid[points[i]];
+                ctx.lineTo(p.x, p.y);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0; // reset
+        }
+
+        // Draw Dots
+        grid.forEach((p, idx) => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, points.includes(idx) ? 10 : 6, 0, Math.PI*2);
+            ctx.fillStyle = points.includes(idx) ? '#fff' : 'rgba(255,255,255,0.3)';
+            ctx.fill();
+        });
+    }
+
+    function getTouchIndex(x, y) {
+        const rect = canvas.getBoundingClientRect();
+        const tx = x - rect.left;
+        const ty = y - rect.top;
+        for(let i=0; i<grid.length; i++) {
+            const dist = Math.hypot(tx - grid[i].x, ty - grid[i].y);
+            if(dist < 30) return i;
+        }
+        return -1;
+    }
+
+    function startDraw(e) {
+        e.preventDefault();
+        isDrawing = true;
+        points = [];
+        const t = e.touches ? e.touches[0] : e;
+        const idx = getTouchIndex(t.clientX, t.clientY);
+        if(idx !== -1) points.push(idx);
+        drawGrid();
+    }
+
+    function moveDraw(e) {
+        if(!isDrawing) return;
+        e.preventDefault();
+        const t = e.touches ? e.touches[0] : e;
+        const idx = getTouchIndex(t.clientX, t.clientY);
+        if(idx !== -1 && !points.includes(idx)) {
+            points.push(idx);
+            drawGrid();
+        }
+    }
+
+    function endDraw() {
+        if(!isDrawing) return;
+        isDrawing = false;
+        
+        // Z pattern is 0,1,2,4,6,7,8
+        const path = points.join('');
+        // Simplified Z (TopL -> TopR -> Center -> BotL -> BotR) -> 0,2,4,6,8 is also commonly accepted as Z
+        // Let's accept strict path 0->1->2->4->6->7->8
+        if(path === "0124678" || path === "02468") { 
+            alert("DEVICE UNLOCKED");
+            closeSecurity();
+        } else {
+            // Error visual
+            ctx.strokeStyle = 'red';
+            ctx.stroke();
+            setTimeout(() => {
+                alert("Wrong Pattern");
+                points = [];
+                drawGrid();
+            }, 100);
+        }
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    window.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchmove', moveDraw);
+    window.addEventListener('touchend', endDraw);
+
+</script>
+</body>
+</html>
