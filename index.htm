@@ -216,10 +216,35 @@
     .pattern-wrapper { display: none; flex-direction: column; align-items: center; }
     .pattern-wrapper.show { display: flex; }
     canvas { touch-action: none; }
+#fullscreenBtn {
+    position: absolute;
+    bottom: 10px;      /* edge padding */
+    right: 10px;       /* edge padding */
+    width: 50px;
+    height: 50px;
+    border-radius: 25px;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 999;
+    transition: background 0.2s;
+}
+
+#fullscreenBtn:hover {
+    background: rgba(0,0,0,0.8);
+}
 
 </style>
 </head>
 <body>
+<!-- Fullscreen Button -->
+<div id="fullscreenBtn" title="Fullscreen">
+    <i class="fas fa-expand"></i>
+</div>
 
 <div class="phone-chassis">
     <div class="btn-side vol-up"></div>
@@ -306,6 +331,22 @@
 </div>
 
 <script>
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+fullscreenBtn.onclick = () => {
+    const el = document.documentElement; // whole page
+    if (!document.fullscreenElement) {
+        // Request fullscreen
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); // Safari
+        else if (el.msRequestFullscreen) el.msRequestFullscreen(); // IE11
+    } else {
+        // Exit fullscreen
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+    }
+};
     /* ----------------------------------------------------------------
        1. DATA & STATE MANAGEMENT
     ---------------------------------------------------------------- */
