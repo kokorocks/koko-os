@@ -12,8 +12,8 @@
     :root {
         --font-main: 'Outfit', sans-serif;
         --app-size: 60px;
-        --grid-cols: 4;
-        --grid-rows: 5; /* 4x5 Grid */
+        --grid-cols: 5;
+        --grid-rows: 6; /* 4x5 Grid */
         --gap: 15px;
         --glass-bg: rgba(255, 255, 255, 0.2);
         --folder-bg: rgba(255, 255, 255, 0.35);
@@ -162,7 +162,7 @@
     #appDrawer.open { transform: translateY(0); }
 
     .drawer-list {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
         overflow-y: auto; padding-bottom: 50px;
     }
 
@@ -526,7 +526,7 @@ fullscreenBtn.onclick = () => {
         //if(!isdraggable) return;
         //e.preventDefault();
         dragTimer = setTimeout(() => {
-            //isDragging = true;
+            isDragging = true;
             dragSrc = { p: parseInt(slot.dataset.p), i: parseInt(slot.dataset.i) };
             
             // Visuals
