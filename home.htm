@@ -29,10 +29,9 @@
         font-family: var(--font-main);
         overflow: hidden;
     }
-/* Hide text labels in the dock */
-.app-slot[data-type="dock"] .icon-label {
-    display: none;
-}
+    
+    /* Hide text labels in the dock */
+    .app-slot[data-loc="dock"] .icon-label { display: none; }
 
     /* --- Device Chassis --- */
     .phone-frame {
@@ -43,7 +42,6 @@
         box-shadow: 0 30px 60px -10px rgba(0,0,0,0.6), inset 0 0 0 2px #333;
         position: relative;
     }
-
 
     .screen-container {
         width: 100%; height: 99%;
@@ -99,6 +97,7 @@
         font-size: 11px; margin-top: 6px; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         text-align: center; width: 66px;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        pointer-events: none;
     }
 
     /* Folder Mini-Grid */
@@ -108,7 +107,8 @@
     }
     .mini-icon {
         width: 100%; height: 100%; border-radius: 3px;
-        background-color: rgba(255,255,255,0.8);
+        display: flex; justify-content: center; align-items: center;
+        font-size: 10px; color: white;
     }
 
     /* --- Dock --- */
@@ -125,7 +125,7 @@
 
     /* --- Dragging Ghost --- */
     .dragging-clone {
-        position: fixed; pointer-events: none; z-index: 999;
+        position: fixed; pointer-events: none; z-index: 9999;
         transform: scale(1.1); opacity: 0.9;
     }
 
@@ -139,10 +139,8 @@
         display: flex; flex-direction: column;
         opacity: 1;
     }
-
-    .overlay-panel[id="notifShade"]{
-        z-index: 250;
-    }
+    
+    .overlay-panel[id="notifShade"] { z-index: 250; }
 
     /* Notification Shade (Top) */
     #notifShade {
@@ -161,25 +159,19 @@
     }
     #appDrawer.open { transform: translateY(0); }
 
-#infopopup {
-    top: 0;
-    height: 100%;
-    transform: translateX(-100%);
-    padding: 50px 20px;
-    background: rgba(0,0,0,0.6); 
-    border-radius: 20px;
-    opacity: 0; 
-    pointer-events: none;
-    transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.35s ease;
-}
-
-#infopopup.open {
-    opacity: 1; 
-    pointer-events: all;
-    transform: translateX(0);
-}
-
-
+    #infopopup {
+        top: 0; height: 100%;
+        transform: translateX(-100%);
+        padding: 50px 20px;
+        background: rgba(0,0,0,0.6); 
+        border-radius: 20px;
+        opacity: 0; pointer-events: none;
+        transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.35s ease;
+    }
+    #infopopup.open {
+        opacity: 1; pointer-events: all;
+        transform: translateX(0);
+    }
 
     .drawer-list {
         display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
@@ -204,111 +196,61 @@
         position: absolute; inset: 0; z-index: 300;
         background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        opacity: 0; pointer-events: none; transition: 0.3s;
+        opacity: 0; pointer-events: none; transition: 0.2s;
     }
     .folder-modal.open { opacity: 1; pointer-events: all; }
 
     .folder-content {
-        width: 300px; padding: 25px; background: rgba(255,255,255,0.2);
+        width: 300px; padding: 25px; background: rgba(255,255,255,0.25);
         border-radius: 35px;
-        display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
         min-height: 150px;
         border: 1px solid rgba(255,255,255,0.2);
+        transition: transform 0.2s;
     }
 
     /* Pagination Dots */
     .dots-container {
-        position: absolute; bottom: 130px; width: 100%; display: flex; justify-content: center; gap: 8px;
+        position: absolute; bottom: 100px; width: 100%; display: flex; justify-content: center; gap: 8px;
     }
     .dot { width: 14px; height: 4px; background: rgba(255,255,255,0.4); border-radius:5px; }
     .dot.active { background: white; transform: scale(1.3); }
-#fullscreenBtn {
-    position: absolute;
-    bottom: 10px;      /* edge padding */
-    right: 10px;       /* edge padding */
-    width: 50px;
-    height: 50px;
-    border-radius: 25px;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-    z-index: 999;
-    transition: background 0.2s;
-}
 
-#fullscreenBtn:hover {
-    background: rgba(0,0,0,0.8);
-}
-.appsbar{
-    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
-    width: 175px; height: 5px; background: rgba(135, 135, 135, 0.733); border-radius:5px; 
-}
-#infopopup .news {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px 15px;
-    border-radius: 16px;
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(15px);
-    transition: background 0.2s, transform 0.2s;
-    text-decoration: none;
-    color: white;
-    margin-bottom: 12px;
-}
+    #fullscreenBtn {
+        position: absolute; bottom: 10px; right: 10px;
+        width: 50px; height: 50px; border-radius: 25px;
+        background: rgba(0,0,0,0.6);
+        display: flex; justify-content: center; align-items: center;
+        color: white; font-size: 20px; cursor: pointer;
+        z-index: 999; transition: background 0.2s;
+    }
+    #fullscreenBtn:hover { background: rgba(0,0,0,0.8); }
 
-#infopopup .news:hover {
-    background: rgba(255,255,255,0.2);
-    transform: translateY(-2px);
-}
+    .appsbar {
+        position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+        width: 175px; height: 5px; background: rgba(135, 135, 135, 0.733); border-radius:5px; 
+    }
 
-#infopopup .news-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#infopopup .news-header i, #infopopup .news-header img {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    flex-shrink: 0;
-    background: rgba(255,255,255,0.2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 16px;
-}
-
-#infopopup .news-title {
-    font-weight: 600;
-    font-size: 14px;
-}
-
-#infopopup .news-content {
-    font-size: 12px;
-    opacity: 0.8;
-}
-
-#infopopup .news-preview {
-    width: 100%;
-    height: 90px;
-    border-radius: 10px;
-    object-fit: cover;
-    margin-top: 5px;
-}
-
+    #infopopup .news {
+        display: flex; flex-direction: column; gap: 8px; padding: 12px 15px;
+        border-radius: 16px; background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(15px); transition: background 0.2s, transform 0.2s;
+        text-decoration: none; color: white; margin-bottom: 12px;
+    }
+    #infopopup .news:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+    #infopopup .news-header { display: flex; align-items: center; gap: 10px; }
+    #infopopup .news-header i, #infopopup .news-header img {
+        width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+        background: rgba(255,255,255,0.2); display: flex;
+        justify-content: center; align-items: center; font-size: 16px;
+    }
+    #infopopup .news-title { font-weight: 600; font-size: 14px; }
+    #infopopup .news-content { font-size: 12px; opacity: 0.8; }
+    #infopopup .news-preview { width: 100%; height: 90px; border-radius: 10px; object-fit: cover; margin-top: 5px; }
 </style>
 </head>
 <body>
-<!-- Fullscreen Button -->
-<div id="fullscreenBtn" title="Fullscreen">
-    <i class="fas fa-expand"></i>
-</div>
+<div id="fullscreenBtn" title="Fullscreen"><i class="fas fa-expand"></i></div>
 
 <div class="phone-frame">
     <div class="screen-container" id="mainScreen">
@@ -341,60 +283,47 @@
                     <div style="font-size:12px;opacity:0.8;">New subscriber!</div>
                 </div>
             </div>
-            
-            <div style="margin-top:auto; align-self:center; opacity:0.6; padding:20px;" onclick="closeShade()">
-                <i class="fas fa-chevron-up"></i>
-            </div>
+            <div style="margin-top:auto; align-self:center; opacity:0.6; padding:20px;" onclick="closeShade()"><i class="fas fa-chevron-up"></i></div>
         </div>
 
-        <div class="pages-slider" id="pagesSlider">
-            </div>
-
+        <div class="pages-slider" id="pagesSlider"></div>
         <div class="dots-container" id="dotsContainer"></div>
 
-        <div class="dock" id="dock">
-        </div>
-        <div class="appsbar">
-            
-        </div>
+        <div class="dock" id="dock"></div>
+        <div class="appsbar"></div>
 
         <div class="overlay-panel" id="appDrawer">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
                 <h2 style="margin:0">App Library</h2>
                 <i class="fas fa-times" style="font-size:24px; padding:10px" onclick="closeDrawer()"></i>
             </div>
-            <div class="drawer-list" id="drawerList">
-                </div>
+            <div class="drawer-list" id="drawerList"></div>
         </div>
 
         <div class="folder-modal" id="folderModal">
             <div class="folder-content" id="folderInner"></div>
             <div style="margin-top:20px; font-size:13px; opacity:0.8; color:white;">Tap outside to close</div>
         </div>
-        <div id="infopopup" class="overlay-panel">
-
-        </div>
+        
+        <div id="infopopup" class="overlay-panel"></div>
         
     </div>
 </div>
 
 <script>
     const fullscreenBtn = document.getElementById('fullscreenBtn');
-
-fullscreenBtn.onclick = () => {
-    const el = document.documentElement; // whole page
-    if (!document.fullscreenElement) {
-        // Request fullscreen
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); // Safari
-        else if (el.msRequestFullscreen) el.msRequestFullscreen(); // IE11
-    } else {
-        // Exit fullscreen
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.msExitFullscreen) document.msExitFullscreen();
-    }
-};
+    fullscreenBtn.onclick = () => {
+        const el = document.documentElement;
+        if (!document.fullscreenElement) {
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+            else if (el.msRequestFullscreen) el.msRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+        }
+    };
 
     /* =========================================
        1. DATA CONFIGURATION
@@ -417,29 +346,28 @@ fullscreenBtn.onclick = () => {
         'wallet': { name: 'Wallet', icon: 'fa-wallet', color: '#000' }
     };
 
-    // Default Layout
     const defaultPages = [
-        ['mail', 'cal', 'photos', 'weather', null, null, null, null, 'clock', 'notes', 'maps', 'settings'], // Page 1
-        ['files', 'health', 'wallet', 'store'] // Page 2
+        ['mail', 'cal', 'photos', 'weather', null, null, null, null, 'clock', 'notes', 'maps', 'settings', null, null, null, null, null, null, null, null],
+        ['files', 'health', 'wallet', 'store', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
     ];
     const defaultDock = ['camera', 'safari', 'mail', 'music'];
 
     const info={
-        'news': {1:{title: 'Latest News', content: 'Breaking news: New features added to Glass OS!', icon: 'fa-newspaper', url: 'https:kokorocks.github.io/koko-os', thumbnail: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2670&auto=format&fit=crop'}, 2: {title: 'system maintenance', content: 'Scheduled maintenance on June 15th from 2 AM to 4 AM.', icon: 'fa-newspaper', url: 'https:kokorocks.github.io/koko-os', thumbnail: 'https://picsum.photos/2670'}}, 
-        'updates':{title: 'Update Available', content: 'A new update is available for your device.'}
+        'news': {
+            1:{title: 'Latest News', content: 'Breaking news: New features added to Glass OS!', icon: 'fa-newspaper', url: '#', thumbnail: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2670&auto=format&fit=crop'}, 
+            2: {title: 'System Maintenance', content: 'Scheduled maintenance on June 15th.', icon: 'fa-wrench', url: '#', thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2670'}
+        }
     }
 
-    // State Load
-    let savedState = JSON.parse(localStorage.getItem('glass_os_state'));
+    let savedState = JSON.parse(localStorage.getItem('glass_os_state_v2'));
     let pages = savedState ? savedState.pages : JSON.parse(JSON.stringify(defaultPages));
     let dock = savedState ? savedState.dock : JSON.parse(JSON.stringify(defaultDock));
-    let pressTimer = null;
-    let isdraggable=true;
     
     let currentPage = 0;
+    let currentOpenFolder = null; // Stores {p, i} of current folder
 
     function saveState() {
-        localStorage.setItem('glass_os_state', JSON.stringify({ pages, dock }));
+        localStorage.setItem('glass_os_state_v2', JSON.stringify({ pages, dock }));
     }
 
     /* =========================================
@@ -450,18 +378,18 @@ fullscreenBtn.onclick = () => {
     const drawerList = document.getElementById('drawerList');
     const dotsContainer = document.getElementById('dotsContainer');
 
-    function render(infopopup='') {
+    function render() {
         // 1. Pages
         slider.innerHTML = '';
         pages.forEach((page, pageIdx) => {
             const pageDiv = document.createElement('div');
             pageDiv.className = 'page';
-            
             // Ensure 20 slots (4x5 grid)
             for (let i = 0; i < 20; i++) {
                 const item = page[i];
                 const slot = document.createElement('div');
                 slot.className = 'app-slot';
+                slot.dataset.loc = 'page';
                 slot.dataset.p = pageIdx;
                 slot.dataset.i = i;
                 
@@ -469,23 +397,27 @@ fullscreenBtn.onclick = () => {
                     slot.appendChild(createIcon(item));
                     addDragEvents(slot);
                 }
-                
                 pageDiv.appendChild(slot);
             }
             slider.appendChild(pageDiv);
         });
 
-        // 2. Dock
+        // 2. Dock (Now Draggable!)
         dockEl.innerHTML = '';
-        dock.forEach((item, i) => {
+        for (let i = 0; i < 4; i++) {
+            const item = dock[i];
             const slot = document.createElement('div');
             slot.className = 'app-slot';
-            // Simple dock rendering, no drag for now to keep it stable
-            const icon = createIcon(item, true);
-            icon.onclick = () => openApp(item);
-            slot.appendChild(icon);
+            slot.dataset.loc = 'dock';
+            slot.dataset.i = i;
+            
+            if (item) {
+                const icon = createIcon(item, true);
+                slot.appendChild(icon);
+                addDragEvents(slot);
+            }
             dockEl.appendChild(slot);
-        });
+        }
 
         // 3. Dots
         dotsContainer.innerHTML = '';
@@ -510,7 +442,6 @@ fullscreenBtn.onclick = () => {
     }
 
     function createIcon(itemData, isDock=false) {
-        // itemData could be string (ID) or object (Folder)
         if (typeof itemData === 'object' && itemData.type === 'folder') {
             // Folder
             const icon = document.createElement('div');
@@ -521,11 +452,13 @@ fullscreenBtn.onclick = () => {
             const grid = document.createElement('div');
             grid.className = 'folder-grid';
             
+            // Render Tiny Icons
             itemData.apps.slice(0, 4).forEach(appId => {
                 const mini = document.createElement('div');
                 mini.className = 'mini-icon';
                 const app = appDB[appId];
                 mini.style.background = app.color;
+                mini.innerHTML = `<i class="fas ${app.icon}"></i>`;
                 grid.appendChild(mini);
             });
             
@@ -539,13 +472,13 @@ fullscreenBtn.onclick = () => {
             wrapper.appendChild(icon);
             if(!isDock) wrapper.appendChild(name);
             
-            // Interaction
             icon.onclick = (e) => {
-                cancelDrag();
-                e.stopPropagation();
-                openFolder(itemData);
+                if(!isDragging) {
+                    cancelDrag();
+                    e.stopPropagation();
+                    openFolder(itemData);
+                }
             };
-
             return wrapper;
         } else {
             // Regular App
@@ -561,78 +494,75 @@ fullscreenBtn.onclick = () => {
             
             const name = document.createElement('div');
             name.className = 'app-name';
+            name.className = 'app-name icon-label'; // added class for dock hiding
             if(itemData.type !== 'dock') name.innerText = app.name;
 
             const wrapper = document.createDocumentFragment();
             wrapper.appendChild(icon);
             if(!isDock) wrapper.appendChild(name);
 
-            // Click Event
             icon.onclick = (e) => {
                 if(!isDragging) {
                     e.stopPropagation();
                     openApp(id);
                 }
             };
-            
             return wrapper;
         }
     }
 
     function openApp(id) {
         cancelDrag();
-        if(typeof id === 'string') alert("Opening " + appDB[id].name);
-        //setTimeout(() => { isdraggable=true; }, 5000);
+        if(typeof id === 'string' && appDB[id]) alert("Opening " + appDB[id].name);
     }
 
     /* =========================================
-       3. DRAG & DROP LOGIC (Refined)
+       3. DRAG & DROP LOGIC
        ========================================= */
     let isDragging = false;
     let dragTimer = null;
     let dragGhost = null;
-    let dragSrc = null; // { p, i }
+    let dragSrc = null; // { loc, p, i }
 
     function addDragEvents(slot) {
-        // Touch
         slot.addEventListener('touchstart', (e) => handleStart(e, slot), {passive:false});
         slot.addEventListener('touchmove', handleMove, {passive:false});
         slot.addEventListener('touchend', handleEnd);
-        
-        // Mouse
         slot.addEventListener('mousedown', (e) => handleStart(e, slot));
     }
 
     function handleStart(e, slot) {
-        // Start Timer for Long Press
-        //if(!isdraggable) return;
-        //e.preventDefault();
         dragTimer = setTimeout(() => {
             isDragging = true;
-            dragSrc = { p: parseInt(slot.dataset.p), i: parseInt(slot.dataset.i) };
+            // Determine location
+            const loc = slot.dataset.loc; // 'page', 'dock', 'folder'
+            const p = slot.dataset.p ? parseInt(slot.dataset.p) : 0;
+            const i = parseInt(slot.dataset.i);
+
+            dragSrc = { loc, p, i };
             
-            // Visuals
             if(navigator.vibrate) navigator.vibrate(50);
             
-            // Create Ghost
             const rect = slot.getBoundingClientRect();
             dragGhost = slot.cloneNode(true);
             dragGhost.className = 'dragging-clone';
             dragGhost.style.width = rect.width + 'px';
             dragGhost.style.height = rect.height + 'px';
-            // Center Ghost on finger
-            updateGhostPosition(e);
             
-            document.body.appendChild(dragGhost);
-            slot.style.opacity = '0'; // Hide original
+            // Remove text from ghost for cleaner look
+            const label = dragGhost.querySelector('.app-name');
+            if(label) label.style.display = 'none';
 
-            // Mouse move binding
-            if(e.type === 'mousedown' && !e.touches) {
+            updateGhostPosition(e);
+            document.body.appendChild(dragGhost);
+            slot.style.opacity = '0'; 
+
+            if(e.type === 'mousedown') {
                 window.addEventListener('mousemove', handleMove);
                 window.addEventListener('mouseup', handleEnd);
             }
 
-        }, 400); // 400ms hold
+        }, 400); 
     }
 
     function handleMove(e) {
@@ -642,138 +572,192 @@ fullscreenBtn.onclick = () => {
         }
         e.preventDefault();
         updateGhostPosition(e);
+
+        // DRAG OUT OF FOLDER LOGIC
+        if (dragSrc.loc === 'folder' && folderModal.classList.contains('open')) {
+            const folderRect = folderInner.getBoundingClientRect();
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+
+            // If dragged outside the folder box, close modal
+            if (x < folderRect.left || x > folderRect.right || y < folderRect.top || y > folderRect.bottom) {
+                folderModal.classList.remove('open');
+            }
+        }
     }
 
-function cancelDrag() {
-    clearTimeout(dragTimer);
-    dragTimer = null;
-    isDragging = false;
-}
+    function cancelDrag() {
+        clearTimeout(dragTimer);
+        dragTimer = null;
+        isDragging = false;
+    }
 
+    let lastEdgeSwitchTime = 0;
+    const EDGE_MARGIN = 40;
 
-let lastEdgeSwitchTime = 0; // prevent multiple rapid switches
-const EDGE_MARGIN = 60;
-const EDGE_COOLDOWN = 500; // ms
+    function updateGhostPosition(e) {
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
 
-function openInfo(type) {
-    let contentHTML = '';
-    for(let index in info[type]){
-        const item = info[type][index];
-
-        // Icon handling
-        let iconHTML = '';
-        if(item.icon.includes('fa-')) {
-            iconHTML = `<i class="fas ${item.icon}"></i>`;
-        } else {
-            iconHTML = `<img src="${item.icon}" />`;
+        if (dragGhost) {
+            dragGhost.style.left = (x - dragGhost.offsetWidth / 2) + 'px';
+            dragGhost.style.top = (y - dragGhost.offsetHeight / 2) + 'px';
         }
 
-        contentHTML += `
-        <a href="${item.url}" class="news">
-            <div class="news-header">
-                ${iconHTML}
-                <div class="news-title">${item.title}</div>
-            </div>
-            <div class="news-content">${item.content}</div>
-            <img class="news-preview" src="${item.thumbnail}" />
-        </a>`;
+        // Page Switching
+        const now = Date.now();
+        if (now - lastEdgeSwitchTime > 600 && !folderModal.classList.contains('open')) {
+            if (x < EDGE_MARGIN && currentPage > 0) {
+                currentPage--;
+                lastEdgeSwitchTime = now;
+                slider.style.transform = `translateX(-${currentPage * 100}%)`;
+            } else if (x > window.innerWidth - EDGE_MARGIN && currentPage < pages.length - 1) {
+                currentPage++;
+                lastEdgeSwitchTime = now;
+                slider.style.transform = `translateX(-${currentPage * 100}%)`;
+            }
+        }
     }
-
-    infoPopup.innerHTML = contentHTML;
-    infoPopup.classList.add('open');
-}
-
-
-
-function updateGhostPosition(e) {
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
-
-    if (dragGhost) {
-        dragGhost.style.left = (x - dragGhost.offsetWidth / 2) + 'px';
-        dragGhost.style.top = (y - dragGhost.offsetHeight / 2) + 'px';
-    }
-
-    // Edge detection with cooldown
-    let inside=0
-    const now = Date.now();
-    if (now - lastEdgeSwitchTime > EDGE_COOLDOWN) {
-        if (x < EDGE_MARGIN && currentPage > 0) {
-            inside=1
-            currentPage--;
-            lastEdgeSwitchTime = now;
-            // Slide the pages without rerendering all icons
-            slider.style.transform = `translateX(-${currentPage * 100}%)`;
-        } else if (x > window.innerWidth - EDGE_MARGIN && currentPage < pages.length - 1 && !inside) {
-            inside=1
-            currentPage++;
-            lastEdgeSwitchTime = now;
-            slider.style.transform = `translateX(-${currentPage * 100}%)`;
-        }else{inside=0}
-    }
-}
-
 
     function handleEnd(e) {
         clearTimeout(dragTimer);
         if(!isDragging) return;
         
         isDragging = false;
+        dragGhost.style.display = 'none'; // hide to peek below
         
-        // Get drop target
-        // We temporarily hide ghost to see what's underneath
-        dragGhost.style.display = 'none';
         const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
         const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
         const elBelow = document.elementFromPoint(x, y);
+        
         dragGhost.remove();
         dragGhost = null;
 
-        // Restore original just in case we don't drop successfully
+        // Restore opacities
         document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
 
         if(elBelow) {
             const targetSlot = elBelow.closest('.app-slot');
-            if(targetSlot && targetSlot.dataset.p) {
-                const targetP = parseInt(targetSlot.dataset.p);
-                const targetI = parseInt(targetSlot.dataset.i);
-                
-                handleDrop(dragSrc.p, dragSrc.i, targetP, targetI);
+            if(targetSlot) {
+                const tgtLoc = targetSlot.dataset.loc;
+                const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
+                const tgtI = parseInt(targetSlot.dataset.i);
+
+                handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI });
+            } else {
+                // Dropped on empty space in modal or page?
+                // If dropped on "page" background but not a slot, we could try to find the nearest empty slot, 
+                // but for grid systems, dropping "on" a slot is best. 
+                // If dragging out of folder and dropped on empty page area:
+                if (dragSrc.loc === 'folder' && !folderModal.classList.contains('open')) {
+                   // Find first empty slot on current page
+                   const emptyIdx = pages[currentPage].findIndex(x => x === null);
+                   if (emptyIdx !== -1) {
+                       handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
+                   }
+                }
             }
         }
-        
-        // Cleanup Mouse listeners
+
         window.removeEventListener('mousemove', handleMove);
         window.removeEventListener('mouseup', handleEnd);
     }
 
-    function handleDrop(srcP, srcI, tgtP, tgtI) {
-        // Prevent dropping on self
-        if(srcP === tgtP && srcI === tgtI) return;
+    function getItem(ref) {
+        if(ref.loc === 'page') return pages[ref.p][ref.i];
+        if(ref.loc === 'dock') return dock[ref.i];
+        if(ref.loc === 'folder') {
+            const folder = pages[currentOpenFolder.p][currentOpenFolder.i];
+            return folder.apps[ref.i];
+        }
+        return null;
+    }
 
-        const srcItem = pages[srcP][srcI];
-        const tgtItem = pages[tgtP][tgtI];
+    function setItem(ref, val) {
+        if(ref.loc === 'page') pages[ref.p][ref.i] = val;
+        else if(ref.loc === 'dock') dock[ref.i] = val;
+else if (ref.loc === 'folder') {
+    const folderSlot = pages[currentOpenFolder.p][currentOpenFolder.i];
+    if (!folderSlot || folderSlot.type !== 'folder') return;
 
-        if(!tgtItem) {
-            // Move to Empty Slot
-            pages[tgtP][tgtI] = srcItem;
-            pages[srcP][srcI] = null;
+    if (val === null) {
+        // Remove app from folder
+        folderSlot.apps.splice(ref.i, 1);
+
+        // 🔥 CASE 1: Folder empty → remove it
+        if (folderSlot.apps.length === 0) {
+            pages[currentOpenFolder.p][currentOpenFolder.i] = null;
+            folderModal.classList.remove('open');
+            currentOpenFolder = null;
+        }
+
+        // 🔥 CASE 2: Folder has ONE app → unwrap it
+        else if (folderSlot.apps.length === 1) {
+            pages[currentOpenFolder.p][currentOpenFolder.i] = folderSlot.apps[0];
+            folderModal.classList.remove('open');
+            currentOpenFolder = null;
+        }
+
+    } else {
+        folderSlot.apps[ref.i] = val;
+    }
+}
+
+    }
+
+    function handleDrop(src, tgt) {
+        // Prevent drop on self
+        if(src.loc === tgt.loc && src.p === tgt.p && src.i === tgt.i) return;
+
+        const srcItem = getItem(src);
+        const tgtItem = getItem(tgt);
+
+        // Logic split based on Target Type
+        
+        // 1. Dropping into Folder (Reordering)
+        if (tgt.loc === 'folder' && src.loc === 'folder') {
+            // Reorder inside folder
+            const folder = pages[currentOpenFolder.p][currentOpenFolder.i];
+            const item = folder.apps.splice(src.i, 1)[0];
+            folder.apps.splice(tgt.i, 0, item);
+            openFolder(pages[currentOpenFolder.p][currentOpenFolder.i], true);
+            return; // Don't call full render
+        }
+
+        // 2. Standard Swap or Create Folder
+        if (!tgtItem) {
+            // Target is Empty -> Move
+            setItem(tgt, srcItem);
+            setItem(src, null);
         } else {
-            // Target is occupied
-            if(typeof tgtItem === 'string' && typeof srcItem === 'string') {
-                // App on App -> Create Folder
+            // Target is Occupied
+            if (typeof tgtItem === 'string' && typeof srcItem === 'string' && tgt.loc !== 'dock' && src.loc !== 'dock' && tgt.loc !== 'folder') {
+                // App on App (Page only) -> Create Folder
                 const folder = { type: 'folder', apps: [tgtItem, srcItem] };
-                pages[tgtP][tgtI] = folder;
-                pages[srcP][srcI] = null;
-            } else if (typeof tgtItem === 'object' && tgtItem.type === 'folder' && typeof srcItem === 'string') {
-                // App on Folder -> Add to Folder
+                setItem(tgt, folder);
+                setItem(src, null);
+            } 
+            else if (typeof tgtItem === 'object' && tgtItem.type === 'folder' && typeof srcItem === 'string') {
+                // App on Folder -> Add
                 tgtItem.apps.push(srcItem);
-                pages[srcP][srcI] = null;
+                setItem(src, null);
+            }
+            else {
+                // Swap (e.g. Dock reordering or Page reordering)
+                // Note: Can't swap a Folder into the Dock (logic choice)
+                if (srcItem.type === 'folder' && tgt.loc === 'dock') return;
+                
+                setItem(tgt, srcItem);
+                setItem(src, tgtItem);
             }
         }
 
         saveState();
         render();
+        // If we moved something out of a folder, re-render folder modal if open
+        if (src.loc === 'folder' && folderModal.classList.contains('open')) {
+             openFolder(pages[currentOpenFolder.p][currentOpenFolder.i], true);
+        }
     }
 
     /* =========================================
@@ -787,60 +771,57 @@ function updateGhostPosition(e) {
     const drawer = document.getElementById('appDrawer');
     const infoPopup = document.getElementById('infopopup');
 
-    // Swipe Left/Right (Pagination)
     hammer.on('swipeleft', () => {
-        if(currentPage < pages.length - 1 && !isDragging && !infoPopup.classList.contains('open')) {
+        if(currentPage < pages.length - 1 && !isDragging && !infoPopup.classList.contains('open') && !folderModal.classList.contains('open')) {
             currentPage++;
             render();
         }
-            if(infoPopup.classList.contains('open')){
-            infoPopup.classList.remove('open');}
-
+        if(infoPopup.classList.contains('open')) infoPopup.classList.remove('open');
     });
+
     hammer.on('swiperight', () => {
-        if(currentPage > 0 && !isDragging) {
+        if(currentPage > 0 && !isDragging && !folderModal.classList.contains('open')) {
             currentPage--;
             render();
-        }
-
-            else if(!isDragging){
-            //alert('bla')
-            if(!infoPopup.classList.contains('open')){
-                //alert('bruh')
-            //infoPopup.classList.add('open');
-            openInfo('news');
-            }
-            else{
-                //infoPopup.classList.remove('open');
-            }
+        } else if(!isDragging && currentPage === 0 && !folderModal.classList.contains('open')){
+            if(!infoPopup.classList.contains('open')) openInfo('news');
         }
     });
 
-    // Swipe Up (Drawer) - Only from bottom 20%
     hammer.on('swipeup', (e) => {
-        const startY = e.center.y - e.deltaY; // approx start Y
-        if(startY > window.innerHeight * 0.8 && shade.classList.contains('open') === false) {
-            if(startY > window.innerHeight * 0.98) {alert("opening app view menu")}
-            else{
-            drawer.classList.add('open');}
+        const startY = e.center.y - e.deltaY;
+        if(startY > window.innerHeight * 0.85 && !shade.classList.contains('open') && !folderModal.classList.contains('open')) {
+            drawer.classList.add('open');
         } else if(shade.classList.contains('open')) {
             closeShade();
         }
     });
 
-    // Swipe Down (Shade) - Only from top 20%
     hammer.on('swipedown', (e) => {
         const startY = e.center.y - e.deltaY;
-        if(startY < window.innerHeight * 0.25) {
+        if(startY < window.innerHeight * 0.15) {
             shade.classList.add('open');
-        } /*else if(drawer.classList.contains('open')) {
-            closeDrawer();
-        }*/
+        }
     });
 
     function closeShade() { shade.classList.remove('open'); }
     function closeDrawer() { drawer.classList.remove('open'); }
-    function closeInfo() { infoPopup.classList.remove('open'); }
+    
+    function openInfo(type) {
+        let contentHTML = '';
+        for(let index in info[type]){
+            const item = info[type][index];
+            const iconHTML = item.icon.includes('fa-') ? `<i class="fas ${item.icon}"></i>` : `<img src="${item.icon}" />`;
+            contentHTML += `
+            <a href="${item.url}" class="news">
+                <div class="news-header">${iconHTML}<div class="news-title">${item.title}</div></div>
+                <div class="news-content">${item.content}</div>
+                <img class="news-preview" src="${item.thumbnail}" />
+            </a>`;
+        }
+        infoPopup.innerHTML = contentHTML;
+        infoPopup.classList.add('open');
+    }
 
     /* =========================================
        5. FOLDER MODAL
@@ -848,42 +829,50 @@ function updateGhostPosition(e) {
     const folderModal = document.getElementById('folderModal');
     const folderInner = document.getElementById('folderInner');
 
-    function openFolder(folderData) {
+    function openFolder(folderData, isRefresh = false) {
+        // Find location of this folder for saving state
+        if(!isRefresh) {
+            let found = false;
+            pages.forEach((p, pIdx) => {
+                p.forEach((item, iIdx) => {
+                    if(item === folderData) {
+                        currentOpenFolder = { p: pIdx, i: iIdx };
+                        found = true;
+                    }
+                });
+            });
+            if(!found) return;
+        }
+
         folderInner.innerHTML = '';
-        folderData.apps.forEach(appId => {
-            const app = appDB[appId];
-            const div = document.createElement('div');
-            div.style.display = 'flex';
-            div.style.flexDirection = 'column';
-            div.style.alignItems = 'center';
-            div.innerHTML = `
-                <div style="width:50px;height:50px;background:${app.color};border-radius:12px;display:flex;justify-content:center;align-items:center;color:white;font-size:24px;">
-                    <i class="fas ${app.icon}"></i>
-                </div>
-                <div style="margin-top:5px;font-size:11px;color:white;">${app.name}</div>
-            `;
-            div.onclick = (e) => {
-                e.stopPropagation();
-                openApp(appId);
-                folderModal.classList.remove('open');
-            };
-            folderInner.appendChild(div);
+        
+        folderData.apps.forEach((appId, idx) => {
+            const slot = document.createElement('div');
+            slot.className = 'app-slot';
+            slot.dataset.loc = 'folder';
+            slot.dataset.i = idx;
+            // No P index needed for folder items, but we need the slot to work
+            
+            const appIcon = createIcon(appId);
+            slot.appendChild(appIcon);
+            addDragEvents(slot);
+            
+            folderInner.appendChild(slot);
         });
-        folderModal.classList.add('open');
+
+        if(!isRefresh) folderModal.classList.add('open');
     }
 
     folderModal.onclick = (e) => {
         if(e.target === folderModal) folderModal.classList.remove('open');
     }
 
-    // Time Clock
     setInterval(() => {
         const d = new Date();
         document.getElementById('clockTime').innerText = 
             d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
     }, 1000);
 
-    // Initial Render
     render();
 
 </script>
