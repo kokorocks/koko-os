@@ -36,13 +36,14 @@
 
     /* --- Device Chassis --- */
     .phone-frame {
-        width: 360px; height: 780px;
-        background: #000;
-        border-radius: 50px;
+        width: 360px; height: 760px;
+        background: #1a1a1a;
+        border-radius: 48px;
+        padding: 10px;
+        box-shadow: 0 30px 60px -10px rgba(0,0,0,0.6), inset 0 0 0 2px #333;
         position: relative;
-        box-shadow: 0 0 0 2px #333, 0 40px 80px rgba(0,0,0,0.5);
-        overflow: hidden;
     }
+
 
     .screen-container {
         width: 100%; height: 99%;
@@ -112,7 +113,7 @@
 
     /* --- Dock --- */
     .dock {
-        position: absolute; bottom: 35px; left: 15px; right: 15px;
+        position: absolute; bottom: 14px; left: 15px; right: 15px;
         height: 90px;
         background: rgba(255,255,255,0.2);
         backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
@@ -131,11 +132,12 @@
     /* --- Overlays --- */
     .overlay-panel {
         position: absolute; left: 0; width: 100%;
-        background: rgba(20, 20, 25, 0.85);
+        background: rgba(20, 20, 25, 0.247);
         backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
         z-index: 200;
         transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
         display: flex; flex-direction: column;
+        opacity: 1;
     }
 
     .overlay-panel[id="notifShade"]{
@@ -221,6 +223,10 @@
 #fullscreenBtn:hover {
     background: rgba(0,0,0,0.8);
 }
+.appsbar{
+    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    width: 175px; height: 5px; background: rgba(135, 135, 135, 0.733); border-radius:5px; 
+}
 
 </style>
 </head>
@@ -273,7 +279,10 @@
         <div class="dots-container" id="dotsContainer"></div>
 
         <div class="dock" id="dock">
-            </div>
+        </div>
+        <div class="appsbar">
+            
+        </div>
 
         <div class="overlay-panel" id="appDrawer">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
@@ -288,7 +297,7 @@
             <div class="folder-content" id="folderInner"></div>
             <div style="margin-top:20px; font-size:13px; opacity:0.8; color:white;">Tap outside to close</div>
         </div>
-
+        
     </div>
 </div>
 
@@ -514,10 +523,10 @@ fullscreenBtn.onclick = () => {
 
     function handleStart(e, slot) {
         // Start Timer for Long Press
-        if(!isdraggable) return;
+        //if(!isdraggable) return;
         //e.preventDefault();
         dragTimer = setTimeout(() => {
-            isDragging = true;
+            //isDragging = true;
             dragSrc = { p: parseInt(slot.dataset.p), i: parseInt(slot.dataset.i) };
             
             // Visuals
