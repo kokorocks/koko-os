@@ -11,7 +11,7 @@
 <style>
     :root {
         --font-main: 'Outfit', sans-serif;
-        --app-size: 60px;
+        --app-size: 50px;
         --grid-cols: 5;
         --grid-rows: 6; /* 4x5 Grid */
         --gap: 15px;
@@ -114,7 +114,7 @@
     /* --- Dock --- */
     .dock {
         position: absolute; bottom: 14px; left: 15px; right: 15px;
-        height: 90px;
+        height: 80px;
         background: rgba(255,255,255,0.2);
         backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
         border-radius: 32px;
@@ -160,6 +160,26 @@
         background: rgba(0, 0, 0, 0.6);
     }
     #appDrawer.open { transform: translateY(0); }
+
+#infopopup {
+    top: 0;
+    height: 100%;
+    transform: translateX(-100%);
+    padding: 50px 20px;
+    background: rgba(0,0,0,0.6); 
+    border-radius: 20px;
+    opacity: 0; 
+    pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.35s ease;
+}
+
+#infopopup.open {
+    opacity: 1; 
+    pointer-events: all;
+    transform: translateX(0);
+}
+
+
 
     .drawer-list {
         display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
@@ -226,6 +246,60 @@
 .appsbar{
     position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
     width: 175px; height: 5px; background: rgba(135, 135, 135, 0.733); border-radius:5px; 
+}
+#infopopup .news {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 15px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+    transition: background 0.2s, transform 0.2s;
+    text-decoration: none;
+    color: white;
+    margin-bottom: 12px;
+}
+
+#infopopup .news:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-2px);
+}
+
+#infopopup .news-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#infopopup .news-header i, #infopopup .news-header img {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+}
+
+#infopopup .news-title {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+#infopopup .news-content {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+#infopopup .news-preview {
+    width: 100%;
+    height: 90px;
+    border-radius: 10px;
+    object-fit: cover;
+    margin-top: 5px;
 }
 
 </style>
@@ -297,6 +371,9 @@
             <div class="folder-content" id="folderInner"></div>
             <div style="margin-top:20px; font-size:13px; opacity:0.8; color:white;">Tap outside to close</div>
         </div>
+        <div id="infopopup" class="overlay-panel">
+
+        </div>
         
     </div>
 </div>
@@ -347,6 +424,11 @@ fullscreenBtn.onclick = () => {
     ];
     const defaultDock = ['camera', 'safari', 'mail', 'music'];
 
+    const info={
+        'news': {1:{title: 'Latest News', content: 'Breaking news: New features added to Glass OS!', icon: 'fa-newspaper', url: 'https:kokorocks.github.io/koko-os', thumbnail: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2670&auto=format&fit=crop'}, 2: {title: 'system maintenance', content: 'Scheduled maintenance on June 15th from 2 AM to 4 AM.', icon: 'fa-newspaper', url: 'https:kokorocks.github.io/koko-os', thumbnail: 'https://picsum.photos/2670'}}, 
+        'updates':{title: 'Update Available', content: 'A new update is available for your device.'}
+    }
+
     // State Load
     let savedState = JSON.parse(localStorage.getItem('glass_os_state'));
     let pages = savedState ? savedState.pages : JSON.parse(JSON.stringify(defaultPages));
@@ -368,7 +450,7 @@ fullscreenBtn.onclick = () => {
     const drawerList = document.getElementById('drawerList');
     const dotsContainer = document.getElementById('dotsContainer');
 
-    function render() {
+    function render(infopopup='') {
         // 1. Pages
         slider.innerHTML = '';
         pages.forEach((page, pageIdx) => {
@@ -573,6 +655,36 @@ let lastEdgeSwitchTime = 0; // prevent multiple rapid switches
 const EDGE_MARGIN = 60;
 const EDGE_COOLDOWN = 500; // ms
 
+function openInfo(type) {
+    let contentHTML = '';
+    for(let index in info[type]){
+        const item = info[type][index];
+
+        // Icon handling
+        let iconHTML = '';
+        if(item.icon.includes('fa-')) {
+            iconHTML = `<i class="fas ${item.icon}"></i>`;
+        } else {
+            iconHTML = `<img src="${item.icon}" />`;
+        }
+
+        contentHTML += `
+        <a href="${item.url}" class="news">
+            <div class="news-header">
+                ${iconHTML}
+                <div class="news-title">${item.title}</div>
+            </div>
+            <div class="news-content">${item.content}</div>
+            <img class="news-preview" src="${item.thumbnail}" />
+        </a>`;
+    }
+
+    infoPopup.innerHTML = contentHTML;
+    infoPopup.classList.add('open');
+}
+
+
+
 function updateGhostPosition(e) {
     const x = e.touches ? e.touches[0].clientX : e.clientX;
     const y = e.touches ? e.touches[0].clientY : e.clientY;
@@ -673,18 +785,34 @@ function updateGhostPosition(e) {
 
     const shade = document.getElementById('notifShade');
     const drawer = document.getElementById('appDrawer');
+    const infoPopup = document.getElementById('infopopup');
 
     // Swipe Left/Right (Pagination)
     hammer.on('swipeleft', () => {
-        if(currentPage < pages.length - 1 && !isDragging) {
+        if(currentPage < pages.length - 1 && !isDragging && !infoPopup.classList.contains('open')) {
             currentPage++;
             render();
         }
+            if(infoPopup.classList.contains('open')){
+            infoPopup.classList.remove('open');}
+
     });
     hammer.on('swiperight', () => {
         if(currentPage > 0 && !isDragging) {
             currentPage--;
             render();
+        }
+
+            else if(!isDragging){
+            //alert('bla')
+            if(!infoPopup.classList.contains('open')){
+                //alert('bruh')
+            //infoPopup.classList.add('open');
+            openInfo('news');
+            }
+            else{
+                //infoPopup.classList.remove('open');
+            }
         }
     });
 
@@ -712,6 +840,7 @@ function updateGhostPosition(e) {
 
     function closeShade() { shade.classList.remove('open'); }
     function closeDrawer() { drawer.classList.remove('open'); }
+    function closeInfo() { infoPopup.classList.remove('open'); }
 
     /* =========================================
        5. FOLDER MODAL
