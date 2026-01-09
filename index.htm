@@ -335,9 +335,9 @@
             ncList.innerHTML = '<div style="text-align:center; opacity:0.5; margin-top:50px;">No Notifications</div>';
             return;
         }
-        if(notifications.length > 1)
+        
         viewAllBtn.style.display = 'block';
-        viewAllBtn.innerText = `View All (${notifications.length})`;}
+        viewAllBtn.innerText = `View All (${notifications.length})`;
 
         // Render Loop
         notifications.forEach((notif, index) => {
@@ -451,6 +451,7 @@
                 if(currentPin === correctPin) {
                     alert("DEVICE UNLOCKED");
                     closeSecurity();
+                    window.location.href='home.htm'
                 } else {
                     alert("Incorrect PIN");
                     currentPin = "";
