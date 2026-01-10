@@ -166,11 +166,17 @@
         background: rgba(0,0,0,0.6); 
         border-radius: 20px;
         opacity: 0; pointer-events: none;
+        overflow-y: auto;
+
         transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.35s ease;
     }
     #infopopup.open {
         opacity: 1; pointer-events: all;
         transform: translateX(0);
+    }
+
+    #infopopup::-webkit-scrollbar {
+        width: 8px;
     }
 
     .drawer-list {
@@ -374,12 +380,17 @@
     ];
     const defaultDock = ['camera', 'safari', 'mail', 'music'];
 
-    const info={
+    const info = {
+        news: {}
+    };
+
+
+    /*const info={
         'news': {
             1:{title: 'Latest News', content: 'Breaking news: New features added to Glass OS!', icon: 'fa-newspaper', url: '#', thumbnail: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2670&auto=format&fit=crop'}, 
             2: {title: 'System Maintenance', content: 'Scheduled maintenance on June 15th.', icon: 'fa-wrench', url: '#', thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2670'}
         }
-    }
+    }*/
 
     let savedState = JSON.parse(localStorage.getItem('glass_os_state_v2'));
     let pages = savedState ? savedState.pages : JSON.parse(JSON.stringify(defaultPages));
@@ -534,6 +545,61 @@
             return wrapper;
         }
     }
+function loadNewsFromBingRSS(query = 'tech') {
+    // 1. Setup Bing RSS URL
+    //const bingRss = `https://www.bing.com/news/search?q=${encodeURIComponent(query)}&format=rss&count=20`;
+    const bingRss = `https://www.bing.com/news/search?q=${encodeURIComponent(query)}&format=rss&count=200`
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(bingRss)}`;
+
+    fetch(apiUrl)
+        .then(res => res.json())
+        .then(async data => {
+            info.news = {}; // reset news
+
+            // Limit to 6 articles
+            const items = data.items.slice(0, 50);
+
+            await Promise.all(items.map(async (item, index) => {
+                // Decode the real URL from Bing's redirect
+                let decodedUrl = item.link;
+                try {
+                    const urlParams = new URLSearchParams(new URL(item.link).search);
+                    if (urlParams.has('url')) decodedUrl = urlParams.get('url');
+                } catch (e) {
+                    console.warn("Could not decode Bing link, using original.");
+                }
+
+                // Fetch thumbnail via Microlink
+                let thumbnail = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2670'; // fallback
+                try {
+                    const metaRes = await fetch(`https://api.microlink.io?url=${encodeURIComponent(decodedUrl)}`);
+                    const metaData = await metaRes.json();
+                    if (metaData.data.image?.url) thumbnail = metaData.data.image.url;
+                } catch (err) {
+                    console.warn("Microlink failed for", decodedUrl);
+                }
+
+                // Strip HTML from description
+                const cleanDescription = item.description.replace(/<[^>]*>?/gm, "");
+
+                // Save to info.news
+                info.news[index + 1] = {
+                    title: item.title,
+                    content: cleanDescription,
+                    icon: 'fa-newspaper',
+                    url: decodedUrl,
+                    thumbnail: thumbnail
+                };
+            }));
+
+            console.log("Loaded news:", info.news);
+        })
+        .catch(err => console.error("Failed to fetch Bing RSS:", err));
+}
+
+// Load news when page starts
+loadNewsFromBingRSS();
+
 
     function openApp(id) {
         cancelDrag();
@@ -548,7 +614,9 @@
             el.style.height='100%';
             el.style.border='none';
             el.style.zIndex='500';
+            el.id='appFrame';
             document.getElementById('mainScreen').appendChild(el);
+            appopen = document.getElementById('appFrame');
         }else if(typeof id === 'string' && appDB[id]) alert("Opening " + appDB[id].name);
     }
 
@@ -813,6 +881,7 @@ else if (ref.loc === 'folder') {
     const shade = document.getElementById('notifShade');
     const drawer = document.getElementById('appDrawer');
     const infoPopup = document.getElementById('infopopup');
+    let appopen = document.getElementById('appFrame');
 
     hammer.on('swipeleft', () => {
         if(currentPage < pages.length - 1 && !isDragging && !infoPopup.classList.contains('open') && !folderModal.classList.contains('open')) {
@@ -833,13 +902,31 @@ else if (ref.loc === 'folder') {
 
 hammer.on('swipeup', (e) => {
     const startY = e.center.y - e.deltaY;
-    // Swipe up from bottom ~15% of screen
-    if(startY > window.innerHeight * 0.90 && !drawer.classList.contains('open') && !folderModal.classList.contains('open') && !shade.classList.contains('open')) {
+
+    const appIsOpen = appopen && appopen.isConnected;
+
+    if (
+        startY > window.innerHeight * 0.90 &&
+        !drawer.classList.contains('open') &&
+        !folderModal.classList.contains('open') &&
+        !shade.classList.contains('open') &&
+        !infoPopup.classList.contains('open') &&
+        !appIsOpen
+    ) {
         drawer.classList.add('open');
-    } else if(shade.classList.contains('open')) {
+    } 
+    else if (shade.classList.contains('open')) {
         closeShade();
+    } 
+    else if (infoPopup.classList.contains('open')) {
+        infoPopup.classList.remove('open');
+    } 
+    else if (appIsOpen) {
+        appopen.remove();
+        appopen = null;
     }
 });
+
 
 hammer.on('swipedown', (e) => {
     const startY = e.center.y - e.deltaY;
