@@ -55,7 +55,7 @@
     /* --- Status Bar --- */
     .status-bar {
         position: absolute; top: 0; width: 100%; height: 40px;
-        z-index: 100;
+        z-index: 999;
         display: flex; justify-content: space-between; padding: 12px 25px;
         font-size: 13px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
@@ -126,7 +126,7 @@
     /* --- Dragging Ghost --- */
     .dragging-clone {
         position: fixed; pointer-events: none; z-index: 9999;
-        transform: scale(1.1); opacity: 0.9;
+        transform: scale(1.1); opacity: 0.9; width: 100; height: 100;
     }
 
     /* --- Overlays --- */
@@ -140,7 +140,7 @@
         opacity: 1;
     }
     
-    .overlay-panel[id="notifShade"] { z-index: 250; }
+    .overlay-panel[id="notifShade"] { z-index: 995; }
 
     /* Notification Shade (Top) */
     #notifShade {
@@ -227,7 +227,7 @@
     #fullscreenBtn:hover { background: rgba(0,0,0,0.8); }
 
     .appsbar {
-        position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+        z-index: 999;position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
         width: 175px; height: 5px; background: rgba(135, 135, 135, 0.733); border-radius:5px; 
     }
 
@@ -247,6 +247,26 @@
     #infopopup .news-title { font-weight: 600; font-size: 14px; }
     #infopopup .news-content { font-size: 12px; opacity: 0.8; }
     #infopopup .news-preview { width: 100%; height: 90px; border-radius: 10px; object-fit: cover; margin-top: 5px; }
+    #top-guard,
+#bottom-guard {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    z-index: 2000; /* ABOVE iframe */
+    background: transparent;
+    pointer-events: auto;
+}
+
+#top-guard {
+    top: 0;
+    height: 60px;
+}
+
+#bottom-guard {
+    bottom: 0;
+    height: 80px;
+}
+
 </style>
 </head>
 <body>
@@ -306,7 +326,9 @@
         </div>
         
         <div id="infopopup" class="overlay-panel"></div>
-        
+       <div id="top-guard"></div>
+<div id="bottom-guard"></div>
+
     </div>
 </div>
 
@@ -335,7 +357,7 @@
         'camera': { name: 'Camera', icon: 'fa-camera', color: '#333' },
         'maps': { name: 'Maps', icon: 'fa-map-marked-alt', color: '#34C759' },
         'weather': { name: 'Weather', icon: 'fa-cloud-sun', color: '#5AC8FA' },
-        'clock': { name: 'Clock', icon: 'fa-clock', color: '#000' },
+        'clock': { name: 'Clock', icon: 'fa-clock', color: '#000', app: 'clock-app.htm' },
         'notes': { name: 'Notes', icon: 'fa-sticky-note', color: '#FFD60A' },
         'settings': { name: 'Settings', icon: 'fa-cog', color: '#8E8E93' },
         'store': { name: 'App Store', icon: 'fa-layer-group', color: '#007AFF' },
@@ -377,6 +399,8 @@
     const dockEl = document.getElementById('dock');
     const drawerList = document.getElementById('drawerList');
     const dotsContainer = document.getElementById('dotsContainer');
+    let startX = 0;
+    let startY = 0;
 
     function render() {
         // 1. Pages
@@ -513,7 +537,19 @@
 
     function openApp(id) {
         cancelDrag();
-        if(typeof id === 'string' && appDB[id]) alert("Opening " + appDB[id].name);
+        if(appDB[id] && appDB[id].app) {
+            
+            let el=document.createElement('iframe');
+            el.src=appDB[id].app || 'app-placeholder.htm';
+            el.style.position='absolute';
+            el.style.top='0';
+            el.style.left='0';
+            el.style.width='100%';
+            el.style.height='100%';
+            el.style.border='none';
+            el.style.zIndex='500';
+            document.getElementById('mainScreen').appendChild(el);
+        }else if(typeof id === 'string' && appDB[id]) alert("Opening " + appDB[id].name);
     }
 
     /* =========================================
@@ -564,12 +600,19 @@
 
         }, 400); 
     }
+const topGuard = document.getElementById('top-guard');
+const bottomGuard = document.getElementById('bottom-guard');
 
     function handleMove(e) {
-        if(!isDragging) {
-            clearTimeout(dragTimer);
+        if (!isDragging) {
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+            const dist = Math.hypot(x - startX, y - startY);
+        
+            if (dist > 8) clearTimeout(dragTimer); // allow slight movement
             return;
         }
+
         e.preventDefault();
         updateGhostPosition(e);
 
@@ -788,21 +831,26 @@ else if (ref.loc === 'folder') {
         }
     });
 
-    hammer.on('swipeup', (e) => {
-        const startY = e.center.y - e.deltaY;
-        if(startY > window.innerHeight * 0.85 && !shade.classList.contains('open') && !folderModal.classList.contains('open')) {
-            drawer.classList.add('open');
-        } else if(shade.classList.contains('open')) {
-            closeShade();
-        }
-    });
+hammer.on('swipeup', (e) => {
+    const startY = e.center.y - e.deltaY;
+    // Swipe up from bottom ~15% of screen
+    if(startY > window.innerHeight * 0.90 && !drawer.classList.contains('open') && !folderModal.classList.contains('open') && !shade.classList.contains('open')) {
+        drawer.classList.add('open');
+    } else if(shade.classList.contains('open')) {
+        closeShade();
+    }
+});
 
-    hammer.on('swipedown', (e) => {
-        const startY = e.center.y - e.deltaY;
-        if(startY < window.innerHeight * 0.15) {
-            shade.classList.add('open');
-        }
-    });
+hammer.on('swipedown', (e) => {
+    const startY = e.center.y - e.deltaY;
+    // Swipe down from top ~15% of screen
+    if(startY < window.innerHeight * 0.10 && !shade.classList.contains('open') && !folderModal.classList.contains('open')) {
+        shade.classList.add('open');
+    } else if(drawer.classList.contains('open')) {
+        closeDrawer();
+    }
+});
+
 
     function closeShade() { shade.classList.remove('open'); }
     function closeDrawer() { drawer.classList.remove('open'); }

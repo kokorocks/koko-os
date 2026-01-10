@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Clock App</title>
+<style>
+    body {
+        user-select: none;
+        font-family: Arial, sans-serif;
+        background: #1e1e1e;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        overflow: hidden;
+    }
+    h1, h2 { margin: 10px 0; }
+    .clock, .world-clock, .timer, .stopwatch {
+        background: #2e2e2e;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 10px;
+        width: 300px;
+        text-align: center;
+    }
+    button { margin: 5px; padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer; }
+    input { width: 50px; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Simple Clock App</h1>
+
+<div class="clock">
+    <h2>Main Clock</h2>
+    <div id="mainClock">--:--:--</div>
+</div>
+
+<div class="world-clock">
+    <h2>World Clocks</h2>
+    <div>New York: <span id="nyClock">--:--:--</span></div>
+    <div>London: <span id="londonClock">--:--:--</span></div>
+    <div>Tokyo: <span id="tokyoClock">--:--:--</span></div>
+</div>
+
+<div class="timer">
+    <h2>Timer</h2>
+    <div id="timerDisplay">00:00:00</div>
+    <input type="number" id="hours" placeholder="H" min="0"> :
+    <input type="number" id="minutes" placeholder="M" min="0" max="59"> :
+    <input type="number" id="seconds" placeholder="S" min="0" max="59">
+    <br>
+    <button onclick="startTimer()">Start</button>
+    <button onclick="pauseTimer()">Pause</button>
+    <button onclick="resetTimer()">Reset</button>
+</div>
+
+<div class="stopwatch">
+    <h2>Stopwatch</h2>
+    <div id="stopwatchDisplay">00:00:00</div>
+    <button onclick="startStopwatch()">Start</button>
+    <button onclick="pauseStopwatch()">Pause</button>
+    <button onclick="resetStopwatch()">Reset</button>
+</div>
+
+<script>
+// --- Main Clock ---
+function updateMainClock() {
+    const now = new Date();
+    document.getElementById('mainClock').textContent = now.toLocaleTimeString();
+}
+setInterval(updateMainClock, 1000);
+updateMainClock();
+
+// --- World Clocks ---
+function updateWorldClocks() {
+    const now = new Date();
+    const ny = now.toLocaleTimeString("en-US", { timeZone: "America/New_York" });
+    const london = now.toLocaleTimeString("en-GB", { timeZone: "Europe/London" });
+    const tokyo = now.toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" });
+    document.getElementById('nyClock').textContent = ny;
+    document.getElementById('londonClock').textContent = london;
+    document.getElementById('tokyoClock').textContent = tokyo;
+}
+setInterval(updateWorldClocks, 1000);
+updateWorldClocks();
+
+// --- Timer ---
+let timerInterval;
+let timerRemaining = 0;
+function startTimer() {
+    if (!timerInterval) {
+        const h = parseInt(document.getElementById('hours').value) || 0;
+        const m = parseInt(document.getElementById('minutes').value) || 0;
+        const s = parseInt(document.getElementById('seconds').value) || 0;
+        if (timerRemaining === 0) timerRemaining = h*3600 + m*60 + s;
+        timerInterval = setInterval(() => {
+            if (timerRemaining <= 0) { clearInterval(timerInterval); timerInterval = null; alert("Time's up!"); }
+            const hrs = Math.floor(timerRemaining/3600);
+            const mins = Math.floor((timerRemaining%3600)/60);
+            const secs = timerRemaining % 60;
+            document.getElementById('timerDisplay').textContent = 
+                `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+            timerRemaining--;
+        }, 1000);
+    }
+}
+function pauseTimer() { clearInterval(timerInterval); timerInterval = null; }
+function resetTimer() { clearInterval(timerInterval); timerInterval = null; timerRemaining = 0; document.getElementById('timerDisplay').textContent = "00:00:00"; }
+
+// --- Stopwatch ---
+let stopwatchInterval;
+let stopwatchTime = 0;
+function startStopwatch() {
+    if (!stopwatchInterval) {
+        stopwatchInterval = setInterval(() => {
+            stopwatchTime++;
+            const hrs = Math.floor(stopwatchTime/3600);
+            const mins = Math.floor((stopwatchTime%3600)/60);
+            const secs = stopwatchTime % 60;
+            document.getElementById('stopwatchDisplay').textContent = 
+                `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+        }, 1000);
+    }
+}
+function pauseStopwatch() { clearInterval(stopwatchInterval); stopwatchInterval = null; }
+function resetStopwatch() { clearInterval(stopwatchInterval); stopwatchInterval = null; stopwatchTime = 0; document.getElementById('stopwatchDisplay').textContent = "00:00:00"; }
+
+</script>
+
+</body>
+</html>
