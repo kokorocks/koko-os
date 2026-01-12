@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartphone App Switcher</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            background: #1c1c1e;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* --- Device Chassis --- */
+        .phone-frame {
+            width: 360px; height: 760px;
+            background: #1a1a1a;
+            border-radius: 48px;
+            padding: 10px;
+            box-shadow: 0 30px 60px -10px rgba(0,0,0,0.6), inset 0 0 0 2px #333;
+            position: relative;
+        }
+
+        .screen-container {
+            width: 100%; height: 100%;
+            background: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2670&auto=format&fit=crop') center/cover no-repeat;
+            position: relative;
+            border-radius: 40px;
+            overflow: hidden;
+            color: white;
+        }
+
+        #multiappsarea { display: none; }
+
+        #multiappspreviewarea {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            height: 100%;
+            width: 100%;
+            /* Center the first and last items */
+            padding-inline: 70px; 
+            align-items: center;
+            overflow-x: scroll;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Hide scrollbars */
+        #multiappspreviewarea::-webkit-scrollbar { display: none; }
+        #multiappspreviewarea { scrollbar-width: none; }
+
+        .app-wrapper {
+            width: 250px;
+            height: 75%;
+            flex: 0 0 auto;
+            position: relative;
+            scroll-snap-align: center;
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
+        }
+
+        .app-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border-radius: 22px;
+            border: none;
+            background: black;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            pointer-events: none; /* Allows dragging the wrapper without iframe interference */
+        }
+
+        /* Focused app style */
+        .app-wrapper.centered {
+            opacity: 1;
+            /*transform: scale(1.05);*/
+        }
+
+        .app-wrapper:not(.centered) {
+            opacity: 0.6;
+            transform: scale(0.9);
+        }
+
+        /* Dragging state */
+        .dragging {
+            transition: none !important;
+            z-index: 1000;
+        }
+        /* Add this to your <style> block */
+.bouncing {
+    /* This curve creates an 'overshoot' effect */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15), 
+                opacity 0.3s ease !important;
+}
+    </style>
+</head>
+<body>
+
+<div class="phone-frame">
+    <div class="screen-container">
+        <div id="multiappsarea">
+    <div id="multiappsarea">
+        <iframe src="clock-app.htm" id="" class="Clock all-apps closing closed"></iframe>
+        <iframe src="maps-app.htm" id="" class="Maps all-apps closing closed"></iframe>
+        <iframe src="weather-app.htm" id="" class="Weather all-apps closing closed"></iframe>
+    </div>
+        </div>
+
+        <div id="multiappspreviewarea"></div>
+    </div>
+</div>
+
+<script>
+const multiApps = document.getElementById('multiappsarea');
+const previewArea = document.getElementById('multiappspreviewarea');
+// --- Detection for clicking "Outside" ---
+previewArea.addEventListener('click', (e) => {
+    // If the element clicked is the container itself (the background)
+    // and NOT an app-wrapper or an iframe
+    if (e.target === previewArea) {
+        alert("You clicked outside!");
+    }
+});
+function renderAppPreviews() {
+    const openApps = Array.from(multiApps.querySelectorAll('.all-apps'));
+    previewArea.innerHTML = ''; 
+
+    openApps.forEach(app => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'app-wrapper';
+        
+        // Clone the iframe into the wrapper
+        const newIframe = app.cloneNode(true);
+        wrapper.appendChild(newIframe);
+        previewArea.appendChild(wrapper);
+        
+        makeDraggable(wrapper);
+    });
+}
+
+// --- Center highlight logic ---
+function updateCenter() {
+    const cards = [...previewArea.querySelectorAll('.app-wrapper')];
+    const centerX = previewArea.scrollLeft + previewArea.offsetWidth / 2;
+
+    cards.forEach(card => {
+        const boxCenter = card.offsetLeft + card.offsetWidth / 2;
+        if (Math.abs(centerX - boxCenter) < 60) {
+            card.classList.add('centered');
+        } else {
+            card.classList.remove('centered');
+        }
+    });
+}
+
+previewArea.addEventListener('scroll', () => requestAnimationFrame(updateCenter));
+
+// --- Swipe-to-close logic ---
+function makeDraggable(el) {
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    el.addEventListener('mousedown', dragStart);
+    el.addEventListener('touchstart', dragStart, {passive: true});
+
+    function dragStart(e) {
+        isDragging = true;
+        startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        el.classList.add('dragging');
+        
+        document.addEventListener('mousemove', dragMove);
+        document.addEventListener('touchmove', dragMove, {passive: false});
+        document.addEventListener('mouseup', dragEnd);
+        document.addEventListener('touchend', dragEnd);
+    }
+
+    function dragMove(e) {
+        if (!isDragging) return;
+        const y = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        currentY = y - startY;
+
+        // Apply transform. We only care about Y axis for closing.
+        el.style.transform = `translateY(${currentY}px) scale(1.05)`;
+        
+        // Fade out as it moves up or down
+        el.style.opacity = 1 - Math.abs(currentY) / 400;
+    }
+
+function dragEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    el.classList.remove('dragging');
+
+    // Threshold to "close" app: 150px
+    if (Math.abs(currentY) > 300) {
+        el.style.transition = 'all 0.3s ease-out';
+        el.style.transform = `translateY(${currentY > 0 ? 600 : -600}px)`;
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+    } else {
+        // --- BOUNCY SNAP BACK LOGIC ---
+        // 1. Add the bounce class
+        el.classList.add('bouncing');
+        
+        // 2. Clear the manual styles to let the CSS transition take over
+        el.style.transform = '';
+        el.style.opacity = '';
+
+        // 3. Clean up the class after the animation completes (0.6s)
+        setTimeout(() => {
+            el.classList.remove('bouncing');
+        }, 600);
+    }
+
+    document.removeEventListener('mousemove', dragMove);
+    document.removeEventListener('touchmove', dragMove);
+    document.removeEventListener('mouseup', dragEnd);
+    document.removeEventListener('touchend', dragEnd);
+}}
+
+
+
+// Initialize
+renderAppPreviews();
+updateCenter();
+</script>
+
+</body>
+</html>
