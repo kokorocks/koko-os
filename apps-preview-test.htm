@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smartphone App Switcher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
@@ -98,6 +99,16 @@
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15), 
                 opacity 0.3s ease !important;
 }
+
+#screenshot {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #3f3795;
+    z-index: 999;
+}
+
     </style>
 </head>
 <body>
@@ -106,17 +117,22 @@
     <div class="screen-container">
         <div id="multiappsarea">
     <div id="multiappsarea">
-        <iframe src="clock-app.htm" id="" class="Clock all-apps closing closed"></iframe>
-        <iframe src="maps-app.htm" id="" class="Maps all-apps closing closed"></iframe>
-        <iframe src="weather-app.htm" id="" class="Weather all-apps closing closed"></iframe>
+        <iframe src="clock-app.htm" id="" class="Clock all-apps"></iframe>
+        <iframe src="maps-app.htm" id="" class="Maps all-apps"></iframe>
+        <iframe src="weather-app.htm" id="" class="Weather all-apps"></iframe>
     </div>
         </div>
 
         <div id="multiappspreviewarea"></div>
+        <div id="screenshot"><i class="fa-solid fa-border-none"></i> take a screenshot</div>
     </div>
 </div>
 
 <script>
+function openAppPreviews(){
+document.getElementById('screenshot').addEventListener('click', () => {
+    alert('Screenshot functionality is not implemented yet.');
+});
 const multiApps = document.getElementById('multiappsarea');
 const previewArea = document.getElementById('multiappspreviewarea');
 // --- Detection for clicking "Outside" ---
@@ -199,7 +215,7 @@ function dragEnd() {
     el.classList.remove('dragging');
 
     // Threshold to "close" app: 150px
-    if (Math.abs(currentY) > 300) {
+    if (Math.abs(currentY) > 250) {
         el.style.transition = 'all 0.3s ease-out';
         el.style.transform = `translateY(${currentY > 0 ? 600 : -600}px)`;
         el.style.opacity = '0';
@@ -229,7 +245,9 @@ function dragEnd() {
 
 // Initialize
 renderAppPreviews();
-updateCenter();
+updateCenter();}
+
+openAppPreviews();
 </script>
 
 </body>

@@ -1,0 +1,472 @@
+    :root {
+        --font-main: 'Outfit', sans-serif;
+        --app-size: 50px;
+        --grid-cols: 5;
+        --grid-rows: 6; /* 4x5 Grid */
+        --gap: 10px;
+        --glass-bg: rgba(255, 255, 255, 0.2);
+        --folder-bg: rgba(255, 255, 255, 0.35);
+        --accent: #007AFF;
+    }
+
+    * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+    body {
+        margin: 0; height: 100vh;
+        display: flex; justify-content: center; align-items: center;
+        background: #1c1c1e;
+        font-family: var(--font-main);
+        overflow: hidden;
+    }
+    
+    /* Hide text labels in the dock */
+    .app-slot[data-loc="dock"] .icon-label { display: none; }
+
+    /* --- Device Chassis --- */
+    .phone-frame {
+        width: 360px; height: 760px;
+        background: #1a1a1a;
+        border-radius: 48px;
+        padding: 10px;
+        box-shadow: 0 30px 60px -10px rgba(0,0,0,0.6), inset 0 0 0 2px #333;
+        position: relative;
+    }
+
+    .screen-container {
+        width: 100%; height: 99%;
+        background: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2670&auto=format&fit=crop') center/cover no-repeat;
+        position: relative;
+        border-radius: 46px;
+        overflow: hidden;
+        color: white;
+    }
+
+    /* --- Status Bar --- */
+    .status-bar {
+        position: absolute; top: 0; width: 100%; height: 40px;
+        z-index: 999;
+        display: flex; justify-content: space-between; padding: 12px 25px;
+        font-size: 13px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    /* --- Home Pages Container --- */
+    .pages-slider {
+        display: flex;
+        width: 100%; height: 100%;
+        transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+
+    .page {
+        min-width: 100%; height: 100%;
+        padding-top: 60px;
+        display: grid;
+        grid-template-columns: repeat(var(--grid-cols), 1fr);
+        grid-template-rows: repeat(var(--grid-rows), 90px);
+        padding-left: var(--gap); padding-right: var(--gap);
+    }
+
+    /* --- App Icons --- */
+    .app-slot {
+        position: relative;
+        display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+        transition: transform 0.2s;
+    }
+
+    .app-icon {
+        width: var(--app-size); height: var(--app-size);
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 26px; color: white;
+        background-size: cover;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        position: relative;
+    }
+
+    .app-name {
+        font-size: 11px; margin-top: 6px; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        text-align: center; width: 66px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        pointer-events: none;
+    }
+
+    /* Folder Mini-Grid */
+    .folder-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 3px;
+        padding: 9px; width: 100%; height: 100%;
+    }
+    .mini-icon {
+        width: 100%; height: 100%; border-radius: 3px;
+        display: flex; justify-content: center; align-items: center;
+        font-size: 10px; color: white;
+    }
+
+    /* --- Dock --- */
+    .dock {
+        position: absolute; bottom: 14px; left: 15px; right: 15px;
+        height: 80px;
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+        border-radius: 32px;
+        display: flex; justify-content: space-around; align-items: center;
+        z-index: 50;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* --- Dragging Ghost --- */
+    .dragging-clone {
+        position: fixed; pointer-events: none; z-index: 9999;
+        transform: scale(1.1); opacity: 0.9; width: 100; height: 100;
+    }
+
+    /* --- Overlays --- */
+    .overlay-panel {
+        position: absolute; left: 0; width: 100%;
+        background: rgba(20, 20, 25, 0.247);
+        backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+        z-index: 200;
+        transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+        display: flex; flex-direction: column;
+        opacity: 1;
+    }
+    
+    .overlay-panel[id="notifShade"] { z-index: 995; }
+
+    /* Notification Shade (Top) */
+    #notifShade {
+        top: 0; height: 100%;
+        transform: translateY(-100%);
+        padding: 50px 20px;
+    }
+    #notifShade.open { transform: translateY(0); }
+
+    /* App Drawer (Bottom) */
+    #appDrawer {
+        top: 0; height: 100%;
+        transform: translateY(100%);
+        padding: 60px 20px 20px 20px;
+        background: rgba(0, 0, 0, 0.6);
+    }
+    #appDrawer.open { transform: translateY(0); }
+
+    #infopopup {
+        top: 0; height: 100%;
+        transform: translateX(-100%);
+        padding: 50px 20px;
+        background: rgba(0,0,0,0.6); 
+        border-radius: 20px;
+        opacity: 0; pointer-events: none;
+        overflow-y: auto;
+        z-index: 500;
+        transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.35s ease;
+    }
+    #infopopup.open {
+        opacity: 1; pointer-events: all;
+        transform: translateX(0);
+    }
+
+    #infopopup::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .drawer-list {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+        overflow-y: auto; padding-bottom: 50px;
+    }
+
+    /* --- Notification UI --- */
+    .control-row { display: flex; gap: 15px; margin-bottom: 25px; }
+    .toggle-btn {
+        width: 60px; height: 60px; border-radius: 16px; background: rgba(255,255,255,0.15);
+        display: flex; align-items: center; justify-content: center; font-size: 22px; transition:0.2s;
+    }
+    .toggle-btn.active { background: var(--accent); color: white; }
+    
+    .notif-item {
+        background: rgba(255,255,255,0.1); border-radius: 16px; padding: 15px;
+        margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
+    }
+
+    /* --- Folder Modal --- */
+    .folder-modal {
+        position: absolute; inset: 0; z-index: 300;
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none; transition: 0.2s;
+    }
+    .folder-modal.open { opacity: 1; pointer-events: all; }
+
+    .folder-content {
+        width: 300px; padding: 25px; background: rgba(255,255,255,0.25);
+        border-radius: 35px;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+        min-height: 150px;
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: transform 0.2s;
+    }
+
+    /* Pagination Dots */
+    .dots-container {
+        position: absolute; bottom: 100px; width: 100%; display: flex; justify-content: center; gap: 8px;
+    }
+    .dot { width: 14px; height: 4px; background: rgba(255,255,255,0.4); border-radius:5px; }
+    .dot.active { background: white; transform: scale(1.3); }
+
+    #fullscreenBtn {
+        position: absolute; bottom: 10px; right: 10px;
+        width: 50px; height: 50px; border-radius: 25px;
+        background: rgba(0,0,0,0.6);
+        display: flex; justify-content: center; align-items: center;
+        color: white; font-size: 20px; cursor: pointer;
+        z-index: 999; transition: background 0.2s;
+    }
+    #fullscreenBtn:hover { background: rgba(0,0,0,0.8); }
+        #resetBtn {
+        position: absolute; bottom: 10px; left: 10px;
+        width: 50px; height: 50px; border-radius: 25px;
+        background: rgba(0,0,0,0.6);
+        display: flex; justify-content: center; align-items: center;
+        color: white; font-size: 20px; cursor: pointer;
+        z-index: 999; transition: background 0.2s;
+    }
+    #resetBtn:hover { background: rgba(0,0,0,0.8); }
+
+    .appsbar {
+        z-index: 999;position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+        width: 175px; height: 5px; background: rgba(135, 135, 135, 0.733); border-radius:5px; 
+    }
+
+    #infopopup .news {
+        display: flex; flex-direction: column; gap: 8px; padding: 12px 15px;
+        border-radius: 16px; background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(15px); transition: background 0.2s, transform 0.2s;
+        text-decoration: none; color: white; margin-bottom: 12px;
+    }
+    #infopopup .news:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+    #infopopup .news-header { display: flex; align-items: center; gap: 10px; }
+    #infopopup .news-header i, #infopopup .news-header img {
+        width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+        background: rgba(255,255,255,0.2); display: flex;
+        justify-content: center; align-items: center; font-size: 16px;
+    }
+    #infopopup .news-title { font-weight: 600; font-size: 14px; }
+    #infopopup .news-content { font-size: 12px; opacity: 0.8; }
+    #infopopup .news-preview { width: 100%; height: 90px; border-radius: 10px; object-fit: cover; margin-top: 5px; }
+    #top-guard,
+#bottom-guard {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    z-index: 2000; /* ABOVE iframe */
+    background: transparent;
+    pointer-events: auto;
+
+}
+#appFrame {
+    /* Starting State (Hidden/Small) */
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+    pointer-events: none; /* Prevent clicking while closed */
+    
+    /* Layout */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 46px;
+    background: white;
+    z-index: 500;
+
+    /* Animation Settings */
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+
+#appFrame.open {
+    /* Ending State (Visible/Full) */
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
+}    /* Closing animation */
+
+#appFrame.closing {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#closed.closed {
+    display: none;
+}
+
+#appFrame.preview {
+    opacity: 0.8;
+    transform: scale(0.95) translateY(10px);
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+
+#multiappsarea {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* Allow underlying gestures */
+}
+
+
+
+#top-guard {
+    top: 0;
+    height: 60px;
+}
+
+#bottom-guard {
+    bottom: 0;
+    height: 80px;
+}
+.control-row {
+  display: flex;
+  gap: 12px;
+}
+
+.toggle-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.12);
+  color: #aaa;
+  cursor: pointer;
+  transition: 0.2s;
+  user-select: none;
+}
+
+/* ACTIVE STATE */
+input:checked + .toggle-btn {
+  background: rgba(80,160,255,0.35);
+  color: #fff;
+}
+
+/* Optional tap feedback */
+.toggle-btn:active {
+  transform: scale(0.94);
+}
+        /*#multiappsarea { display: none; }*/
+
+#multiappspreviewarea {
+    position: absolute;
+    inset: 0;
+    display: flex;           /* flex layout for horizontal scrolling */
+    /*align-items: center;*/
+    align-items: flex-start; /* push to top */
+    padding-top: 50px;       /* add some offset from top */
+    overflow-x: auto;        /* horizontal scrolling */
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; 
+    backdrop-filter: blur(0px);
+    transition: all 0.3s ease;
+    padding: 0 50%; /* half the container width */
+    box-sizing: content-box; /* important so padding doesn’t shrink children */
+    pointer-events: none;    /* default: let clicks pass through */
+    opacity: 0;              /* default: hidden */
+}
+#multiappspreviewarea > .app-wrapper {
+    margin-top: 50px; /* shift all apps up */
+}
+
+
+/* When preview is open */
+#multiappspreviewarea.open {
+    pointer-events: auto;    /* only capture clicks when open */
+    opacity: 1;
+    backdrop-filter: blur(5px);
+}
+
+
+.app-wrapper {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+    cursor: grab;
+}
+.app-wrapper iframe {
+    pointer-events: auto; /* allow clicking iframe once centered */
+}
+
+
+
+
+        /* Hide scrollbars */
+        #multiappspreviewarea::-webkit-scrollbar { display: none; }
+        #multiappspreviewarea { scrollbar-width: none; }
+
+        .app-wrapper {
+            width: 250px;
+            height: 75%;
+            flex: 0 0 auto;
+            position: relative;
+            scroll-snap-align: center;
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
+        }
+
+        .app-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border-radius: 22px;
+            border: none;
+            background: black;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            pointer-events: none; /* Allows dragging the wrapper without iframe interference */
+        }
+
+        /* Focused app style */
+        .app-wrapper.centered {
+            opacity: 1;
+            /*transform: scale(1.05);*/
+        }
+
+        .app-wrapper:not(.centered) {
+            opacity: 0.6;
+            transform: scale(0.9);
+        }
+
+        /* Dragging state */
+        .dragging {
+            transition: none !important;
+            z-index: 1000;
+        }
+        /* Add this to your <style> block */
+.bouncing {
+    /* This curve creates an 'overshoot' effect */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15), 
+                opacity 0.3s ease !important;
+}
+
+.preview-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    justify-self: center;
+    color: white;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+#screenshot {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #3f3795;
+    z-index: 999;
+}
+
+.app-wrapper{
+    pointer-events: auto;
+}
