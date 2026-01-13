@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Fixed Glass OS</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+
+<style>
+    :root {
+        --font-main: 'Outfit', sans-serif;
+        --app-size: 50px;
+        --grid-cols: 5;
+        --grid-rows: 6; /* 4x5 Grid */
+        --gap: 10px;
+        --glass-bg: rgba(255, 255, 255, 0.2);
+        --folder-bg: rgba(255, 255, 255, 0.35);
+        --accent: #007AFF;
+    }
+
+    * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+    body {
+        margin: 0; height: 100vh;
+        display: flex; justify-content: center; align-items: center;
+        background: #1c1c1e;
+        font-family: var(--font-main);
+        overflow: hidden;
+    }
+    
+    /* Hide text labels in the dock */
+    .app-slot[data-loc="dock"] .icon-label { display: none; }
+
+
+    
+
+
+
+
+    
+    .screen-container {
+        width: 100%; height: 99%;
+        background: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2670&auto=format&fit=crop') center/cover no-repeat;
+        position: relative;
+        border-radius: 46px;
+        overflow: hidden;
+        color: white;
+    }
+
+    /* --- Status Bar --- */
+    .status-bar {
+        position: absolute; top: 0; width: 100%; height: 40px;
+        z-index: 999;
+        display: flex; justify-content: space-between; padding: 12px 25px;
+        font-size: 13px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    /* --- Home Pages Container --- */
+    .pages-slider {
+        display: flex;
+        width: 100%; height: 100%;
+        transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+
+    .page {
+        min-width: 100%; height: 100%;
+        padding-top: 60px;
+        display: grid;
+        grid-template-columns: repeat(var(--grid-cols), 1fr);
+        grid-template-rows: repeat(var(--grid-rows), 90px);
+        padding-left: var(--gap); padding-right: var(--gap);
+    }
+
+    /* --- App Icons --- */
+    .app-slot {
+        position: relative;
+        display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+        transition: transform 0.2s;
+    }
+
+    .app-icon {
+        width: var(--app-size); height: var(--app-size);
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 26px; color: white;
+        background-size: cover;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        position: relative;
+    }
+
+    .app-name {
+        font-size: 11px; margin-top: 6px; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        text-align: center; width: 66px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        pointer-events: none;
+    }
+
+    /* Folder Mini-Grid */
+    .folder-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 3px;
+        padding: 9px; width: 100%; height: 100%;
+    }
+    .mini-icon {
+        width: 100%; height: 100%; border-radius: 3px;
+        display: flex; justify-content: center; align-items: center;
+        font-size: 10px; color: white;
+    }
+
+    /* --- Dock --- */
+    .dock {
+        position: absolute; bottom: 14px; left: 15px; right: 15px;
+        height: 80px;
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+        border-radius: 32px;
+        display: flex; justify-content: space-around; align-items: center;
+        z-index: 50;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* --- Dragging Ghost --- */
+    .dragging-clone {
+        position: fixed; pointer-events: none; z-index: 9999;
+        transform: scale(1.1); opacity: 0.9; width: 100; height: 100;
+    }
+
+    /* --- Overlays --- */
+    .overlay-panel {
+        position: absolute; left: 0; width: 100%;
+        background: rgba(20, 20, 25, 0.247);
+        backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+        z-index: 200;
+        transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+        display: flex; flex-direction: column;
+        opacity: 1;
+    }
+    
+    .overlay-panel[id="notifShade"] { z-index: 995; }
+
+    /* Notification Shade (Top) */
+    #notifShade {
+        top: 0; height: 100%;
+        transform: translateY(-100%);
+        padding: 50px 20px;
+    }
+    #notifShade.open { transform: translateY(0); }
+
+    /* App Drawer (Bottom) */
+    #appDrawer {
+        top: 0; height: 100%;
+        transform: translateY(100%);
+        padding: 60px 20px 20px 20px;
+        background: rgba(0, 0, 0, 0.6);
+    }
+    #appDrawer.open { transform: translateY(0); }
+
+    #infopopup {
+        top: 0; height: 100%;
+        transform: translateX(-100%);
+        padding: 50px 20px;
+        background: rgba(0,0,0,0.6); 
+        border-radius: 20px;
+        opacity: 0; pointer-events: none;
+        overflow-y: auto;
+        z-index: 500;
+        transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.35s ease;
+    }
+    #infopopup.open {
+        opacity: 1; pointer-events: all;
+        transform: translateX(0);
+    }
+
+    #infopopup::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .drawer-list {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+        overflow-y: auto; padding-bottom: 50px;
+    }
+
+    /* --- Notification UI --- */
+    .control-row { display: flex; gap: 15px; margin-bottom: 25px; }
+    .toggle-btn {
+        width: 60px; height: 60px; border-radius: 16px; background: rgba(255,255,255,0.15);
+        display: flex; align-items: center; justify-content: center; font-size: 22px; transition:0.2s;
+    }
+    .toggle-btn.active { background: var(--accent); color: white; }
+    
+    .notif-item {
+        background: rgba(255,255,255,0.1); border-radius: 16px; padding: 15px;
+        margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
+    }
+
+    /* --- Folder Modal --- */
+    .folder-modal {
+        position: absolute; inset: 0; z-index: 300;
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none; transition: 0.2s;
+    }
+    .folder-modal.open { opacity: 1; pointer-events: all; }
+
+    .folder-content {
+        width: 300px; padding: 25px; background: rgba(255,255,255,0.25);
+        border-radius: 35px;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+        min-height: 150px;
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: transform 0.2s;
+    }
+
+    /* Pagination Dots */
+    .dots-container {
+        position: absolute; bottom: 100px; width: 100%; display: flex; justify-content: center; gap: 8px;
+    }
+    .dot { width: 14px; height: 4px; background: rgba(255,255,255,0.4); border-radius:5px; }
+    .dot.active { background: white; transform: scale(1.3); }
+
+    #fullscreenBtn {
+        position: absolute; bottom: 10px; right: 10px;
+        width: 50px; height: 50px; border-radius: 25px;
+        background: rgba(0,0,0,0.6);
+        display: flex; justify-content: center; align-items: center;
+        color: white; font-size: 20px; cursor: pointer;
+        z-index: 999; transition: background 0.2s;
+    }
+    #fullscreenBtn:hover { background: rgba(0,0,0,0.8); }
+        #resetBtn {
+        position: absolute; bottom: 10px; left: 10px;
+        width: 50px; height: 50px; border-radius: 25px;
+        background: rgba(0,0,0,0.6);
+        display: flex; justify-content: center; align-items: center;
+        color: white; font-size: 20px; cursor: pointer;
+        z-index: 999; transition: background 0.2s;
+    }
+    #resetBtn:hover { background: rgba(0,0,0,0.8); }
+
+    .appsbar {
+        z-index: 999;position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+        width: 175px; height: 5px; background: rgba(135, 135, 135, 0.733); border-radius:5px; 
+    }
+
+    #infopopup .news {
+        display: flex; flex-direction: column; gap: 8px; padding: 12px 15px;
+        border-radius: 16px; background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(15px); transition: background 0.2s, transform 0.2s;
+        text-decoration: none; color: white; margin-bottom: 12px;
+    }
+    #infopopup .news:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+    #infopopup .news-header { display: flex; align-items: center; gap: 10px; }
+    #infopopup .news-header i, #infopopup .news-header img {
+        width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+        background: rgba(255,255,255,0.2); display: flex;
+        justify-content: center; align-items: center; font-size: 16px;
+    }
+    #infopopup .news-title { font-weight: 600; font-size: 14px; }
+    #infopopup .news-content { font-size: 12px; opacity: 0.8; }
+    #infopopup .news-preview { width: 100%; height: 90px; border-radius: 10px; object-fit: cover; margin-top: 5px; }
+    #top-guard,
+#bottom-guard {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    z-index: 2000; /* ABOVE iframe */
+    background: transparent;
+    pointer-events: auto;
+
+}
+#appFrame {
+    /* Starting State (Hidden/Small) */
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+    pointer-events: none; /* Prevent clicking while closed */
+    
+    /* Layout */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 46px;
+    background: white;
+    z-index: 500;
+
+    /* Animation Settings */
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+
+#appFrame.open {
+    /* Ending State (Visible/Full) */
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
+}    /* Closing animation */
+
+#appFrame.closing {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#appFrame.preview {
+    opacity: 0.8;
+    transform: scale(0.95) translateY(10px);
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+
+#multiappsarea {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* Allow underlying gestures */
+}
+
+.app-preview {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  width: 220px;
+  height: 400px;
+  transform: translateX(-50%) scale(0.9);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  background: white;
+  pointer-events: all;
+  z-index: 500;
+  cursor: grab;
+}
+
+.app-preview.open {
+  transform: translateX(-50%) scale(1);
+}
+
+.app-preview.dragging {
+  cursor: grabbing;
+  transition: none;
+  z-index: 1000;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+}
+
+.app-preview iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+
+#top-guard {
+    top: 0;
+    height: 60px;
+}
+
+#bottom-guard {
+    bottom: 0;
+    height: 80px;
+}
+.control-row {
+  display: flex;
+  gap: 12px;
+}
+
+.toggle-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.12);
+  color: #aaa;
+  cursor: pointer;
+  transition: 0.2s;
+  user-select: none;
+}
+
+/* ACTIVE STATE */
+input:checked + .toggle-btn {
+  background: rgba(80,160,255,0.35);
+  color: #fff;
+}
+
+/* Optional tap feedback */
+.toggle-btn:active {
+  transform: scale(0.94);
+}
+
+</style>
+</head>
+<body>
+<div id="fullscreenBtn" title="Fullscreen"><i class="fas fa-expand"></i></div>
+<div id="resetBtn" title="reset to default state"><i class="fa-solid fa-trash-can"></i></div>
+
+<div class="phone-frame">
+    <div class="screen-container" id="mainScreen">
+        
+        <div class="status-bar">
+            <span id="clockTime">12:00</span>
+            <span><i class="fas fa-wifi"></i>&nbsp; <i class="fas fa-battery-full"></i></span>
+        </div>
+
+        <div class="overlay-panel" id="notifShade">
+            <h2 style="margin-top:0">Control Center</h2>
+            <input type="range" name="" id=""><br>
+<div class="control-row">
+  <input type="checkbox" id="wifi" hidden checked>
+  <label for="wifi" class="toggle-btn">
+    <i class="fas fa-wifi"></i>
+  </label>
+
+  <input type="checkbox" id="bt" hidden checked>
+  <label for="bt" class="toggle-btn">
+    <i class="fab fa-bluetooth-b"></i>
+  </label>
+
+  <input type="checkbox" id="airplane" hidden>
+  <label for="airplane" class="toggle-btn">
+    <i class="fas fa-plane"></i>
+  </label>
+
+  <input type="checkbox" id="dnd" hidden>
+  <label for="dnd" class="toggle-btn">
+    <i class="fas fa-moon"></i>
+  </label>
+</div>
+
+            <h3>Notifications</h3>
+            <div class="notif-item">
+                <div style="width:40px;height:40px;background:#34C759;border-radius:10px;display:flex;justify-content:center;align-items:center"><i class="fas fa-comment"></i></div>
+                <div>
+                    <div style="font-weight:600;font-size:14px;">Messages</div>
+                    <div style="font-size:12px;opacity:0.8;">Mom: Dinner at 6?</div>
+                </div>
+            </div>
+            <div class="notif-item">
+                <div style="width:40px;height:40px;background:#FF3B30;border-radius:10px;display:flex;justify-content:center;align-items:center"><i class="fab fa-youtube"></i></div>
+                <div>
+                    <div style="font-weight:600;font-size:14px;">YouTube</div>
+                    <div style="font-size:12px;opacity:0.8;">New subscriber!</div>
+                </div>
+            </div>
+            <div style="margin-top:auto; align-self:center; opacity:0.6; padding:20px;" onclick="closeShade()"><i class="fas fa-chevron-up"></i></div>
+        </div>
+
+        <div class="pages-slider" id="pagesSlider"></div>
+        <div class="dots-container" id="dotsContainer"></div>
+
+        <div class="dock" id="dock"></div>
+        <div class="appsbar"></div>
+
+        <div class="overlay-panel" id="appDrawer">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h2 style="margin:0">App Library</h2>
+                <i class="fas fa-times" style="font-size:24px; padding:10px" onclick="closeDrawer()"></i>
+            </div>
+            <div class="drawer-list" id="drawerList"></div>
+        </div>
+
+        <div class="folder-modal" id="folderModal">
+            <div class="folder-content" id="folderInner"></div>
+            <div style="margin-top:20px; font-size:13px; opacity:0.8; color:white;">Tap outside to close</div>
+        </div>
+        
+        <div id="infopopup" class="overlay-panel"></div>
+        <div id="multiappsarea"></div>
+       <div id="top-guard"></div>
+<div id="bottom-guard"></div>
+
+    </div>
+</div>
+
+<script>
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    fullscreenBtn.onclick = () => {
+        const el = document.documentElement;
+        if (!document.fullscreenElement) {
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+            else if (el.msRequestFullscreen) el.msRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+        }
+    };
+
+    /* =========================================
+       1. DATA CONFIGURATION
+       ========================================= */
+    const appDB = {
+        'mail': { name: 'Mail', icon: 'fa-envelope', color: '#007AFF' },
+        'cal':  { name: 'Calendar', icon: 'fa-calendar-alt', color: '#FF3B30' },
+        'photos': { name: 'Photos', icon: 'fa-images', color: 'linear-gradient(to bottom right, #ff9a9e, #fad0c4)' },
+        'camera': { name: 'Camera', icon: 'fa-camera', color: '#333' },
+        'maps': { name: 'Maps', icon: 'fa-map-marked-alt', color: '#34C759', app: 'maps-app.htm' },
+        'weather': { name: 'Weather', icon: 'fa-cloud-sun', color: '#5AC8FA', app: 'weather-app.htm' },
+        'clock': { name: 'Clock', icon: 'fa-clock', color: '#000', app: 'clock-app.htm' },
+        'notes': { name: 'Notes', icon: 'fa-sticky-note', color: '#FFD60A' },
+        'settings': { name: 'Settings', icon: 'fa-cog', color: '#8E8E93' },
+        'store': { name: 'App Store', icon: 'fa-layer-group', color: '#007AFF' },
+        'safari': { name: 'Safari', icon: 'fa-compass', color: '#007AFF' },
+        'music': { name: 'Music', icon: 'fa-music', color: '#FF2D55' },
+        'files': { name: 'Files', icon: 'fa-folder', color: '#007AFF' },
+        'health': { name: 'Health', icon: 'fa-heart', color: '#FF2D55' },
+        'wallet': { name: 'Wallet', icon: 'fa-wallet', color: '#000' }
+    };
+
+    const defaultPages = [
+        ['mail', 'cal', 'photos', 'weather', null, null, null, null, 'clock', 'notes', 'maps', 'settings', null, null, null, null, null, null, null, null],
+        ['files', 'health', 'wallet', 'store', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
+    ];
+    const defaultDock = ['camera', 'safari', 'mail', 'music'];
+
+    const info = {
+        news: {}
+    };
+
+    document.getElementById('resetBtn').onclick = () => {
+        localStorage.removeItem('glass_os_state_v2');
+        location.reload();
+    };
+
+    /*const info={
+        'news': {
+            1:{title: 'Latest News', content: 'Breaking news: New features added to Glass OS!', icon: 'fa-newspaper', url: '#', thumbnail: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2670&auto=format&fit=crop'}, 
+            2: {title: 'System Maintenance', content: 'Scheduled maintenance on June 15th.', icon: 'fa-wrench', url: '#', thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2670'}
+        }
+    }*/
+
+    let savedState = JSON.parse(localStorage.getItem('glass_os_state_v2'));
+    let pages = savedState ? savedState.pages : JSON.parse(JSON.stringify(defaultPages));
+    let dock = savedState ? savedState.dock : JSON.parse(JSON.stringify(defaultDock));
+    
+    let currentPage = 0;
+    let currentOpenFolder = null; // Stores {p, i} of current folder
+
+    function saveState() {
+        localStorage.setItem('glass_os_state_v2', JSON.stringify({ pages, dock }));
+    }
+
+    /* =========================================
+       2. RENDERING
+       ========================================= */
+    const slider = document.getElementById('pagesSlider');
+    const dockEl = document.getElementById('dock');
+    const drawerList = document.getElementById('drawerList');
+    const dotsContainer = document.getElementById('dotsContainer');
+    let startX = 0;
+    let startY = 0;
+
+    function render() {
+        // 1. Pages
+        slider.innerHTML = '';
+        pages.forEach((page, pageIdx) => {
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page';
+            // Source - https://stackoverflow.com/a
+
+            let rows=window.getComputedStyle(document.body).getPropertyValue('--grid-rows');
+            let cols=window.getComputedStyle(document.body).getPropertyValue('--grid-cols');
+
+            // Ensure 20 slots (4x5 grid)
+            for (let i = 0; i < cols*rows; i++) {
+                const item = page[i];
+                const slot = document.createElement('div');
+                slot.className = 'app-slot';
+                slot.dataset.loc = 'page';
+                slot.dataset.p = pageIdx;
+                slot.dataset.i = i;
+                
+                if (item) {
+                    slot.appendChild(createIcon(item));
+                    addDragEvents(slot);
+                }
+                pageDiv.appendChild(slot);
+            }
+            slider.appendChild(pageDiv);
+        });
+
+        // 2. Dock (Now Draggable!)
+        dockEl.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+            const item = dock[i];
+            const slot = document.createElement('div');
+            slot.className = 'app-slot';
+            slot.dataset.loc = 'dock';
+            slot.dataset.i = i;
+            
+            if (item) {
+                const icon = createIcon(item, true);
+                slot.appendChild(icon);
+                addDragEvents(slot);
+            }
+            dockEl.appendChild(slot);
+        }
+
+        // 3. Dots
+        dotsContainer.innerHTML = '';
+        pages.forEach((_, i) => {
+            const d = document.createElement('div');
+            d.className = `dot ${i === currentPage ? 'active' : ''}`;
+            dotsContainer.appendChild(d);
+        });
+
+        // 4. Slide Position
+        slider.style.transform = `translateX(-${currentPage * 100}%)`;
+
+        // 5. Drawer
+        drawerList.innerHTML = '';
+        Object.keys(appDB).forEach(key => {
+            const slot = document.createElement('div');
+            slot.className = 'app-slot';
+            slot.appendChild(createIcon(key));
+            slot.onclick = () => openApp(key);
+            drawerList.appendChild(slot);
+        });
+    }
+
+    function createIcon(itemData, isDock=false) {
+        if (typeof itemData === 'object' && itemData.type === 'folder') {
+            // Folder
+            const icon = document.createElement('div');
+            icon.className = 'app-icon';
+            icon.style.background = 'var(--folder-bg)';
+            icon.style.backdropFilter = 'blur(10px)';
+            
+            const grid = document.createElement('div');
+            grid.className = 'folder-grid';
+            
+            // Render Tiny Icons
+            itemData.apps.slice(0, 4).forEach(appId => {
+                const mini = document.createElement('div');
+                mini.className = 'mini-icon';
+                const app = appDB[appId];
+                mini.style.background = app.color;
+                mini.innerHTML = `<i class="fas ${app.icon}"></i>`;
+                grid.appendChild(mini);
+            });
+            
+            icon.appendChild(grid);
+            
+            const name = document.createElement('div');
+            name.className = 'app-name';
+            name.innerText = 'Folder';
+            
+            const wrapper = document.createDocumentFragment();
+            wrapper.appendChild(icon);
+            if(!isDock) wrapper.appendChild(name);
+            
+            icon.onclick = (e) => {
+                if(!isDragging) {
+                    cancelDrag();
+                    e.stopPropagation();
+                    openFolder(itemData);
+                }
+            };
+            return wrapper;
+        } else {
+            // Regular App
+            const id = itemData;
+            const app = appDB[id];
+            
+            const icon = document.createElement('div');
+            icon.className = 'app-icon';
+            if(app.color.includes('gradient')) icon.style.background = app.color;
+            else icon.style.backgroundColor = app.color;
+            
+            icon.innerHTML = `<i class="fas ${app.icon}"></i>`;
+            
+            const name = document.createElement('div');
+            name.className = 'app-name';
+            name.className = 'app-name icon-label'; // added class for dock hiding
+            if(itemData.type !== 'dock') name.innerText = app.name;
+
+            const wrapper = document.createDocumentFragment();
+            wrapper.appendChild(icon);
+            if(!isDock) wrapper.appendChild(name);
+
+            icon.onclick = (e) => {
+                if(!isDragging) {
+                    e.stopPropagation();
+                    openApp(id);
+                }
+            };
+            return wrapper;
+        }
+    }
+function loadNewsFromBingRSS(query = 'tech') {
+    // 1. Setup Bing RSS URL
+    //const bingRss = `https://www.bing.com/news/search?q=${encodeURIComponent(query)}&format=rss&count=20`;
+    const bingRss = `https://www.bing.com/news/search?q=${encodeURIComponent(query)}&format=rss&count=200`
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(bingRss)}`;
+
+    fetch(apiUrl)
+        .then(res => res.json())
+        .then(async data => {
+            info.news = {}; // reset news
+
+            // Limit to 6 articles
+            const items = data.items.slice(0, 50);
+
+            await Promise.all(items.map(async (item, index) => {
+                // Decode the real URL from Bing's redirect
+                let decodedUrl = item.link;
+                try {
+                    const urlParams = new URLSearchParams(new URL(item.link).search);
+                    if (urlParams.has('url')) decodedUrl = urlParams.get('url');
+                } catch (e) {
+                    console.warn("Could not decode Bing link, using original.");
+                }
+
+                // Fetch thumbnail via Microlink
+                let thumbnail = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2670'; // fallback
+                try {
+                    const metaRes = await fetch(`https://api.microlink.io?url=${encodeURIComponent(decodedUrl)}`);
+                    const metaData = await metaRes.json();
+                    if (metaData.data.image?.url) thumbnail = metaData.data.image.url;
+                } catch (err) {
+                    console.warn("Microlink failed for", decodedUrl);
+                }
+
+                // Strip HTML from description
+                const cleanDescription = item.description.replace(/<[^>]*>?/gm, "");
+
+                // Save to info.news
+                info.news[index + 1] = {
+                    title: item.title,
+                    content: cleanDescription,
+                    icon: 'fa-newspaper',
+                    url: decodedUrl,
+                    thumbnail: thumbnail
+                };
+            }));
+
+            console.log("Loaded news:", info.news);
+        })
+        .catch(err => console.error("Failed to fetch Bing RSS:", err));
+}
+
+// Load news when page starts
+loadNewsFromBingRSS();
+//let apps=0;
+
+    function openApp(id) {
+        cancelDrag();
+        if(appDB[id] && appDB[id].app) {
+            if(document.getElementsByClassName(appDB[id].name).length === 0) { // Prevent multiple instances
+            let el=document.createElement('iframe');
+            el.src=appDB[id].app || 'app-placeholder.htm';
+            /*el.style.position='absolute';
+            el.style.top='0';
+            el.style.left='0';
+            el.style.width='100%';
+            el.style.height='100%';
+            el.style.border='none';
+            el.style.zIndex='500';*/
+            el.id='appFrame';
+            el.classList.add(appDB[id].name);
+            el.classList.add('all-apps')
+            document.getElementById('multiappsarea').appendChild(el);
+            appopen = document.getElementById('appFrame');
+            setTimeout(() => {
+                el.classList.add('open');
+            }, 50);}
+            else {
+    const el = document.getElementsByClassName(appDB[id].name)[0];
+    if (!el) {
+        console.error("No element found with class:", appDB[id].name);
+        return; // safely exit
+    }
+    appopen = el
+    el.classList.remove('closed');
+    el.classList.remove('closing');
+    el.classList.add('open');
+    el.id = 'appFrame';
+            }
+        }else if(typeof id === 'string' && appDB[id]) alert("Opening " + appDB[id].name);
+    }
+
+
+    
+    /* =========================================
+       3. DRAG & DROP LOGIC
+       ========================================= */
+    let isDragging = false;
+    let dragTimer = null;
+    let dragGhost = null;
+    let dragSrc = null; // { loc, p, i }
+
+    function addDragEvents(slot) {
+        slot.addEventListener('touchstart', (e) => handleStart(e, slot), {passive:false});
+        slot.addEventListener('touchmove', handleMove, {passive:false});
+        slot.addEventListener('touchend', handleEnd);
+        slot.addEventListener('mousedown', (e) => handleStart(e, slot));
+    }
+
+    function handleStart(e, slot) {
+        dragTimer = setTimeout(() => {
+            isDragging = true;
+            // Determine location
+            const loc = slot.dataset.loc; // 'page', 'dock', 'folder'
+            const p = slot.dataset.p ? parseInt(slot.dataset.p) : 0;
+            const i = parseInt(slot.dataset.i);
+
+            dragSrc = { loc, p, i };
+            
+            if(navigator.vibrate) navigator.vibrate(50);
+            
+            const rect = slot.getBoundingClientRect();
+            dragGhost = slot.cloneNode(true);
+            dragGhost.className = 'dragging-clone';
+            dragGhost.style.width = rect.width + 'px';
+            dragGhost.style.height = rect.height + 'px';
+            
+            // Remove text from ghost for cleaner look
+            const label = dragGhost.querySelector('.app-name');
+            if(label) label.style.display = 'none';
+
+            updateGhostPosition(e);
+            document.body.appendChild(dragGhost);
+            slot.style.opacity = '0'; 
+
+            if(e.type === 'mousedown') {
+                window.addEventListener('mousemove', handleMove);
+                window.addEventListener('mouseup', handleEnd);
+            }
+
+        }, 400); 
+    }
+const topGuard = document.getElementById('top-guard');
+const bottomGuard = document.getElementById('bottom-guard');
+
+    function handleMove(e) {
+        if (!isDragging) {
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+            const dist = Math.hypot(x - startX, y - startY);
+        
+            if (dist > 8) clearTimeout(dragTimer); // allow slight movement
+            return;
+        }
+
+        e.preventDefault();
+        updateGhostPosition(e);
+
+        // DRAG OUT OF FOLDER LOGIC
+        if (dragSrc.loc === 'folder' && folderModal.classList.contains('open')) {
+            const folderRect = folderInner.getBoundingClientRect();
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+
+            // If dragged outside the folder box, close modal
+            if (x < folderRect.left || x > folderRect.right || y < folderRect.top || y > folderRect.bottom) {
+                folderModal.classList.remove('open');
+            }
+        }
+    }
+
+    function cancelDrag() {
+        clearTimeout(dragTimer);
+        dragTimer = null;
+        isDragging = false;
+    }
+
+    let lastEdgeSwitchTime = 0;
+    const EDGE_MARGIN = 40;
+
+    function updateGhostPosition(e) {
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
+
+        if (dragGhost) {
+            dragGhost.style.left = (x - dragGhost.offsetWidth / 2) + 'px';
+            dragGhost.style.top = (y - dragGhost.offsetHeight / 2) + 'px';
+        }
+
+        // Page Switching
+        const now = Date.now();
+        if (now - lastEdgeSwitchTime > 600 && !folderModal.classList.contains('open')) {
+            if (x < EDGE_MARGIN && currentPage > 0) {
+                currentPage--;
+                lastEdgeSwitchTime = now;
+                slider.style.transform = `translateX(-${currentPage * 100}%)`;
+            } else if (x > window.innerWidth - EDGE_MARGIN && currentPage < pages.length - 1) {
+                currentPage++;
+                lastEdgeSwitchTime = now;
+                slider.style.transform = `translateX(-${currentPage * 100}%)`;
+            }
+        }
+    }
+
+    function handleEnd(e) {
+        clearTimeout(dragTimer);
+        if(!isDragging) return;
+        
+        isDragging = false;
+        dragGhost.style.display = 'none'; // hide to peek below
+        
+        const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+        const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+        dragGhost.style.display = 'none';
+        const elBelow = document.elementFromPoint(x, y);
+        dragGhost.style.display = '';
+            
+        
+        dragGhost.remove();
+        dragGhost = null;
+
+        // Restore opacities
+        document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
+
+        if(elBelow) {
+            const targetSlot = elBelow.closest('.app-slot');
+            if(targetSlot) {
+                const tgtLoc = targetSlot.dataset.loc;
+                const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
+                const tgtI = parseInt(targetSlot.dataset.i);
+
+                handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI });
+            } else {
+                // Dropped on empty space in modal or page?
+                // If dropped on "page" background but not a slot, we could try to find the nearest empty slot, 
+                // but for grid systems, dropping "on" a slot is best. 
+                // If dragging out of folder and dropped on empty page area:
+                if (dragSrc.loc === 'folder' && !folderModal.classList.contains('open')) {
+                   // Find first empty slot on current page
+                   const emptyIdx = pages[currentPage].findIndex(x => x === null);
+                   if (emptyIdx !== -1) {
+                       handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
+                   }
+                }
+            }
+        }
+
+        window.removeEventListener('mousemove', handleMove);
+        window.removeEventListener('mouseup', handleEnd);
+    }
+
+    function getItem(ref) {
+        if(ref.loc === 'page') return pages[ref.p][ref.i];
+        if(ref.loc === 'dock') return dock[ref.i];
+        if(ref.loc === 'folder') {
+            const folder = pages[currentOpenFolder.p][currentOpenFolder.i];
+            return folder.apps[ref.i];
+        }
+        return null;
+    }
+
+    function setItem(ref, val) {
+        if(ref.loc === 'page') pages[ref.p][ref.i] = val;
+        else if(ref.loc === 'dock') dock[ref.i] = val;
+else if (ref.loc === 'folder') {
+    const folderSlot = pages[currentOpenFolder.p][currentOpenFolder.i];
+    if (!folderSlot || folderSlot.type !== 'folder') return;
+
+    if (val === null) {
+        // Remove app from folder
+        folderSlot.apps.splice(ref.i, 1);
+
+        // 🔥 CASE 1: Folder empty → remove it
+        if (folderSlot.apps.length === 0) {
+            pages[currentOpenFolder.p][currentOpenFolder.i] = null;
+            folderModal.classList.remove('open');
+            currentOpenFolder = null;
+        }
+
+        // 🔥 CASE 2: Folder has ONE app → unwrap it
+        else if (folderSlot.apps.length === 1) {
+            pages[currentOpenFolder.p][currentOpenFolder.i] = folderSlot.apps[0];
+            folderModal.classList.remove('open');
+            currentOpenFolder = null;
+        }
+
+    } else {
+        folderSlot.apps[ref.i] = val;
+    }
+}
+
+    }
+
+    function handleDrop(src, tgt) {
+        // Prevent drop on self
+        if(src.loc === tgt.loc && src.p === tgt.p && src.i === tgt.i) return;
+
+        const srcItem = getItem(src);
+        const tgtItem = getItem(tgt);
+
+        // Logic split based on Target Type
+        
+        // 1. Dropping into Folder (Reordering)
+        if (tgt.loc === 'folder' && src.loc === 'folder') {
+            // Reorder inside folder
+            const folder = pages[currentOpenFolder.p][currentOpenFolder.i];
+            const item = folder.apps.splice(src.i, 1)[0];
+            folder.apps.splice(tgt.i, 0, item);
+            openFolder(pages[currentOpenFolder.p][currentOpenFolder.i], true);
+            return; // Don't call full render
+        }
+
+        // 2. Standard Swap or Create Folder
+        if (!tgtItem) {
+            // Target is Empty -> Move
+            setItem(tgt, srcItem);
+            setItem(src, null);
+        } else {
+            // Target is Occupied
+            if (typeof tgtItem === 'string' && typeof srcItem === 'string' && tgt.loc !== 'dock' && src.loc !== 'dock' && tgt.loc !== 'folder') {
+                // App on App (Page only) -> Create Folder
+                const folder = { type: 'folder', apps: [tgtItem, srcItem] };
+                setItem(tgt, folder);
+                setItem(src, null);
+            } 
+            else if (typeof tgtItem === 'object' && tgtItem.type === 'folder' && typeof srcItem === 'string') {
+                // App on Folder -> Add
+                tgtItem.apps.push(srcItem);
+                setItem(src, null);
+            }
+            else {
+                // Swap (e.g. Dock reordering or Page reordering)
+                // Note: Can't swap a Folder into the Dock (logic choice)
+                if (srcItem.type === 'folder' && tgt.loc === 'dock') return;
+                
+                setItem(tgt, srcItem);
+                setItem(src, tgtItem);
+            }
+        }
+
+        saveState();
+        render();
+        // If we moved something out of a folder, re-render folder modal if open
+        if (src.loc === 'folder' && folderModal.classList.contains('open')) {
+             openFolder(pages[currentOpenFolder.p][currentOpenFolder.i], true);
+        }
+    }
+
+    function openPreview() {
+      document.querySelectorAll('.all-apps').forEach(el => {
+        // do something
+        el.classList.add('preview');
+        el.classList.remove('open');
+        el.classList.remove('closed');
+        el.classList.remove('closing');
+      });
+    }
+
+    /* =========================================
+       4. GESTURES & SYSTEM UI
+       ========================================= */
+    const screen = document.getElementById('mainScreen');
+    const hammer = new Hammer(screen);
+    hammer.get('swipe').set({ direction: Hammer.DIRECTION_ALL });
+
+    const shade = document.getElementById('notifShade');
+    const drawer = document.getElementById('appDrawer');
+    const infoPopup = document.getElementById('infopopup');
+    let appopen = document.getElementById('appFrame');
+
+    hammer.on('swipeleft', () => {
+        if(currentPage < pages.length - 1 && !isDragging && !infoPopup.classList.contains('open') && !folderModal.classList.contains('open')) {
+            currentPage++;
+            render();
+        }
+        if(infoPopup.classList.contains('open')) infoPopup.classList.remove('open');
+    });
+
+    hammer.on('swiperight', () => {
+        if(currentPage > 0 && !isDragging && !folderModal.classList.contains('open')) {
+            currentPage--;
+            render();
+        } else if(!isDragging && currentPage === 0 && !folderModal.classList.contains('open')){
+            if(!infoPopup.classList.contains('open')) openInfo('news');
+        }
+    });
+
+hammer.on('swipeup', (e) => {
+    const startY = e.center.y - e.deltaY;
+
+    const appIsOpen = appopen.classList.contains('open') //appopen && appopen.isConnected;
+
+    if (
+        startY > window.innerHeight * 0.90 &&
+        !drawer.classList.contains('open') &&
+        !folderModal.classList.contains('open') &&
+        !shade.classList.contains('open') &&
+        !infoPopup.classList.contains('open') &&
+        !appIsOpen
+    ) {
+        drawer.classList.add('open');
+    } 
+    else if (shade.classList.contains('open')) {
+        closeShade();
+    } 
+    else if (infoPopup.classList.contains('open')) {
+        infoPopup.classList.remove('open');
+    } 
+    else if (appIsOpen && startY > window.innerHeight * 0.95) {
+        const endY = e.center.y - e.deltaY + e.deltaY; // same thing
+
+                // Close app
+    if(appIsOpen) {
+        if (endY > window.innerHeight * 0.6 ||true) {
+            const currentApp = document.getElementById('appFrame');
+            if(currentApp){
+            // Close app
+            currentApp.classList.remove('open');
+            currentApp.classList.add('closing');
+            // Wait for animation before removing
+            setTimeout(() => {
+                if (currentApp) {
+                    //currentApp.classList.remove('closing');
+                    currentApp.classList.add('closed');
+                    currentApp.id = '';
+                    //appopen.remove();
+                    //appopen = null;
+                }
+            }, 350);}
+            
+        } else {
+            openPreview();
+            updateAppPreviews();
+        }
+    }}
+});
+        /*
+        appopen.classList.remove('open');
+        appopen.classList.add('closing');
+
+        // Wait for animation before removing
+        setTimeout(() => {
+            if (appopen) {
+                appopen.remove();
+                appopen = null;
+            }
+        }, 350);*/
+//    }
+//});
+
+
+hammer.on('swipedown', (e) => {
+    const startY = e.center.y - e.deltaY;
+    // Swipe down from top ~15% of screen
+    if(startY < window.innerHeight * 0.10 && !shade.classList.contains('open') && !folderModal.classList.contains('open')) {
+        shade.classList.add('open');
+    } else if(drawer.classList.contains('open')) {
+        closeDrawer();
+    }
+});
+
+const multiApps = document.getElementById('multiappsarea');
+
+function updateAppPreviews() {
+    const openApps = Array.from(multiApps.querySelectorAll('.all-apps'));
+    multiApps.innerHTML = ''; // clear previous previews
+    
+    openApps.forEach((app, idx) => {
+        const preview = app.cloneNode(true);
+        preview.classList.add('app-preview', 'open');
+        preview.dataset.idx = idx;
+
+        // Reset state for preview
+        preview.classList.remove('open', 'closing', 'preview');
+        preview.style.top = `${10 + idx * 10}%`; 
+        preview.style.transform = `translateX(-50%) scale(${1 - idx*0.05})`;
+        multiApps.appendChild(preview);
+
+        // Drag to remove app
+        let startY = 0;
+        preview.addEventListener('mousedown', e => {
+            preview.classList.add('dragging');
+            startY = e.clientY;
+            const onMove = evt => {
+                const dy = evt.clientY - startY;
+                preview.style.transform = `translateX(-50%) translateY(${dy}px) scale(${1 - idx*0.05})`;
+                preview.style.opacity = `${1 - Math.abs(dy)/300}`;
+            };
+            const onUp = evt => {
+                const dy = evt.clientY - startY;
+                if(dy < -150) { // Swiped up → close app
+                    app.remove(); 
+                    preview.remove();
+                } else { // Snap back
+                    preview.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+                    preview.style.transform = `translateX(-50%) scale(${1 - idx*0.05})`;
+                    preview.style.opacity = '1';
+                    setTimeout(()=>preview.style.transition='', 310);
+                }
+                preview.classList.remove('dragging');
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+            };
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+        });
+
+        // Tap to open app
+        preview.addEventListener('click', e => {
+            app.classList.add('open');
+            multiApps.innerHTML = ''; // hide previews
+        });
+    });
+}
+
+// Swipe up from bottom to show previews
+/*hammer.on('swipeup', (e) => {
+    if(e.center.y > window.innerHeight*0.85) {
+        
+    }
+});*/
+
+// Close previews by tapping background
+multiApps.addEventListener('click', e => {
+    if(e.target === multiApps) {
+        multiApps.innerHTML = '';
+    }
+});
+
+    function closeShade() { shade.classList.remove('open'); }
+    function closeDrawer() { drawer.classList.remove('open'); }
+    
+    function openInfo(type) {
+        let contentHTML = '';
+        for(let index in info[type]){
+            const item = info[type][index];
+            const iconHTML = item.icon.includes('fa-') ? `<i class="fas ${item.icon}"></i>` : `<img src="${item.icon}" />`;
+            contentHTML += `
+            <a href="${item.url}" class="news">
+                <div class="news-header">${iconHTML}<div class="news-title">${item.title}</div></div>
+                <div class="news-content">${item.content}</div>
+                <img class="news-preview" src="${item.thumbnail}" />
+            </a>`;
+        }
+        infoPopup.innerHTML = contentHTML;
+        infoPopup.classList.add('open');
+    }
+
+    /* =========================================
+       5. FOLDER MODAL
+       ========================================= */
+    const folderModal = document.getElementById('folderModal');
+    const folderInner = document.getElementById('folderInner');
+
+    function openFolder(folderData, isRefresh = false) {
+        // Find location of this folder for saving state
+        if(!isRefresh) {
+            let found = false;
+            pages.forEach((p, pIdx) => {
+                p.forEach((item, iIdx) => {
+                    if(item === folderData) {
+                        currentOpenFolder = { p: pIdx, i: iIdx };
+                        found = true;
+                    }
+                });
+            });
+            if(!found) return;
+        }
+
+        folderInner.innerHTML = '';
+        
+        folderData.apps.forEach((appId, idx) => {
+            const slot = document.createElement('div');
+            slot.className = 'app-slot';
+            slot.dataset.loc = 'folder';
+            slot.dataset.i = idx;
+            // No P index needed for folder items, but we need the slot to work
+            
+            const appIcon = createIcon(appId);
+            slot.appendChild(appIcon);
+            addDragEvents(slot);
+            
+            folderInner.appendChild(slot);
+        });
+
+        if(!isRefresh) folderModal.classList.add('open');
+    }
+
+    folderModal.onclick = (e) => {
+        if(e.target === folderModal) folderModal.classList.remove('open');
+    }
+
+    setInterval(() => {
+        const d = new Date();
+        document.getElementById('clockTime').innerText = 
+            d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+    }, 1000);
+
+    render();
+
+</script>
+</body>
+</html>
