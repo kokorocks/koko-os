@@ -67,7 +67,45 @@ hammer.on('panstart', (e) => {
 });
 
 
+// ---------- PAN MOVE ----------
+hammer.on('panmove', (e) => {
+    // --- App Drag ---
+    if (gestureActive && activeApp) {
+        // Only track upward dragging to close
+        if (e.deltaY > 0) return;
 
+        lastDeltaY = e.deltaY;
+
+        if (!rafPending) {
+            rafPending = true;
+            requestAnimationFrame(updateDrag);
+        }
+        return;
+    }
+
+    // --- Quick Settings ---
+    if (shadeGesture) {
+        if (e.deltaY < 0) return; // only pull down
+        const progress = Math.min(e.deltaY / (window.innerHeight * 0.35), 1);
+        shade.style.transform = `translateY(${(-100 + progress * 100)}%)`;
+        return;
+    }
+
+    if (shadeCloseGesture) {
+        if (e.deltaY > 0) return; // only pull up
+        const progress = Math.min(Math.abs(e.deltaY) / (window.innerHeight * 0.35), 1);
+        shade.style.transform = `translateY(${(100 - progress * 100)}%)`;
+        return;
+    }
+
+    // --- App Drawer ---
+    if (drawerGesture) {
+        if (e.deltaY > 0) return; // only pull up
+        const progress = Math.min(Math.abs(e.deltaY) / (window.innerHeight * 0.35), 1);
+        appDrawer.style.transform = `translateY(${100 - progress * 100}%)`;
+        return;
+    }
+});
 
 // ---------- PAN END ----------
 hammer.on('panend', (e) => {
