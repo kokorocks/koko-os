@@ -1,4 +1,5 @@
     const drawer = document.getElementById('appDrawer');
+    let infoPopup = document.getElementById('infopopup')
     function closeShade() { shade.classList.remove('open'); }
     function closeDrawer() { drawer.classList.remove('open'); }
     

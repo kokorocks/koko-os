@@ -86,6 +86,8 @@ function openApp(id) {
         el.id='appFrame';
         el.classList.add(appDB[id].name);
         el.classList.add('all-apps')
+        el.previewIndex=previewIdx
+        previewIdx++
         document.getElementById('multiappsarea').appendChild(el);
         appopen = document.getElementById('appFrame');
 

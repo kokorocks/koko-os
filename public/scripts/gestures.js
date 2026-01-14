@@ -2,45 +2,134 @@ const screen = document.getElementById('mainScreen');
 const hammer = new Hammer(screen);
 
 hammer.get('pan').set({
-    direction: Hammer.DIRECTION_VERTICAL,
+    direction: Hammer.DIRECTION_ALL, // vertical + horizontal
     threshold: 2
 });
 
+// ---------- STATE ----------
 let activeApp = null;
 let gestureActive = false;
 let startTime = 0;
 let lastDeltaY = 0;
 let rafPending = false;
 
-// ---------- PAN START ----------
+// Quick Settings / App Drawer gestures
+let shadeGesture = false;
+let drawerGesture = false;
+let shadeCloseGesture = false;
+let previewGesture = false;
+
+const shade = document.getElementById('notifShade');
+const appDrawer = document.getElementById('appDrawer');
+const PREVIEW_START = 0.92; // bottom 8%
+const DRAWER_START  = 0.80; // above preview
+
+function noAppOpen() {
+    return !document.querySelector('#appFrame.open');
+}
+
 hammer.on('panstart', (e) => {
     const openApp = document.querySelector('#appFrame.open');
-    if (!openApp) return;
+    const yRatio = e.center.y / window.innerHeight;
 
-    // Only from bottom 10%
-    if (e.center.y < window.innerHeight * 0.9) return;
+    // --- APP DRAG (only bottom-most zone) ---
+    if (openApp && yRatio > PREVIEW_START && !shade.classList.contains('open')) {
+        activeApp = openApp;
+        gestureActive = true;
+        startTime = performance.now();
+        lastDeltaY = 0;
+        activeApp.classList.add('is-dragging');
+        return;
+    }
 
-    activeApp = openApp;
-    gestureActive = true;
-    startTime = performance.now();
-    lastDeltaY = 0;
+    // --- PREVIEW (beats drawer) ---
+    if (noAppOpen() && yRatio > PREVIEW_START && !shade.classList.contains('open') && !drawer.classList.contains('open') && !document.getElementById('infopopup').classList.contains('open')) {
+        previewGesture = true;
+        return;
+    }
 
-    activeApp.classList.add('is-dragging');
-});
+    // --- APP DRAWER ---
+    if (noAppOpen() && yRatio > DRAWER_START && !shade.classList.contains('open')) {
+        drawerGesture = true;
+        return;
+    }
 
-// ---------- PAN MOVE ----------
-hammer.on('panmove', (e) => {
-    if (!gestureActive || !activeApp) return;
-    if (e.deltaY > 0) return; // only upward
+    // --- QUICK SETTINGS ---
+    if (yRatio < 0.15) {
+        shadeGesture = true;
+        return;
+    }
 
-    lastDeltaY = e.deltaY;
-
-    if (!rafPending) {
-        rafPending = true;
-        requestAnimationFrame(updateDrag);
+    // --- CLOSE SHADE ---
+    if (shade.classList.contains('open') && yRatio > DRAWER_START) {
+        shadeCloseGesture = true;
     }
 });
 
+
+
+
+// ---------- PAN END ----------
+hammer.on('panend', (e) => {
+    
+    // --- APP DRAG END ---
+    if (gestureActive && activeApp) {
+        gestureActive = false;
+        activeApp.classList.remove('is-dragging');
+
+        const velocity = e.velocityY;
+        const distance = Math.abs(e.deltaY);
+
+        if (velocity < -0.6 || distance > 120) {
+            closeApp(activeApp);
+        } else {
+            resetAppStyles(activeApp);
+        }
+
+        activeApp.style.opacity = 1;
+        activeApp = null;
+        return;
+    }
+
+    // --- PREVIEW ---
+    if (previewGesture) {
+        if(document.getElementById('infopopup').classList.contains('open')){ document.getElementById('infopopup').classList.remove('open'); return}
+        previewGesture = false;
+
+        if (Math.abs(e.deltaY) > 80) {
+            openAppPreviews?.();
+        }
+        return;
+    }
+
+    // --- SHADE OPEN ---
+    if (shadeGesture) {
+        shadeGesture = false;
+        if (e.deltaY > 120) shade.classList.add('open');
+        shade.style.transform = '';
+        return;
+    }
+
+    // --- SHADE CLOSE ---
+    if (shadeCloseGesture) {
+      //if(document.getElementById('infopopup').classList.contains('open')){ document.getElementById('infopopup').classList.remove('open'); return;}
+        shadeCloseGesture = false;
+        if (Math.abs(e.deltaY) > 120) shade.classList.remove('open');
+        shade.style.transform = '';
+        return;
+    }
+
+    // --- DRAWER ---
+    if (drawerGesture) {
+      if(document.getElementById('infopopup').classList.contains('open')){ document.getElementById('infopopup').classList.remove('open'); return}
+        drawerGesture = false;
+        if (Math.abs(e.deltaY) > 120) appDrawer.classList.add('open');
+        appDrawer.style.transform = '';
+    }
+});
+
+
+// ---------- DRAG UPDATE ----------
 function updateDrag() {
     rafPending = false;
 
@@ -49,46 +138,11 @@ function updateDrag() {
 
     const scale = 1 - progress * 0.2;
     const translateY = lastDeltaY * 0.4;
-    //const radius = 46 + progress * 40;
     const opacity = 1 - progress * 0.3;
 
-    activeApp.style.transform =
-        `translateY(${translateY}px) scale(${scale})`;
-    //activeApp.style.borderRadius = `${radius}px`;
+    activeApp.style.transform = `translateY(${translateY}px) scale(${scale})`;
     activeApp.style.opacity = opacity;
 }
-
-// ---------- PAN END ----------
-hammer.on('panend', (e) => {
-    if (!gestureActive || !activeApp) return;
-
-    gestureActive = false;
-    activeApp.classList.remove('is-dragging');
-
-    const distance = Math.abs(e.deltaY);
-    const velocity = e.velocityY;
-    const duration = performance.now() - startTime;
-
-    // HOLD → PREVIEWS
-    if (
-        distance > 90 &&
-        duration > 280 &&
-        Math.abs(velocity) < 0.45
-    ) {
-        resetAppStyles(activeApp);
-        openAppPreviews?.();
-    }
-    // FLICK → CLOSE
-    else if (velocity < -0.6 || distance > 260) {
-        closeApp(activeApp);
-    }
-    // CANCEL
-    else {
-        resetAppStyles(activeApp);
-    }
-    activeApp.style.opacity = 1
-    activeApp = null;
-});
 
 // ---------- HELPERS ----------
 function closeApp(app) {
@@ -114,3 +168,22 @@ function resetAppStyles(app) {
         app.classList.remove('snap-back');
     }, 300);
 }
+
+// ---------- HORIZONTAL SWIPE FOR PAGES ----------
+hammer.on('swipeleft swiperight', (e) => {
+    if (getOpenApp() || Math.abs(e.deltaY) > Math.abs(e.deltaX)) return;
+
+    if (e.type === 'swipeleft' && currentPage < pages.length - 1 && !infoPopup.classList.contains('open')) {
+        currentPage++;
+        render();
+    } else if (infoPopup.classList.contains('open')) {
+        infoPopup.classList.remove('open');
+    } else if (e.type === 'swiperight') {
+        if (currentPage > 0) {
+            currentPage--;
+            render();
+        } else {
+            openInfo('news');
+        }
+    }
+});

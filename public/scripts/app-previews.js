@@ -6,8 +6,8 @@ function getOpenApp() {
 
 function openAppPreviews() {
     const currentApp = document.getElementById('appFrame');
-    currentApp.previewIndex=previewIdx
-    previewIdx++
+    //currentApp.previewIndex=previewIdx
+    //previewIdx++
     if (currentApp) {
         // Close current app smoothly
         currentApp.classList.remove('open');
