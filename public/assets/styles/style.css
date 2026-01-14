@@ -16,9 +16,23 @@
         display: flex; justify-content: center; align-items: center;
         background: #1c1c1e;
         font-family: var(--font-main);
-        overflow: hidden;
+        overflow: auto;
     }
     
+#buttons {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 80px;
+    z-index: 2000; /* above everything */
+}
+#buttons i {
+    font-size: 20px;
+    color: #B197FC;
+}
+
     /* Hide text labels in the dock */
     .app-slot[data-loc="dock"] .icon-label { display: none; }
 
@@ -262,7 +276,11 @@
     pointer-events: auto;
 
 }
+
+
 #appFrame {
+    will-change: transform, opacity;
+    transform-origin: center bottom;
     /* Starting State (Hidden/Small) */
     opacity: 0;
     transform: scale(0.9) translateY(20px);
@@ -306,6 +324,28 @@
     transform: scale(0.95) translateY(10px);
     pointer-events: none;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+/* 1. Prevent transitions while dragging so it follows finger 1:1 */
+/* Prevent transition lag during manual dragging */
+.is-dragging {
+    transition: none !important;
+}
+
+/* Natural spring-back animation */
+.snap-back {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                border-radius 0.4s ease, 
+                opacity 0.4s ease !important;
+}
+
+#appFrame, #notifShade, #appDrawer {
+    will-change: transform, opacity, border-radius;
+}
+
+/* 3. Ensure the app frame is ready for transforms */
+#appFrame {
+    will-change: transform, opacity, border-radius;
+    transform-origin: center bottom;
 }
 
 #multiappsarea {

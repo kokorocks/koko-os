@@ -1,122 +1,116 @@
-    const screen = document.getElementById('mainScreen');
-    const hammer = new Hammer(screen);
-    hammer.get('swipe').set({ direction: Hammer.DIRECTION_ALL });
-    hammer.get('pan').set({
-      direction: Hammer.DIRECTION_VERTICAL,
-      threshold: 0
-    });
+const screen = document.getElementById('mainScreen');
+const hammer = new Hammer(screen);
 
-
-    const shade = document.getElementById('notifShade');
-    const drawer = document.getElementById('appDrawer');
-    const infoPopup = document.getElementById('infopopup');
-    let appopen = document.getElementById('appFrame');
-
-    hammer.on('swipeleft', () => {
-        if(currentPage < pages.length - 1 && !isDragging && !infoPopup.classList.contains('open') && !folderModal.classList.contains('open')) {
-            currentPage++;
-            render();
-        }
-        if(infoPopup.classList.contains('open')) infoPopup.classList.remove('open');
-    });
-
-    hammer.on('swiperight', () => {
-        if(currentPage > 0 && !isDragging && !folderModal.classList.contains('open')) {
-            currentPage--;
-            render();
-        } else if(!isDragging && currentPage === 0 && !folderModal.classList.contains('open')){
-            if(!infoPopup.classList.contains('open')) openInfo('news');
-        }
-    });
-
-hammer.on('swipeup', (e) => {
-    const startY = e.center.y - e.deltaY;
-
-    //const appIsOpen = appopen.classList.contains('open') //appopen && appopen.isConnected;
-    const openApp = getOpenApp();
-    const appIsOpen = !!openApp;
-
-    if (
-        startY > window.innerHeight * 0.90 &&
-        !drawer.classList.contains('open') &&
-        !folderModal.classList.contains('open') &&
-        !shade.classList.contains('open') &&
-        !infoPopup.classList.contains('open') &&
-        !appIsOpen
-    ) {
-        drawer.classList.add('open');
-    } 
-    else if (shade.classList.contains('open')) {
-        closeShade();
-    } 
-    else if (infoPopup.classList.contains('open')) {
-        infoPopup.classList.remove('open');
-    } 
-    else if (appIsOpen && startY > window.innerHeight * 0.95) {
-        const endY = e.center.y - e.deltaY + e.deltaY; // same thing
-        openAppPreviews()
-                // Close app
-
-
-    if(appIsOpen || document.getElementById('appFrame') !== null) {
-        openAppPreviews();
-
-        /*const currentApp = document.getElementById('appFrame');
-        alert(e.velocityY)
-        if (endY > window.innerHeight * 0.6 || e.velocityY < -1) {
-            if(currentApp){
-            // Close app
-            currentApp.classList.remove('open');
-            currentApp.classList.add('closing');
-            //currentApp.classList.add('closed');
-            // Wait for animation before removing
-            setTimeout(() => {
-                if (currentApp) {
-                    currentApp.classList.remove('closing');
-                    currentApp.classList.add('closed');
-                    currentApp.id = 'closed';
-                    //appopen.remove();
-                    //appopen = null;
-                }
-            }, 350);}
-            
-        } else {
-            currentApp.classList.remove('open');
-            currentApp.classList.add('closing');
-                        setTimeout(() => {
-                if (currentApp) {
-                    currentApp.classList.remove('closing');
-                    currentApp.classList.add('closed');
-                    currentApp.id = 'closed';
-                    openAppPreviews();
-                    //appopen.remove();
-                    //appopen = null;
-                }
-            }, 350);
-        }*/
-    }}
+hammer.get('pan').set({
+    direction: Hammer.DIRECTION_VERTICAL,
+    threshold: 2
 });
-        /*
-        appopen.classList.remove('open');
-        appopen.classList.add('closing');
 
-        // Wait for animation before removing
-        setTimeout(() => {
-            if (appopen) {
-                appopen.remove();
-                appopen = null;
-            }
-        }, 350);*/
-//    }
-//});
+let activeApp = null;
+let gestureActive = false;
+let startTime = 0;
+let lastDeltaY = 0;
+let rafPending = false;
 
+// ---------- PAN START ----------
+hammer.on('panstart', (e) => {
+    const openApp = document.querySelector('#appFrame.open');
+    if (!openApp) return;
 
-hammer.on('swipedown', (e) => {
-    const startY = e.center.y - e.deltaY;
-    // Swipe down from top ~15% of screen
-    if(startY < window.innerHeight * 0.10 && !shade.classList.contains('open') && !folderModal.classList.contains('open')) {
-        shade.classList.add('open');
-    } else if(drawer.classList.contains('open')) {
-        closeDrawer();
+    // Only from bottom 10%
+    if (e.center.y < window.innerHeight * 0.9) return;
+
+    activeApp = openApp;
+    gestureActive = true;
+    startTime = performance.now();
+    lastDeltaY = 0;
+
+    activeApp.classList.add('is-dragging');
+});
+
+// ---------- PAN MOVE ----------
+hammer.on('panmove', (e) => {
+    if (!gestureActive || !activeApp) return;
+    if (e.deltaY > 0) return; // only upward
+
+    lastDeltaY = e.deltaY;
+
+    if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(updateDrag);
     }
 });
+
+function updateDrag() {
+    rafPending = false;
+
+    const absY = Math.abs(lastDeltaY);
+    const progress = Math.min(absY / (window.innerHeight * 0.5), 1);
+
+    const scale = 1 - progress * 0.2;
+    const translateY = lastDeltaY * 0.4;
+    const radius = 46 + progress * 40;
+    const opacity = 1 - progress * 0.3;
+
+    activeApp.style.transform =
+        `translateY(${translateY}px) scale(${scale})`;
+    activeApp.style.borderRadius = `${radius}px`;
+    activeApp.style.opacity = opacity;
+}
+
+// ---------- PAN END ----------
+hammer.on('panend', (e) => {
+    if (!gestureActive || !activeApp) return;
+
+    gestureActive = false;
+    activeApp.classList.remove('is-dragging');
+
+    const distance = Math.abs(e.deltaY);
+    const velocity = e.velocityY;
+    const duration = performance.now() - startTime;
+
+    // HOLD → PREVIEWS
+    if (
+        distance > 90 &&
+        duration > 280 &&
+        Math.abs(velocity) < 0.45
+    ) {
+        resetAppStyles(activeApp);
+        openAppPreviews?.();
+    }
+    // FLICK → CLOSE
+    else if (velocity < -0.6 || distance > 260) {
+        closeApp(activeApp);
+    }
+    // CANCEL
+    else {
+        resetAppStyles(activeApp);
+    }
+
+    activeApp = null;
+});
+
+// ---------- HELPERS ----------
+function closeApp(app) {
+    app.style.transform = 'translateY(-100vh) scale(0.5)';
+    app.style.opacity = '0';
+
+    app.classList.remove('open');
+    app.classList.add('closing');
+
+    setTimeout(() => {
+        app.classList.add('closed');
+        app.id = 'closed';
+        resetAppStyles(app);
+    }, 350);
+}
+
+function resetAppStyles(app) {
+    app.style.transform = '';
+    app.style.borderRadius = '';
+    app.style.opacity = '';
+
+    setTimeout(() => {
+        app.classList.remove('snap-back');
+    }, 300);
+}

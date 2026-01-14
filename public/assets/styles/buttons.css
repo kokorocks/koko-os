@@ -1,0 +1,6 @@
+.rounded-triangle {
+  width: 150px;
+  height: 150px;
+  background-color: steelblue;
+  clip-path: url(#rounded-triangle-clip); /* Reference the SVG clip path */
+}

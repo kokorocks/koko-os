@@ -1,3 +1,4 @@
+    const drawer = document.getElementById('appDrawer');
     function closeShade() { shade.classList.remove('open'); }
     function closeDrawer() { drawer.classList.remove('open'); }
     

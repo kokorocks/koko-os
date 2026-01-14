@@ -1,0 +1,110 @@
+<div class="wrapper">
+  <input type="range" min="0" max="100" value="50" />
+</div>
+
+<div class="wrapper">
+  <input type="range" min="0" max="100" value="50" step="12.5" />
+</div>
+
+<style>
+:root {
+  --slider-width: 3rem;          /* Width of the vertical slider */
+  --slider-height: 20rem;        /* Height of the vertical slider */
+  --track-color: rgba(83, 76, 142, 0.2);
+  --fill-color: rgba(52, 0, 182, 0.505);
+  --bg-step-color: #05051a;
+  --thumb-size: 0;               /* hidden thumb */
+  --plus-color: #fff;
+  --minus-color: #fff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  background-color: #000;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  place-items: center;
+}
+
+.wrapper {
+  position: relative;
+  width: var(--slider-width);
+  height: var(--slider-height);
+}
+
+/* Plus and minus labels */
+.wrapper::before,
+.wrapper::after {
+  display: block;
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.wrapper::before {
+  content: "+";
+  top: 0;
+  color: var(--plus-color);
+}
+
+.wrapper::after {
+  content: "−";
+  bottom: 0;
+  color: var(--minus-color);
+}
+
+/* Vertical range input */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--slider-height);   /* rotated width becomes height */
+  height: var(--slider-width);   /* rotated height becomes width */
+  transform: translate(-50%, -50%) rotate(-90deg);
+  border-radius: 0.5rem;
+  background-color: var(--track-color);
+  cursor: row-resize;
+  overflow: hidden;
+}
+
+/* Step marks */
+input[type="range"][step] {
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--fill-color),
+    var(--fill-color) calc(12.5% - 1px),
+    var(--bg-step-color) 12.5%
+  );
+}
+
+/* Hidden thumb but still draggable */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  box-shadow: -2000px 0 0 2000px var(--fill-color); /* fill the track */
+}
+
+input[type="range"]::-moz-range-thumb {
+  border: none;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  box-shadow: -2000px 0 0 2000px var(--fill-color);
+}
+
+</style>
