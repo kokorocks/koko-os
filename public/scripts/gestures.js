@@ -49,12 +49,12 @@ function updateDrag() {
 
     const scale = 1 - progress * 0.2;
     const translateY = lastDeltaY * 0.4;
-    const radius = 46 + progress * 40;
+    //const radius = 46 + progress * 40;
     const opacity = 1 - progress * 0.3;
 
     activeApp.style.transform =
         `translateY(${translateY}px) scale(${scale})`;
-    activeApp.style.borderRadius = `${radius}px`;
+    //activeApp.style.borderRadius = `${radius}px`;
     activeApp.style.opacity = opacity;
 }
 
@@ -86,7 +86,7 @@ hammer.on('panend', (e) => {
     else {
         resetAppStyles(activeApp);
     }
-
+    activeApp.style.opacity = 1
     activeApp = null;
 });
 

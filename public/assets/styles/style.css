@@ -329,6 +329,8 @@
 /* Prevent transition lag during manual dragging */
 .is-dragging {
     transition: none !important;
+    user-select: none;
+    pointer-events: none;
 }
 
 /* Natural spring-back animation */
