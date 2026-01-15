@@ -29,11 +29,12 @@ function noAppOpen() {
 }
 
 hammer.on('panstart', (e) => {
+    if(isDragging) return
     const openApp = document.querySelector('#appFrame.open');
     const yRatio = e.center.y / window.innerHeight;
 
     // --- APP DRAG (only bottom-most zone) ---
-    if (openApp && yRatio > PREVIEW_START && !shade.classList.contains('open')) {
+    if (openApp && yRatio > PREVIEW_START && !shade.classList.contains('open') && !isDragging) {
         activeApp = openApp;
         gestureActive = true;
         startTime = performance.now();
@@ -43,19 +44,19 @@ hammer.on('panstart', (e) => {
     }
 
     // --- PREVIEW (beats drawer) ---
-    if (noAppOpen() && yRatio > PREVIEW_START && !shade.classList.contains('open') && !drawer.classList.contains('open') && !document.getElementById('infopopup').classList.contains('open')) {
+    if (noAppOpen() && yRatio > PREVIEW_START && !shade.classList.contains('open') && !drawer.classList.contains('open') && !document.getElementById('infopopup').classList.contains('open') && !isDragging) {
         previewGesture = true;
         return;
     }
 
     // --- APP DRAWER ---
-    if (noAppOpen() && yRatio > DRAWER_START && !shade.classList.contains('open')) {
+    if (noAppOpen() && yRatio > DRAWER_START && !shade.classList.contains('open') && !isDragging) {
         drawerGesture = true;
         return;
     }
 
     // --- QUICK SETTINGS ---
-    if (yRatio < 0.15) {
+    if (yRatio < 0.15 && !isDragging) {
         shadeGesture = true;
         return;
     }
@@ -69,6 +70,7 @@ hammer.on('panstart', (e) => {
 
 // ---------- PAN MOVE ----------
 hammer.on('panmove', (e) => {
+    if(isDragging) return
     // --- App Drag ---
     if (gestureActive && activeApp) {
         // Only track upward dragging to close
@@ -84,14 +86,14 @@ hammer.on('panmove', (e) => {
     }
 
     // --- Quick Settings ---
-    if (shadeGesture) {
+    if (shadeGesture && !isDragging) {
         if (e.deltaY < 0) return; // only pull down
         const progress = Math.min(e.deltaY / (window.innerHeight * 0.35), 1);
         shade.style.transform = `translateY(${(-100 + progress * 100)}%)`;
         return;
     }
 
-    if (shadeCloseGesture) {
+    if (shadeCloseGesture && !isDragging) {
         if (e.deltaY > 0) return; // only pull up
         const progress = Math.min(Math.abs(e.deltaY) / (window.innerHeight * 0.35), 1);
         shade.style.transform = `translateY(${(100 - progress * 100)}%)`;
@@ -99,7 +101,7 @@ hammer.on('panmove', (e) => {
     }
 
     // --- App Drawer ---
-    if (drawerGesture) {
+    if (drawerGesture && !isDragging && noAppOpen()) {
         if (e.deltaY > 0) return; // only pull up
         const progress = Math.min(Math.abs(e.deltaY) / (window.innerHeight * 0.35), 1);
         appDrawer.style.transform = `translateY(${100 - progress * 100}%)`;
@@ -109,7 +111,7 @@ hammer.on('panmove', (e) => {
 
 // ---------- PAN END ----------
 hammer.on('panend', (e) => {
-    
+    if(isDragging) return
     // --- APP DRAG END ---
     if (gestureActive && activeApp) {
         gestureActive = false;
@@ -130,7 +132,7 @@ hammer.on('panend', (e) => {
     }
 
     // --- PREVIEW ---
-    if (previewGesture) {
+    if (previewGesture && !isDragging) {
         if(document.getElementById('infopopup').classList.contains('open')){ document.getElementById('infopopup').classList.remove('open'); return}
         previewGesture = false;
 
@@ -141,7 +143,7 @@ hammer.on('panend', (e) => {
     }
 
     // --- SHADE OPEN ---
-    if (shadeGesture) {
+    if (shadeGesture && !isDragging) {
         shadeGesture = false;
         if (e.deltaY > 120) shade.classList.add('open');
         shade.style.transform = '';
@@ -158,7 +160,7 @@ hammer.on('panend', (e) => {
     }
 
     // --- DRAWER ---
-    if (drawerGesture) {
+    if (drawerGesture && !isDragging && !previewOpen && noAppOpen()) {
       if(document.getElementById('infopopup').classList.contains('open')){ document.getElementById('infopopup').classList.remove('open'); return}
         drawerGesture = false;
         if (Math.abs(e.deltaY) > 120) appDrawer.classList.add('open');
@@ -215,7 +217,7 @@ hammer.on('swipeleft swiperight', (e) => {
         currentPage++;
         render();
     } else if (infoPopup.classList.contains('open')) {
-        infoPopup.classList.remove('open');
+        document.getElementById('infopopup').classList.remove('open')
     } else if (e.type === 'swiperight') {
         if (currentPage > 0) {
             currentPage--;

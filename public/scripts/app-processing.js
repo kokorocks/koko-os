@@ -68,7 +68,8 @@ function createIcon(itemData, isDock=false) {
 
 function openApp(id) {
     cancelDrag();
-    closeDrawer();
+    //closeDrawer();
+    document.getElementById('appDrawer').style.transform='translateY(100%)'//.classList.remove('open');
     if(appDB[id] && appDB[id].app) {
         console.log('opening app:', id)
         if(document.getElementsByClassName(appDB[id].name).length === 0) { // Prevent multiple instances

@@ -1,3 +1,6 @@
+
+// add yahoo rss
+
 function loadNewsFromBingRSS(query = 'tech') {
     // 1. Setup Bing RSS URL
     //const bingRss = `https://www.bing.com/news/search?q=${encodeURIComponent(query)}&format=rss&count=20`;

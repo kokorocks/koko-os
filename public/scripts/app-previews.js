@@ -5,6 +5,7 @@ function getOpenApp() {
 }
 
 function openAppPreviews() {
+    previewOpen=true
     const currentApp = document.getElementById('appFrame');
     //currentApp.previewIndex=previewIdx
     //previewIdx++
@@ -193,6 +194,7 @@ previewArea.addEventListener('scroll', () => requestAnimationFrame(updateCenter)
         setTimeout(() => {
             wrapper.remove();
             checkIfNoAppsLeft();
+            previewOpen=false
         }, 250);
     }
 
