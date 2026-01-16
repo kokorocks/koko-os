@@ -7,7 +7,15 @@ const drawerList = document.getElementById('drawerList');
 const dotsContainer = document.getElementById('dotsContainer');
 let startX = 0;
 let startY = 0;
-
+function click1(event){
+    event.preventDefault();
+    /*
+    lastwordchoosed = "";
+    isindrag = true;
+    */
+    //lastwordchoosed += document.getElementById(id).innerHTML;
+    console.log("you started dragging");
+}
 function render() {
     // 1. Pages
     slider.innerHTML = '';
@@ -57,7 +65,7 @@ function render() {
         d.className = `dot ${i === currentPage ? 'active' : ''}`;
         dotsContainer.appendChild(d);
     });
-    
+
     // 4. Slide Position
     slider.style.transform = `translateX(-${currentPage * 100}%)`;
     // 5. Drawer
@@ -65,14 +73,28 @@ function render() {
     Object.keys(appDB).forEach(key => {
         const slot = document.createElement('div');
         slot.className = 'app-slot';
+        slot.classList.add('app-drawer')
+        slot.setAttribute('draggable', 'true');
+        slot.dataset.loc = 'drawer';
+        slot.dataset.key = key;
         
         const icon = createIcon(key);
+        icon.querySelector('.app-icon').dataset.key = key;
+
         slot.appendChild(icon);
+
+        addDragEvents(slot)
     
         // Start drag from drawer
-        slot.addEventListener('mousedown', (e) => startDrawerDrag(e, key));
-        slot.addEventListener('touchstart', (e) => startDrawerDrag(e, key), {passive:false});
+        //slot.addEventListener('mousedown', (e) => startDrawerDrag(e, key));
+        //slot.addEventListener('touchstart', (e) => startDrawerDrag(e, key), {passive:false});
     
         drawerList.appendChild(slot);
     });
 }
+            //slot.className = 'app-slot';
+            //slot.dataset.loc = 'page';
+            //slot.dataset.p = pageIdx;
+            
+            //slot.dataset.i = i;
+            

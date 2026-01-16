@@ -1,6 +1,6 @@
 let isDragging = false;
 let gestures=true;//false
-let previewOpen=true;
+let previewOpen=false;
 
 /* =========================================
    1. DATA CONFIGURATION

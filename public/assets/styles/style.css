@@ -526,3 +526,9 @@ input:checked + .toggle-btn {
 #delete-zone.active{
     display: flex;
 }
+
+.dragging-clone {
+    position: fixed;
+    pointer-events: none;   /* 🔥 REQUIRED */
+    z-index: 9999;
+}

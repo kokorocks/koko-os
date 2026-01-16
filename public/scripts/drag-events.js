@@ -3,12 +3,67 @@ let dragTimer = null;
 let dragGhost = null;
 let dragSrc = null; // { loc, p, i }
 let overDeleteZone = false;
+
+// Source - https://stackoverflow.com/a
+// Posted by Eugene Lazutkin, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-01-15, License - CC BY-SA 4.0
+
+//var mouseDown = 0;
+//document.body.onmousedown = function() { 
+//  ++mouseDown;
+//}
+//document.body.onmouseup = function() {
+//  --mouseDown;
+//}
+
 const DELETE_ZONE_HEIGHT = 80; // px from top
 const deleteZone = document.getElementById('delete-zone');
 
+
+function onDragIntent(e, slot) {
+    e.preventDefault();          // 🔥 KILLS native drag
+    e.dataTransfer.setData('text/plain', '');
+    e.stopPropagation();
+
+    // Kill native ghost
+    const img = new Image();
+    img.src = '';
+    e.dataTransfer.setDragImage(img, 0, 0);
+
+    // Now switch to your system
+    isDragging = true;
+
+    slot.draggable = false; // disable native dragging AFTER start
+
+    appDrawer.classList.remove('open');
+    appDrawer.style.transform = 'translateY(100%)';
+
+    dragSrc = {
+        loc: 'drawer',
+        key: slot.dataset.key
+    };
+
+    const rect = slot.getBoundingClientRect();
+    dragGhost = slot.cloneNode(true);
+    dragGhost.className = 'dragging-clone';
+    dragGhost.style.width = rect.width + 'px';
+    dragGhost.style.height = rect.height + 'px';
+
+    const label = dragGhost.querySelector('.app-name');
+    if (label) label.style.display = 'none';
+
+    document.body.appendChild(dragGhost);
+
+    // From now on, ignore drag events
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+}
+
+
 function startDrawerDrag(e, appKey) {
-    e.preventDefault();
+    //e.preventDefault();
     if (isDragging) return;
+    
 
     // Close the drawer immediately
     document.getElementById('appDrawer').style.transform='translateY(100%)'
@@ -40,68 +95,71 @@ function startDrawerDrag(e, appKey) {
     }
 }
 
-    function addDragEvents(slot) {
+function addDragEvents(slot) {
+    if(!slot.classList.contains('app-drawer')){
         slot.addEventListener('touchstart', (e) => handleStart(e, slot), {passive:false});
         slot.addEventListener('touchmove', handleMove, {passive:false});
         slot.addEventListener('touchend', handleEnd);
         slot.addEventListener('mousedown', (e) => handleStart(e, slot));
+    } else {
+        console.log('here')
+        slot.ondragstart=(e)=>onDragIntent(e, slot)
+        slot.addEventListener('touchmove', handleMove, {passive:false});
+        slot.addEventListener('touchend', handleEnd);
     }
+}
     
-    function cleanupEmptyPages() {
-        // Never remove the last remaining page
-        for (let i = pages.length - 1; i >= 0; i--) {
-            const page = pages[i];
-            const hasApps = page.some(item => item !== null);
-
-            if (!hasApps && pages.length > 1) {
-                pages.splice(i, 1);
-                
-                // Fix currentPage if needed
-                if (currentPage >= pages.length) {
-                    currentPage = pages.length - 1;
-                }
+function cleanupEmptyPages() {
+    // Never remove the last remaining page
+    for (let i = pages.length - 1; i >= 0; i--) {
+        const page = pages[i];
+        const hasApps = page.some(item => item !== null);
+        if (!hasApps && pages.length > 1) {
+            pages.splice(i, 1);
+            
+            // Fix currentPage if needed
+            if (currentPage >= pages.length) {
+                currentPage = pages.length - 1;
             }
         }
     }
+}
+
+cleanupEmptyPages()
+
+function handleStart(e, slot) {
+    document.getElementById('appDrawer').style.transform='translateY(100%)'
+    appDrawer.classList.remove('open');
+    isDragging = true;
+    // Determine location
+    const loc = slot.dataset.loc; // 'page', 'dock', 'folder'
+    const p = slot.dataset.p ? parseInt(slot.dataset.p) : 0;
+    const i = parseInt(slot.dataset.i);
+    dragSrc = { loc, p, i };
     
-    cleanupEmptyPages()
-
-    function handleStart(e, slot) {
-        {
-            isDragging = true;
-            // Determine location
-            const loc = slot.dataset.loc; // 'page', 'dock', 'folder'
-            const p = slot.dataset.p ? parseInt(slot.dataset.p) : 0;
-            const i = parseInt(slot.dataset.i);
-
-            dragSrc = { loc, p, i };
-            
-            if(navigator.vibrate) navigator.vibrate(50);
-            
-            const rect = slot.getBoundingClientRect();
-            dragGhost = slot.cloneNode(true);
-            dragGhost.className = 'dragging-clone';
-            dragGhost.style.width = rect.width + 'px';
-            dragGhost.style.height = rect.height + 'px';
-            
-            // Remove text from ghost for cleaner look
-            const label = dragGhost.querySelector('.app-name');
-            if(label) label.style.display = 'none';
-
-            updateGhostPosition(e);
-            document.body.appendChild(dragGhost);
-            slot.style.opacity = '0'; 
-
-            if(e.type === 'mousedown') {
-                window.addEventListener('mousemove', handleMove);
-                window.addEventListener('mouseup', handleEnd);
-            }
-
-        } 
+    if(navigator.vibrate) navigator.vibrate(50);
+    
+    const rect = slot.getBoundingClientRect();
+    dragGhost = slot.cloneNode(true);
+    dragGhost.className = 'dragging-clone';
+    dragGhost.style.width = rect.width + 'px';
+    dragGhost.style.height = rect.height + 'px';
+    
+    // Remove text from ghost for cleaner look
+    const label = dragGhost.querySelector('.app-name');
+    if(label) label.style.display = 'none';
+    updateGhostPosition(e);
+    document.body.appendChild(dragGhost);
+    slot.style.opacity = '0'; 
+    if(e.type === 'mousedown') {
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
     }
+    
+}
 
-const topGuard = document.getElementById('top-guard');
-const bottomGuard = document.getElementById('bottom-guard');
+//const topGuard = document.getElementById('top-guard');
+//const bottomGuard = document.getElementById('bottom-guard');
 
 function handleMove(e) {
     if (!isDragging) {
@@ -264,14 +322,14 @@ function setItem(ref, val) {
             // Remove app from folder
             folderSlot.apps.splice(ref.i, 1);
 
-            // 🔥 CASE 1: Folder empty → remove it
+            // Folder empty → remove it
             if (folderSlot.apps.length === 0) {
                 pages[currentOpenFolder.p][currentOpenFolder.i] = null;
                 folderModal.classList.remove('open');
                 currentOpenFolder = null;
             }
 
-            // 🔥 CASE 2: Folder has ONE app → unwrap it
+            // Folder has ONE app → unwrap it
             else if (folderSlot.apps.length === 1) {
                 pages[currentOpenFolder.p][currentOpenFolder.i] = folderSlot.apps[0];
                 folderModal.classList.remove('open');
@@ -295,6 +353,20 @@ function handleDrop(src, tgt) {
     // Logic split based on Target Type
     
     // 1. Dropping into Folder (Reordering)
+
+        // DRAWER → GRID
+    if (src.loc === 'drawer') {
+        if (tgt.loc !== 'page') return;
+
+        // Only drop on empty slots
+        if (getItem(tgt) !== null) return;
+
+        setItem(tgt, src.key);
+        saveState();
+        render();
+        return;
+    }
+
     if (tgt.loc === 'folder' && src.loc === 'folder') {
         // Reorder inside folder
         const folder = pages[currentOpenFolder.p][currentOpenFolder.i];
@@ -332,16 +404,6 @@ function handleDrop(src, tgt) {
         }
     }
         // If dragged from drawer
-if (src.loc === 'drawer') {
-    // Find first empty slot on the target page
-    const emptyIdx = pages[currentPage].findIndex(x => x === null);
-    if (emptyIdx !== -1) {
-        pages[currentPage][emptyIdx] = src.key; // Place the app
-        saveState();
-        render();
-    }
-    return;
-}
 
     //();
     saveState();

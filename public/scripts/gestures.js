@@ -34,7 +34,7 @@ hammer.on('panstart', (e) => {
     const yRatio = e.center.y / window.innerHeight;
 
     // --- APP DRAG (only bottom-most zone) ---
-    if (openApp && yRatio > PREVIEW_START && !shade.classList.contains('open') && !isDragging) {
+    if (openApp && yRatio > PREVIEW_START && !shade.classList.contains('open') && !isDragging && !previewOpen) {
         activeApp = openApp;
         gestureActive = true;
         startTime = performance.now();
@@ -44,25 +44,25 @@ hammer.on('panstart', (e) => {
     }
 
     // --- PREVIEW (beats drawer) ---
-    if (noAppOpen() && yRatio > PREVIEW_START && !shade.classList.contains('open') && !drawer.classList.contains('open') && !document.getElementById('infopopup').classList.contains('open') && !isDragging) {
+    if (noAppOpen() && yRatio > PREVIEW_START && !shade.classList.contains('open') && !drawer.classList.contains('open') && !document.getElementById('infopopup').classList.contains('open') && !isDragging && !previewOpen) {
         previewGesture = true;
         return;
     }
 
     // --- APP DRAWER ---
-    if (noAppOpen() && yRatio > DRAWER_START && !shade.classList.contains('open') && !isDragging) {
+    if (noAppOpen() && yRatio > DRAWER_START && !shade.classList.contains('open') && !isDragging && !previewOpen) {
         drawerGesture = true;
         return;
     }
 
     // --- QUICK SETTINGS ---
-    if (yRatio < 0.15 && !isDragging) {
+    if (yRatio < 0.15 && !isDragging && !previewOpen) {
         shadeGesture = true;
         return;
     }
 
     // --- CLOSE SHADE ---
-    if (shade.classList.contains('open') && yRatio > DRAWER_START) {
+    if (shade.classList.contains('open') && yRatio > DRAWER_START && !previewOpen) {
         shadeCloseGesture = true;
     }
 });
@@ -86,14 +86,14 @@ hammer.on('panmove', (e) => {
     }
 
     // --- Quick Settings ---
-    if (shadeGesture && !isDragging) {
+    if (shadeGesture && !isDragging && !previewOpen) {
         if (e.deltaY < 0) return; // only pull down
         const progress = Math.min(e.deltaY / (window.innerHeight * 0.35), 1);
         shade.style.transform = `translateY(${(-100 + progress * 100)}%)`;
         return;
     }
 
-    if (shadeCloseGesture && !isDragging) {
+    if (shadeCloseGesture && !isDragging && !previewOpen) {
         if (e.deltaY > 0) return; // only pull up
         const progress = Math.min(Math.abs(e.deltaY) / (window.innerHeight * 0.35), 1);
         shade.style.transform = `translateY(${(100 - progress * 100)}%)`;
@@ -101,7 +101,7 @@ hammer.on('panmove', (e) => {
     }
 
     // --- App Drawer ---
-    if (drawerGesture && !isDragging && noAppOpen()) {
+    if (drawerGesture && !isDragging && noAppOpen() && !previewOpen) {
         if (e.deltaY > 0) return; // only pull up
         const progress = Math.min(Math.abs(e.deltaY) / (window.innerHeight * 0.35), 1);
         appDrawer.style.transform = `translateY(${100 - progress * 100}%)`;
@@ -143,7 +143,7 @@ hammer.on('panend', (e) => {
     }
 
     // --- SHADE OPEN ---
-    if (shadeGesture && !isDragging) {
+    if (shadeGesture && !isDragging && !previewOpen) {
         shadeGesture = false;
         if (e.deltaY > 120) shade.classList.add('open');
         shade.style.transform = '';
@@ -160,7 +160,7 @@ hammer.on('panend', (e) => {
     }
 
     // --- DRAWER ---
-    if (drawerGesture && !isDragging && !previewOpen && noAppOpen()) {
+    if (drawerGesture && !isDragging && !previewOpen && noAppOpen() && !previewOpen) {
       if(document.getElementById('infopopup').classList.contains('open')){ document.getElementById('infopopup').classList.remove('open'); return}
         drawerGesture = false;
         if (Math.abs(e.deltaY) > 120) appDrawer.classList.add('open');

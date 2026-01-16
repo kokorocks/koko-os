@@ -70,3 +70,14 @@ setInterval(() => {
 }, 1000);
 
 render();
+
+// Source - https://stackoverflow.com/a
+// Posted by Walid Ajaj
+// Retrieved 2026-01-15, License - CC BY-SA 3.0
+
+/*document.addEventListener("dragstart", function( event ) {
+    var img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
+    event.dataTransfer.setDragImage(img, 0, 0);
+}, false);
+*/
