@@ -21,8 +21,8 @@ let previewGesture = false;
 
 const shade = document.getElementById('notifShade');
 const appDrawer = document.getElementById('appDrawer');
-const PREVIEW_START = 0.85; // bottom 8%
-const DRAWER_START  = 0.60; // above preview
+const PREVIEW_START = 0.88; // bottom 8%
+const DRAWER_START  = 0.78; // above preview
 
 function noAppOpen() {
     return !document.querySelector('#appFrame.open');
