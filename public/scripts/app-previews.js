@@ -4,6 +4,41 @@ function getOpenApp() {
     return document.querySelector('.all-apps.open');
 }
 
+const previewArea = document.getElementById('multiappspreviewarea');
+
+function updateCenter() {
+    if (!previewArea) return; // safety
+    const cards = [...previewArea.querySelectorAll('.app-wrapper')];
+    if (!cards.length) return;
+
+    const centerX = previewArea.scrollLeft + previewArea.offsetWidth / 2;
+
+    cards.forEach(card => {
+        const boxCenter = card.offsetLeft + card.offsetWidth / 2;
+        if (Math.abs(centerX - boxCenter) < card.offsetWidth / 2) {
+            card.classList.add('centered');
+        } else {
+            card.classList.remove('centered');
+        }
+    });
+}
+
+// Call this AFTER the previews are rendered
+function openAppPreviews() {
+    previewOpen = true;
+
+    // ... your code to close current app ...
+
+    renderAppPreviews();
+
+    // --- Scroll listener ---
+    previewArea.addEventListener('scroll', () => requestAnimationFrame(updateCenter));
+
+    // --- Highlight the first card immediately ---
+    requestAnimationFrame(updateCenter);
+}
+
+
 function openAppPreviews() {
     previewOpen=true
     const currentApp = document.getElementById('appFrame');
@@ -159,7 +194,7 @@ function renderAppPreviews() {
 
 }
 
-    //previewArea.addEventListener('scroll', () => requestAnimationFrame(updateCenter));
+    previewArea.addEventListener('scroll', () => requestAnimationFrame(updateCenter));
 
     function closePreviewApp(wrapper) {
         const iframe = wrapper.querySelector('iframe');
@@ -203,19 +238,7 @@ function renderAppPreviews() {
             document.addEventListener('touchend', dragEnd);
         }
 
-        /*function updateCenter() {
-    const cards = [...previewArea.querySelectorAll('.app-wrapper')];
-    const centerX = previewArea.scrollLeft + previewArea.offsetWidth / 2;
 
-    cards.forEach(card => {
-        const boxCenter = card.offsetLeft + card.offsetWidth / 2;
-        if (Math.abs(centerX - boxCenter) < 60) {
-            card.classList.add('centered');
-        } else {
-            card.classList.remove('centered');
-        }
-    });
-}*/
 
         function dragMove(e) {
             const y = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
