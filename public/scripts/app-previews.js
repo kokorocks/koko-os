@@ -44,6 +44,7 @@ function openAppPreviews() {
         previewArea.style.zIndex = '-1';
         previewArea.classList.remove('open');
         previewArea.innerHTML = '';
+        previewOpen = false; // ✅ ALWAYS reset state
     }
 
 /*function openAppPreviews() {
@@ -97,84 +98,65 @@ function renderAppPreviews() {
     let centerThisApp = true;
 
     openApps.forEach((app, i) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'app-wrapper';
-        if (centerThisApp) {
-            wrapper.classList.add('centered');
-            centerThisApp = false;
-        }
+    const wrapper = document.createElement('div');
+    wrapper.className = 'app-wrapper';
+    if (centerThisApp) {
+        wrapper.classList.add('centered');
+        centerThisApp = false;
+    }
 
-        // Icon
-        const appId = app.classList[0].toLowerCase();
-        const appData = appDB[appId];
-        const icon = document.createElement('div');
-        icon.className = 'preview-icon';
-        icon.style.background = appData.color.includes('gradient')
-            ? appData.color
-            : appData.color;
-        icon.innerHTML = `<i class="fas ${appData.icon}"></i>`;
-        wrapper.appendChild(icon);
+    // --- Clone iframe (preview) ---
+    const previewClone = app.cloneNode(true);
+    previewClone.id = '';
+    previewClone.classList.remove('closed', 'closing', 'open');
+    previewClone.classList.add('preview');
+    previewClone.style.pointerEvents = 'none';
+    wrapper.appendChild(previewClone);
 
-        // Clone iframe but make non-interactive
-        const previewClone = app.cloneNode(true);
-        previewClone.id = '';
-        previewClone.classList.remove('closed', 'closing', 'open');
-        previewClone.classList.add('preview');
-        previewClone.style.pointerEvents = 'none';
-        wrapper.appendChild(previewClone);
+    // --- Overlay to block interactions ---
+    const overlay = document.createElement('div');
+    overlay.style.position = 'absolute';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.pointerEvents = 'auto';
+    wrapper.appendChild(overlay);
 
-        // Overlay to block interactions
-        const overlay = document.createElement('div');
-        overlay.style.position = 'absolute';
-        overlay.style.top = '0';
-        overlay.style.left = '0';
-        overlay.style.width = '100%';
-        overlay.style.height = '100%';
-        overlay.style.pointerEvents = 'auto';
-        //overlay.style.pointerEvents = 'none'; // allow clicks to pass through
-        wrapper.appendChild(overlay);
+    // --- PREVIEW ICON (move on top) ---
+    const icon = document.createElement('div');
+    icon.className = 'preview-icon';
+    icon.style.background = appDB[app.classList[0].toLowerCase()].color;
+    icon.innerHTML = `<i class="fas ${appDB[app.classList[0].toLowerCase()].icon}"></i>`;
+    icon.style.position = 'absolute';
+    icon.style.top = '-25px'; // float above iframe
+    icon.style.left = '50%';
+    icon.style.transform = 'translateX(-50%)';
+    icon.style.zIndex = '9999';
+    icon.style.pointerEvents = 'none'; // allow clicks through
+    wrapper.appendChild(icon);
 
-        previewArea.appendChild(wrapper);
+    previewArea.appendChild(wrapper);
 
-        // After app clones and wrapper creation
-wrapper.addEventListener('click', (e) => {
-    e.stopPropagation();
-    //alert('f')
-    console.log(appId)
-    const realApp = document.getElementsByClassName(app.classList[0])[0];
-    if (!realApp) return;
+    // --- Click to open real app ---
+    wrapper.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const realApp = document.getElementsByClassName(app.classList[0])[0];
+        if (!realApp) return;
 
-    // Update previewIndex to bring to front
-    app.previewIdx = previewIdx;
-    previewIdx++
+        // Update previewIndex to bring to front
+        app.previewIndex = ++previewIdx;
 
-    realApp.id = 'appFrame';
-    realApp.classList.remove('closed', 'closing');
-    realApp.classList.add('open');
+        realApp.id = 'appFrame';
+        realApp.classList.remove('closed', 'closing');
+        realApp.classList.add('open');
 
-    closeAppPreviews();
+        closeAppPreviews();
+    });
+
+    makeDraggable(wrapper);
 });
 
-// Now attach updateCenter globally
-function updateCenter() {
-    const cards = [...previewArea.querySelectorAll('.app-wrapper')];
-    const centerX = previewArea.scrollLeft + previewArea.offsetWidth / 2;
-
-    cards.forEach(card => {
-        const boxCenter = card.offsetLeft + card.offsetWidth / 2;
-        if (Math.abs(centerX - boxCenter) < 60) {
-            card.classList.add('centered');
-        } else {
-            card.classList.remove('centered');
-        }
-    });
-}
-
-previewArea.addEventListener('scroll', () => requestAnimationFrame(updateCenter));
-
-
-        makeDraggable(wrapper);
-    });
 }
 
     //previewArea.addEventListener('scroll', () => requestAnimationFrame(updateCenter));

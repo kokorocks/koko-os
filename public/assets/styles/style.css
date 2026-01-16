@@ -256,7 +256,7 @@ body {
 }
 
 #infopopup .news {
-    display: flex; flex-direction: column; gap: 8px; padding: 12px 15px;
+    display: flex; flex-direction: column; gap: 8px; padding: 8px 8px;
     border-radius: 16px; background: rgba(255,255,255,0.1);
     backdrop-filter: blur(15px); transition: background 0.2s, transform 0.2s;
     text-decoration: none; color: white; margin-bottom: 12px;
@@ -369,7 +369,7 @@ body {
 
 #bottom-guard {
     bottom: 0;
-    height: 80px;
+    height: 25px;
 }
 .control-row {
   display: flex;
@@ -491,7 +491,7 @@ input:checked + .toggle-btn {
     width: 50px;
     height: 50px;
     border-radius: 12px;
-    margin-bottom: 10px;
+    margin-bottom: -25px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -499,6 +499,7 @@ input:checked + .toggle-btn {
     color: white;
     font-size: 24px;
     flex-shrink: 0;
+    z-index: 900;
 }
 
 #screenshot {
