@@ -21,8 +21,8 @@ let previewGesture = false;
 
 const shade = document.getElementById('notifShade');
 const appDrawer = document.getElementById('appDrawer');
-const PREVIEW_START = 0.92; // bottom 8%
-const DRAWER_START  = 0.80; // above preview
+const PREVIEW_START = 0.85; // bottom 8%
+const DRAWER_START  = 0.60; // above preview
 
 function noAppOpen() {
     return !document.querySelector('#appFrame.open');
@@ -164,6 +164,7 @@ hammer.on('panend', (e) => {
       if(document.getElementById('infopopup').classList.contains('open')){ document.getElementById('infopopup').classList.remove('open'); return}
         drawerGesture = false;
         if (Math.abs(e.deltaY) > 120) appDrawer.classList.add('open');
+        appDrawer.style.transform = 'translateY(100%)';
         appDrawer.style.transform = '';
     }
 });

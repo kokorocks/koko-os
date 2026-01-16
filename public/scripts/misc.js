@@ -3,6 +3,24 @@ let infoPopup = document.getElementById('infopopup')
 function closeShade() { shade.classList.remove('open'); }
 function closeDrawer() { drawer.classList.remove('open'); document.getElementById('appDrawer').style.transform='translateY(100%)'}
 
+function updateRootVars() {
+    const root = document.documentElement;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    const cols = w > 600 ? 5 : 4; // more columns on bigger screens
+    const rows = h > 800 ? 6 : 5; 
+    root.style.setProperty('--grid-cols', cols);
+    root.style.setProperty('--grid-rows', rows);
+}
+
+// Run on load
+//updateRootVars();
+
+// Update on resize
+//window.addEventListener('resize', updateRootVars);
+
+
 function openInfo(type) {
     let contentHTML = '';
     for(let index in info[type]){

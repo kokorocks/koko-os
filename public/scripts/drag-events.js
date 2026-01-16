@@ -16,7 +16,7 @@ let overDeleteZone = false;
 //  --mouseDown;
 //}
 
-const DELETE_ZONE_HEIGHT = 80; // px from top
+const DELETE_ZONE_HEIGHT = 50; // px from top
 const deleteZone = document.getElementById('delete-zone');
 
 
@@ -215,7 +215,7 @@ function handleMove(e) {
                 currentPage--;
                 lastEdgeSwitchTime = now;
                 slider.style.transform = `translateX(-${currentPage * 100}%)`;
-            } else if (x > window.innerWidth - EDGE_MARGIN) {
+            } else if (x > window.innerWidth - EDGE_MARGIN && currentPage < 12) {
                 // If dragging beyond last page → create one
                 if (currentPage === pages.length - 1 && pages.length<13) {
                     pages.push(new Array(grid).fill(null)); // empty page
@@ -246,15 +246,17 @@ function handleMove(e) {
                 dragGhost = null;
                 return;
             }
-
+            deleteZone.classList.remove('active');
+            
             // Remove item from its source
             setItem(dragSrc, null);
-
+            
             cleanupEmptyPages();
             saveState();
             render();
-
+            
             dragGhost.remove();
+            overDeleteZone=false
             dragGhost = null;
             return;
         }

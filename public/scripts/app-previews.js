@@ -98,61 +98,61 @@ function renderAppPreviews() {
     let centerThisApp = true;
 
     openApps.forEach((app, i) => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'app-wrapper';
-    if (centerThisApp) {
-        wrapper.classList.add('centered');
-        centerThisApp = false;
-    }
-
-    // --- Clone iframe (preview) ---
-    const previewClone = app.cloneNode(true);
-    previewClone.id = '';
-    previewClone.classList.remove('closed', 'closing', 'open');
-    previewClone.classList.add('preview');
-    previewClone.style.pointerEvents = 'none';
-    wrapper.appendChild(previewClone);
-
-    // --- Overlay to block interactions ---
-    const overlay = document.createElement('div');
-    overlay.style.position = 'absolute';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.pointerEvents = 'auto';
-    wrapper.appendChild(overlay);
-
-    // --- PREVIEW ICON (move on top) ---
-    const icon = document.createElement('div');
-    icon.className = 'preview-icon';
-    icon.style.background = appDB[app.classList[0].toLowerCase()].color;
-    icon.innerHTML = `<i class="fas ${appDB[app.classList[0].toLowerCase()].icon}"></i>`;
-    icon.style.position = 'absolute';
-    icon.style.top = '-25px'; // float above iframe
-    icon.style.left = '50%';
-    icon.style.transform = 'translateX(-50%)';
-    icon.style.zIndex = '9999';
-    icon.style.pointerEvents = 'none'; // allow clicks through
-    wrapper.appendChild(icon);
-
-    previewArea.appendChild(wrapper);
-
-    // --- Click to open real app ---
-    wrapper.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const realApp = document.getElementsByClassName(app.classList[0])[0];
-        if (!realApp) return;
-
-        // Update previewIndex to bring to front
-        app.previewIndex = ++previewIdx;
-
-        realApp.id = 'appFrame';
-        realApp.classList.remove('closed', 'closing');
-        realApp.classList.add('open');
-
-        closeAppPreviews();
-    });
+        const wrapper = document.createElement('div');
+        wrapper.className = 'app-wrapper';
+        if (centerThisApp) {
+            wrapper.classList.add('centered');
+            centerThisApp = false;
+        }
+    
+        // --- Clone iframe (preview) ---
+        const previewClone = app.cloneNode(true);
+        previewClone.id = '';
+        previewClone.classList.remove('closed', 'closing', 'open');
+        previewClone.classList.add('preview');
+        previewClone.style.pointerEvents = 'none';
+        wrapper.appendChild(previewClone);
+    
+        // --- Overlay to block interactions ---
+        const overlay = document.createElement('div');
+        overlay.style.position = 'absolute';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.pointerEvents = 'auto';
+        wrapper.appendChild(overlay);
+    
+        // --- PREVIEW ICON (move on top) ---
+        const icon = document.createElement('div');
+        icon.className = 'preview-icon';
+        icon.style.background = appDB[app.classList[0].toLowerCase()].color;
+        icon.innerHTML = `<i class="fas ${appDB[app.classList[0].toLowerCase()].icon}"></i>`;
+        icon.style.position = 'absolute';
+        icon.style.top = '-25px'; // float above iframe
+        icon.style.left = '50%';
+        icon.style.transform = 'translateX(-50%)';
+        icon.style.zIndex = '9999';
+        icon.style.pointerEvents = 'none'; // allow clicks through
+        wrapper.appendChild(icon);
+    
+        previewArea.appendChild(wrapper);
+    
+        // --- Click to open real app ---
+        wrapper.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const realApp = document.getElementsByClassName(app.classList[0])[0];
+            if (!realApp) return;
+        
+            // Update previewIndex to bring to front
+            app.previewIndex = ++previewIdx;
+        
+            realApp.id = 'appFrame';
+            realApp.classList.remove('closed', 'closing');
+            realApp.classList.add('open');
+        
+            closeAppPreviews();
+        });
 
     makeDraggable(wrapper);
 });
