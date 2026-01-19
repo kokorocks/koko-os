@@ -1,0 +1,222 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Glassmorphism Lock Screen</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+
+<style>
+    :root {
+        --font-main: 'Outfit', sans-serif;
+        --glass-high: rgba(255, 255, 255, 0.25);
+        --glass-med: rgba(255, 255, 255, 0.15);
+        --glass-low: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.2);
+        --blur-amount: 25px;
+        --shadow-soft: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        --accent: #a2d2ff;
+    }
+
+    * { box-sizing: border-box; user-select: none; outline: none; -webkit-tap-highlight-color: transparent; }
+
+    body {
+        margin: 0; height: 100vh;
+        display: flex; justify-content: center; align-items: center;
+        background: #eef2f3;
+        font-family: var(--font-main);
+        overflow: hidden;
+    }
+
+    /* --- Phone Hardware --- */
+    .phone-chassis {
+        width: 360px; height: 760px;
+        background: #1a1a1a;
+        border-radius: 48px;
+        padding: 10px;
+        box-shadow: 0 30px 60px -10px rgba(0,0,0,0.6), inset 0 0 0 2px #333;
+        position: relative;
+    }
+
+    /* Buttons on side (visual only) */
+    .btn-side { position: absolute; background: #222; border-radius: 4px; left: -4px; }
+    .vol-up { top: 120px; height: 40px; width: 4px; }
+    .vol-down { top: 170px; height: 40px; width: 4px; }
+    .pwr-side { top: 240px; height: 60px; width: 4px; right: -4px; left: auto; background: #333; }
+
+    .screen {
+        width: 100%; height: 100%;
+        background: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2670&auto=format&fit=crop') center/cover no-repeat;
+        border-radius: 40px;
+        position: relative;
+        overflow: hidden;
+        color: white;
+          display: grid;
+  place-items: center; /* Centers both horizontally and vertically with a single property */
+
+  /* Ensure the container takes up the full screen height */
+  /*height: 100vh;
+  width: 100vw;*/
+    }
+
+    /* Dark Overlay for readability */
+    .screen::before {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.4));
+        pointer-events: none;
+    }
+
+    /* Bottom Area */
+    .bottom-area {
+        margin-top: auto; margin-bottom: 25px;
+        width: 100%;
+        display: flex; justify-content: space-between; padding: 0 40px; align-items: center;
+    }
+    .circle-btn {
+        width: 35px; height: 35px;
+        border-radius: 25%;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(5px);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; color: white; transition: 0.2s;
+    }
+    
+    .circle-btn:active { background: rgba(255,255,255,0.2); }
+
+#fullscreenBtn {
+    position: absolute;
+    bottom: 10px;      /* edge padding */
+    right: 10px;       /* edge padding */
+    width: 50px;
+    height: 50px;
+    border-radius: 25px;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 999;
+    transition: background 0.2s;
+}
+
+#fullscreenBtn:hover {
+    background: rgba(0,0,0,0.8);
+}
+
+
+.circle{
+  border-radius: 100%;
+  width: 125px;
+  height: 125px;
+  /*background-color: rgba(red, green, blue, alpha);*/
+  backdrop-filter: blur(5px);
+}
+
+  /* From Uiverse.io by Shoh2008 */ 
+.loader {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 12rem;
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+  backdrop-filter: blur(5px);
+}
+
+.loader:before,
+  .loader:after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  animation: pulsOut 1.8s ease-in-out infinite;
+  filter: drop-shadow(0 0 1rem rgba(255, 255, 255, 0.75));
+}
+
+.loader:before {
+  width: 100%;
+  padding-bottom: 100%;
+  box-shadow: inset 0 0 0 1rem #fff;
+  animation-name: pulsIn;
+}
+
+.loader:after {
+  width: calc(100% - 2rem);
+  padding-bottom: calc(100% - 2rem);
+  box-shadow: 0 0 0 0 #fff;
+}
+
+@keyframes pulsIn {
+  0% {
+    box-shadow: inset 0 0 0 1rem #fff;
+    opacity: 1;
+  }
+
+  50%, 100% {
+    box-shadow: inset 0 0 0 0 #fff;
+    opacity: 0;
+  }
+}
+
+@keyframes pulsOut {
+  0%, 50% {
+    box-shadow: 0 0 0 0 #fff;
+    opacity: 0;
+  }
+
+  100% {
+    box-shadow: 0 0 0 1rem #fff;
+    opacity: 1;
+  }
+}
+</style>
+</head>
+<body>
+<!-- Fullscreen Button -->
+<div id="fullscreenBtn" title="Fullscreen">
+    <i class="fas fa-expand"></i>
+</div>
+
+<div class="phone-chassis">
+    <div class="screen" id="mainScreen">
+<!-- From Uiverse.io by Shoh2008 --> 
+<span class="loader"></span>
+<div id="circle"></div>
+    </div>
+</div>
+
+<script>
+
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+fullscreenBtn.onclick = () => {
+    const el = document.documentElement; // whole page
+    if (!document.fullscreenElement) {
+        // Request fullscreen
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); // Safari
+        else if (el.msRequestFullscreen) el.msRequestFullscreen(); // IE11
+    } else {
+        // Exit fullscreen
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+    }
+};
+
+</script>
+</body>
+</html>
+
+
+<style type="text/css" media="all">
+
+
+</style>
+

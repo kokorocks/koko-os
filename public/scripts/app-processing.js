@@ -68,47 +68,42 @@ function createIcon(itemData, isDock=false) {
 
 function openApp(id) {
     cancelDrag();
-    //closeDrawer();
-    document.getElementById('appDrawer').style.transform='translateY(100%)'//.classList.remove('open');
-    if(appDB[id] && appDB[id].app) {
-        console.log('opening app:', id)
-        if(document.getElementsByClassName(appDB[id].name).length === 0) { // Prevent multiple instances
-            console.log('creating iframe for app:', id)
 
-        let el=document.createElement('iframe');
-        el.src='apps/'+appDB[id].app || 'app-placeholder.htm';
-        /*el.style.position='absolute';
-        el.style.top='0';
-        el.style.left='0';
-        el.style.width='100%';
-        el.style.height='100%';
-        el.style.border='none';
-        el.style.zIndex='500';*/
-        el.id='appFrame';
-        el.classList.add(appDB[id].name);
-        el.classList.add('all-apps')
-        el.previewIndex=previewIdx
-        previewIdx++
+    document.getElementById('appDrawer').style.transform = 'translateY(100%)';
+
+    if (!appDB[id] || !appDB[id].app) return;
+
+    let el;
+
+    // ---------- CREATE ----------
+    if (document.getElementsByClassName(appDB[id].name).length === 0) {
+        el = document.createElement('iframe');
+        el.src = 'apps/' + appDB[id].app;
+        el.id = 'appFrame';
+        el.classList.add(appDB[id].name, 'all-apps');
+        el.previewIndex = previewIdx++;
         document.getElementById('multiappsarea').appendChild(el);
-        appopen = document.getElementById('appFrame');
-
-        setTimeout(() => {
-            el.classList.add('open');
-        }, 50);}
-        else {
-            const el = document.getElementsByClassName(appDB[id].name)[0];
-            console.log('found iframe for app:', id, el)
-        if (!el) {
-            console.error("No element found with class:", appDB[id].name);
-            return; // safely exit
-        }
-
-            appopen = el
-            el.classList.remove('closed');
-            el.classList.remove('closing');
-            el.classList.add('open');
-            el.id = 'appFrame';
-        }
     }
-    else if(typeof id === 'string' && appDB[id]) alert("Opening " + appDB[id].name);
+    // ---------- REOPEN ----------
+    else {
+        el = document.getElementsByClassName(appDB[id].name)[0];
+        el.id = 'appFrame';
+        el.classList.remove('closed', 'closing');
+    }
+
+    appopen = el;
+
+    // ---------- FORCE START STATE ----------
+    el.style.transition = 'none';
+    el.style.transform = 'translateY(25vh) scale(0.4)';
+    el.style.opacity = '0';
+
+    // 🔥 FORCE REFLOW (this is the missing piece)
+    el.offsetHeight;
+
+    // ---------- ANIMATE IN ----------
+    el.style.transition = '';
+    el.classList.add('open');
+    el.style.transform = '';
+    el.style.opacity = '';
 }

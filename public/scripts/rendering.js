@@ -47,6 +47,7 @@ function render() {
         const item = dock[i];
         const slot = document.createElement('div');
         slot.className = 'app-slot';
+        slot.classList.add('dock-app-slot')
         slot.dataset.loc = 'dock';
         slot.dataset.i = i;
         

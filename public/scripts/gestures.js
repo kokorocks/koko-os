@@ -2,229 +2,248 @@ const screen = document.getElementById('mainScreen');
 const hammer = new Hammer(screen);
 
 hammer.get('pan').set({
-    direction: Hammer.DIRECTION_ALL, // vertical + horizontal
-    threshold: 2
+    direction: Hammer.DIRECTION_ALL,
+    threshold: 5 
 });
 
-// ---------- STATE ----------
-let activeApp = null;
-let gestureActive = false;
-let startTime = 0;
-let lastDeltaY = 0;
-let rafPending = false;
+// ---------- CONFIG & STATE ----------
+const SETTINGS_TRIGGER_ZONE = 0.10; // Top 10%
+const DRAWER_TRIGGER_ZONE = 0.85;   // Bottom 15%
+const PREVIEW_TRIGGER_ZONE = 0.95;  // Very bottom 5% (Home Bar area)
+const FLICK_VELOCITY = 0.4;         
 
-// Quick Settings / App Drawer gestures
-let shadeGesture = false;
-let drawerGesture = false;
-let shadeCloseGesture = false;
-let previewGesture = false;
+let activeGesture = null; 
+let activeApp = null;
+let rafPending = false;
+let currentDeltaY = 0;
 
 const shade = document.getElementById('notifShade');
 const appDrawer = document.getElementById('appDrawer');
-const PREVIEW_START = 0.88; // bottom 8%
-const DRAWER_START  = 0.78; // above preview
+// Assuming infoPopup is defined globally elsewhere as in your previous snippets
+const noAppOpen = () => !document.querySelector('#appFrame.open');
+const isShadeOpen = () => shade.classList.contains('open');
 
-function noAppOpen() {
-    return !document.querySelector('#appFrame.open');
-}
-
+// ---------- PAN START ----------
 hammer.on('panstart', (e) => {
-    if(isDragging) return
-    const openApp = document.querySelector('#appFrame.open');
+    if (window.isDragging) return; 
+
     const yRatio = e.center.y / window.innerHeight;
+    const openApp = document.querySelector('#appFrame.open');
 
-    // --- APP DRAG (only bottom-most zone) ---
-    if (openApp && yRatio > PREVIEW_START && !shade.classList.contains('open') && !isDragging && !previewOpen) {
+    activeGesture = null;
+    activeApp = null;
+    currentDeltaY = 0;
+
+    // 1. CLOSE SHADE (If open)
+    if (isShadeOpen()) {
+        activeGesture = 'shade_close';
+        shade.style.transition = 'none';
+        return;
+    }
+
+    // 2. OPEN SHADE (Top)
+    if (yRatio < SETTINGS_TRIGGER_ZONE && noAppOpen()) {
+        activeGesture = 'shade_open';
+        shade.style.transition = 'none';
+        return;
+    }
+
+    // 3. APP GESTURES (Close App)
+    if (openApp && yRatio > DRAWER_TRIGGER_ZONE) {
+        activeGesture = 'app_close';
         activeApp = openApp;
-        gestureActive = true;
-        startTime = performance.now();
-        lastDeltaY = 0;
         activeApp.classList.add('is-dragging');
+        activeApp.style.transition = 'none';
         return;
     }
 
-    // --- PREVIEW (beats drawer) ---
-    if (noAppOpen() && yRatio > PREVIEW_START && !shade.classList.contains('open') && !drawer.classList.contains('open') && !document.getElementById('infopopup').classList.contains('open') && !isDragging && !previewOpen) {
-        previewGesture = true;
+    // 4. HOME SCREEN BOTTOM GESTURES
+    if (noAppOpen() && yRatio > DRAWER_TRIGGER_ZONE) {
+        // If swipe starts at the very bottom edge, trigger Previews
+        if (yRatio > PREVIEW_TRIGGER_ZONE) {
+            activeGesture = 'preview_open';
+        } else {
+            activeGesture = 'drawer_open';
+            appDrawer.style.transition = 'none';
+        }
         return;
-    }
-
-    // --- APP DRAWER ---
-    if (noAppOpen() && yRatio > DRAWER_START && !shade.classList.contains('open') && !isDragging && !previewOpen) {
-        drawerGesture = true;
-        return;
-    }
-
-    // --- QUICK SETTINGS ---
-    if (yRatio < 0.15 && !isDragging && !previewOpen) {
-        shadeGesture = true;
-        return;
-    }
-
-    // --- CLOSE SHADE ---
-    if (shade.classList.contains('open') && yRatio > DRAWER_START && !previewOpen) {
-        shadeCloseGesture = true;
     }
 });
-
 
 // ---------- PAN MOVE ----------
 hammer.on('panmove', (e) => {
-    if(isDragging) return
-    // --- App Drag ---
-    if (gestureActive && activeApp) {
-        // Only track upward dragging to close
-        if (e.deltaY > 0) return;
+    if (!activeGesture || window.isDragging) return;
+    currentDeltaY = e.deltaY;
 
-        lastDeltaY = e.deltaY;
-
-        if (!rafPending) {
-            rafPending = true;
-            requestAnimationFrame(updateDrag);
-        }
-        return;
-    }
-
-    // --- Quick Settings ---
-    if (shadeGesture && !isDragging && !previewOpen) {
-        if (e.deltaY < 0) return; // only pull down
-        const progress = Math.min(e.deltaY / (window.innerHeight * 0.35), 1);
-        shade.style.transform = `translateY(${(-100 + progress * 100)}%)`;
-        return;
-    }
-
-    if (shadeCloseGesture && !isDragging && !previewOpen) {
-        if (e.deltaY > 0) return; // only pull up
-        const progress = Math.min(Math.abs(e.deltaY) / (window.innerHeight * 0.35), 1);
-        shade.style.transform = `translateY(${(100 - progress * 100)}%)`;
-        return;
-    }
-
-    // --- App Drawer ---
-    if (drawerGesture && !isDragging && noAppOpen() && !previewOpen) {
-        if (e.deltaY > 0) return; // only pull up
-        const progress = Math.min(Math.abs(e.deltaY) / (window.innerHeight * 0.35), 1);
-        appDrawer.style.transform = `translateY(${100 - progress * 100}%)`;
-        return;
+    if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(handleDragFrame);
     }
 });
+
+// ---------- ANIMATION FRAME ----------
+function handleDragFrame() {
+    rafPending = false;
+    const screenH = window.innerHeight;
+
+    switch (activeGesture) {
+        case 'shade_open':
+            if (currentDeltaY < 0) currentDeltaY = 0;
+            shade.style.transform = `translateY(calc(-100% + ${currentDeltaY}px))`;
+            break;
+
+        case 'shade_close':
+            const safeDelta = Math.min(0, currentDeltaY); 
+            shade.style.transform = `translateY(${safeDelta}px)`;
+            break;
+
+        case 'drawer_open':
+            if (currentDeltaY > 0) currentDeltaY *= 0.2; 
+            appDrawer.style.transform = `translateY(calc(100% + ${currentDeltaY}px))`;
+            break;
+
+        case 'preview_open':
+            // Visual feedback: Shrink the home screen slightly as you pull up
+            const previewProgress = Math.min(Math.abs(currentDeltaY) / 200, 1);
+            const previewScale = 1 - (previewProgress * 0.05);
+            screen.style.transform = `scale(${previewScale})`;
+            screen.style.borderRadius = `${previewProgress * 30}px`;
+            break;
+
+        case 'app_close':
+            if (currentDeltaY > 0) return;
+            const progress = Math.min(Math.abs(currentDeltaY) / (screenH * 0.5), 1);
+            const scale = 1 - (progress * 0.15);
+            activeApp.style.transform = `translateY(${currentDeltaY * 0.5}px) scale(${scale})`; 
+            break;
+    }
+}
 
 // ---------- PAN END ----------
 hammer.on('panend', (e) => {
-    if(isDragging) return
-    // --- APP DRAG END ---
-    if (gestureActive && activeApp) {
-        gestureActive = false;
+    if (!activeGesture || window.isDragging) return;
+
+    const velocity = e.velocityY;
+    const distance = Math.abs(e.deltaY);
+    const screenH = window.innerHeight;
+    
+    // Reset screen styles if they were modified by preview gesture
+    screen.style.transition = 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)';
+    screen.style.transform = '';
+    screen.style.borderRadius = '';
+
+    shade.style.transition = 'transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)';
+    appDrawer.style.transition = 'transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)';
+    
+    if (activeApp) {
+        activeApp.style.transition = 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)';
         activeApp.classList.remove('is-dragging');
-
-        const velocity = e.velocityY;
-        const distance = Math.abs(e.deltaY);
-
-        if (velocity < -0.6 || distance > 120) {
-            closeApp(activeApp);
-        } else {
-            resetAppStyles(activeApp);
-        }
-
-        activeApp.style.opacity = 1;
-        activeApp = null;
-        return;
     }
 
-    // --- PREVIEW ---
-    if (previewGesture && !isDragging) {
-        if(document.getElementById('infopopup').classList.contains('open')){ document.getElementById('infopopup').classList.remove('open'); return}
-        previewGesture = false;
+    switch (activeGesture) {
+        case 'shade_open':
+            if (distance > screenH * 0.3 || (velocity > FLICK_VELOCITY && e.deltaY > 0)) {
+                shade.classList.add('open');
+                shade.style.transform = 'translateY(0)';
+            } else {
+                shade.style.transform = 'translateY(-100%)';
+            }
+            break;
 
-        if (Math.abs(e.deltaY) > 80) {
-            openAppPreviews?.();
-        }
-        return;
+        case 'shade_close':
+            if (distance > screenH * 0.2 || (velocity < -FLICK_VELOCITY && e.deltaY < 0)) {
+                shade.classList.remove('open');
+                shade.style.transform = 'translateY(-100%)';
+            } else {
+                shade.style.transform = 'translateY(0)';
+            }
+            break;
+
+        case 'drawer_open':
+            if ((distance > screenH * 0.2 && e.deltaY < 0) || velocity < -FLICK_VELOCITY) {
+                appDrawer.classList.add('open');
+                appDrawer.style.transform = 'translateY(0)';
+            } else {
+                appDrawer.style.transform = 'translateY(100%)';
+            }
+            break;
+
+        case 'preview_open':
+            // If swiped up enough, trigger the App Switcher
+            if (distance > 80 || velocity < -FLICK_VELOCITY) {
+                if (typeof openAppPreviews === 'function') {
+                    openAppPreviews();
+                }
+            }
+            break;
+
+        case 'app_close':
+            if ((distance > 100 && e.deltaY < 0) || velocity < -0.6) {
+                closeApp(activeApp);
+            } else {
+                resetAppStyles(activeApp);
+            }
+            break;
     }
 
-    // --- SHADE OPEN ---
-    if (shadeGesture && !isDragging && !previewOpen) {
-        shadeGesture = false;
-        if (e.deltaY > 120) shade.classList.add('open');
-        shade.style.transform = '';
-        return;
-    }
-
-    // --- SHADE CLOSE ---
-    if (shadeCloseGesture) {
-      //if(document.getElementById('infopopup').classList.contains('open')){ document.getElementById('infopopup').classList.remove('open'); return;}
-        shadeCloseGesture = false;
-        if (Math.abs(e.deltaY) > 120) shade.classList.remove('open');
-        shade.style.transform = '';
-        return;
-    }
-
-    // --- DRAWER ---
-    if (drawerGesture && !isDragging && !previewOpen && noAppOpen() && !previewOpen) {
-      if(document.getElementById('infopopup').classList.contains('open')){ document.getElementById('infopopup').classList.remove('open'); return}
-        drawerGesture = false;
-        if (Math.abs(e.deltaY) > 120) appDrawer.classList.add('open');
-        appDrawer.style.transform = 'translateY(100%)';
-        appDrawer.style.transform = '';
-    }
+    activeGesture = null;
+    rafPending = false;
 });
 
+// (Keep your swipeleft/swiperight and helpers as they were)
 
-// ---------- DRAG UPDATE ----------
-function updateDrag() {
-    rafPending = false;
-
-    const absY = Math.abs(lastDeltaY);
-    const progress = Math.min(absY / (window.innerHeight * 0.5), 1);
-
-    const scale = 1 - progress * 0.2;
-    const translateY = lastDeltaY * 0.4;
-    const opacity = 1 - progress * 0.3;
-
-    activeApp.style.transform = `translateY(${translateY}px) scale(${scale})`;
-    activeApp.style.opacity = opacity;
-}
-
-// ---------- HELPERS ----------
-function closeApp(app) {
-    app.style.transform = 'translateY(-100vh) scale(0.5)';
-    app.style.opacity = '0';
-
-    app.classList.remove('open');
-    app.classList.add('closing');
-
-    setTimeout(() => {
-        app.classList.add('closed');
-        app.id = 'closed';
-        resetAppStyles(app);
-    }, 350);
-}
-
-function resetAppStyles(app) {
-    app.style.transform = '';
-    app.style.borderRadius = '';
-    app.style.opacity = '';
-
-    setTimeout(() => {
-        app.classList.remove('snap-back');
-    }, 300);
-}
-
-// ---------- HORIZONTAL SWIPE FOR PAGES ----------
+// ---------- HORIZONTAL SWIPES (Home Pages) ----------
 hammer.on('swipeleft swiperight', (e) => {
-    if (getOpenApp() || Math.abs(e.deltaY) > Math.abs(e.deltaX)) return;
+    if (activeGesture || isDragging || !noAppOpen() || isShadeOpen()) return;
+    
+    // Prevent swipes if drawer is open
+    if (appDrawer.classList.contains('open')) return;
 
-    if (e.type === 'swipeleft' && currentPage < pages.length - 1 && !infoPopup.classList.contains('open')) {
-        currentPage++;
-        render();
-    } else if (infoPopup.classList.contains('open')) {
-        document.getElementById('infopopup').classList.remove('open')
-    } else if (e.type === 'swiperight') {
+    if (e.type === 'swipeleft') {
+        // Next Page
+        if (currentPage < pages.length - 1 && !infoPopup.classList.contains('open')) {
+            currentPage++;
+            render();
+        } else if (infoPopup.classList.contains('open')) {
+            infoPopup.classList.remove('open');
+        }
+    } 
+    else if (e.type === 'swiperight') {
+        // Previous Page or Open News
         if (currentPage > 0) {
             currentPage--;
             render();
-        } else {
+        } else if (currentPage === 0 && !infoPopup.classList.contains('open')) {
             openInfo('news');
         }
     }
 });
+
+hammer.on('swipeup', (e) => {
+    if(e.pointer===3){
+        alert('screenshot')
+    }
+})
+
+// ---------- REUSED HELPERS ----------
+function closeApp(app) {
+    app.classList.remove('open');
+    app.classList.add('closing');
+    
+    // Animate off screen
+    app.style.transform = 'scale(0.8) translateY(20px)';
+    app.style.opacity = '0';
+
+    setTimeout(() => {
+        app.classList.add('closed');
+        app.classList.remove('closing');
+        app.id = 'closed';
+        resetAppStyles(app);
+    }, 300);
+}
+
+function resetAppStyles(app) {
+    app.style.transform = '';
+    app.style.opacity = '';
+    app.style.transition = '';
+}

@@ -3,18 +3,20 @@ let dragTimer = null;
 let dragGhost = null;
 let dragSrc = null; // { loc, p, i }
 let overDeleteZone = false;
+// At the top of your file
+//let dock = JSON.parse(localStorage.getItem('dock')) || [null, null, null, null];
 
 // Source - https://stackoverflow.com/a
 // Posted by Eugene Lazutkin, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-01-15, License - CC BY-SA 4.0
 
-//var mouseDown = 0;
-//document.body.onmousedown = function() { 
-//  ++mouseDown;
-//}
-//document.body.onmouseup = function() {
-//  --mouseDown;
-//}
+var mouseDown = 0;
+document.body.onmousedown = function() { 
+  ++mouseDown;
+}
+document.body.onmouseup = function() {
+  --mouseDown;
+}
 
 const DELETE_ZONE_HEIGHT = 50; // px from top
 const deleteZone = document.getElementById('delete-zone');
@@ -231,82 +233,72 @@ function handleMove(e) {
             }
         }
 
-    function handleEnd(e) {
-        clearTimeout(dragTimer);
-        if(!isDragging) return;
-        
-        isDragging = false;
-        dragGhost.style.display = 'none'; // hide to peek below
+function handleEnd(e) {
+    clearTimeout(dragTimer);
+    if (!isDragging) return;
+    
+    isDragging = false;
 
-            // --- DELETE ---
-        if (overDeleteZone) {
-            // Drawer apps = just cancel (nothing to delete)
-            if (dragSrc.loc === 'drawer') {
-                dragGhost.remove();
-                dragGhost = null;
-                return;
-            }
-            deleteZone.classList.remove('active');
-            
-            // Remove item from its source
+    // 1. Force Ghost Hidden so we can see what's underneath
+    if(dragGhost) dragGhost.style.display = 'none';
+
+    // 2. Detect what is under the finger
+    const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+    const elBelow = document.elementFromPoint(x, y);
+
+    // 3. Clean up ghost
+    if(dragGhost) {
+        dragGhost.remove();
+        dragGhost = null;
+    }
+    document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
+
+    // 4. Handle Delete Zone
+    if (overDeleteZone) {
+        deleteZone.classList.remove('active');
+        overDeleteZone = false;
+        if (dragSrc.loc !== 'drawer') {
             setItem(dragSrc, null);
-            
             cleanupEmptyPages();
             saveState();
             render();
-            
-            dragGhost.remove();
-            overDeleteZone=false
-            dragGhost = null;
-            return;
         }
-        
-        const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
-        const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-        dragGhost.style.display = 'none';
-        const elBelow = document.elementFromPoint(x, y);
-        dragGhost.style.display = '';
- 
-        
-        dragGhost.remove();
-        dragGhost = null;
+        return;
+    }
 
-        // Restore opacities
-        document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
-
-        if(elBelow) {
-            const targetSlot = elBelow.closest('.app-slot');
-            if(targetSlot) {
-                const tgtLoc = targetSlot.dataset.loc;
-                const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
-                const tgtI = parseInt(targetSlot.dataset.i);
+    // 5. Handle Drop
+    if (elBelow) {
+        const targetSlot = elBelow.closest('.app-slot');
+        if (targetSlot) {
+            const tgtLoc = targetSlot.dataset.loc;
+            const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
+            const tgtI = parseInt(targetSlot.dataset.i);
 
             handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI });
         } else {
-            // Dropped on empty space in modal or page?
-            // If dropped on "page" background but not a slot, we could try to find the nearest empty slot, 
-            // but for grid systems, dropping "on" a slot is best. 
-            // If dragging out of folder and dropped on empty page area:
+            // Logic for dropping on empty page space
             if (dragSrc.loc === 'folder' && !folderModal.classList.contains('open')) {
-               // Find first empty slot on current page
-               const emptyIdx = pages[currentPage].findIndex(x => x === null);
-               if (emptyIdx !== -1) {
-                   handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
-               }
+                const emptyIdx = pages[currentPage].findIndex(x => x === null);
+                if (emptyIdx !== -1) {
+                    handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
+                }
             }
         }
     }
 
     window.removeEventListener('mousemove', handleMove);
     window.removeEventListener('mouseup', handleEnd);
+    window.removeEventListener('touchmove', handleMove);
+    window.removeEventListener('touchend', handleEnd);
 }
-
 function getItem(ref) {
-    if(ref.loc === 'page') return pages[ref.p][ref.i];
-    if(ref.loc === 'dock') return dock[ref.i];
-    if(ref.loc === 'folder') {
+    if (ref.loc === 'page') return pages[ref.p] ? pages[ref.p][ref.i] : null;
+    if (ref.loc === 'dock') return dock[ref.i] || null; // Force null if undefined
+    if (ref.loc === 'folder') {
+        if (!currentOpenFolder) return null;
         const folder = pages[currentOpenFolder.p][currentOpenFolder.i];
-        return folder.apps[ref.i];
+        return folder ? folder.apps[ref.i] : null;
     }
     return null;
 }
@@ -357,17 +349,18 @@ function handleDrop(src, tgt) {
     // 1. Dropping into Folder (Reordering)
 
         // DRAWER → GRID
-    if (src.loc === 'drawer') {
-        if (tgt.loc !== 'page') return;
+    // Inside handleDrop(src, tgt)
+if (src.loc === 'drawer') {
+    if (tgt.loc !== 'page' && tgt.loc !== 'dock') return;
 
-        // Only drop on empty slots
-        if (getItem(tgt) !== null) return;
+    // Use !getItem(tgt) to catch both null AND undefined
+    if (getItem(tgt)) return; 
 
-        setItem(tgt, src.key);
-        saveState();
-        render();
-        return;
-    }
+    setItem(tgt, src.key);
+    saveState();
+    render();
+    return;
+}
 
     if (tgt.loc === 'folder' && src.loc === 'folder') {
         // Reorder inside folder

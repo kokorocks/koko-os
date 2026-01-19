@@ -16,7 +16,7 @@ const appDB = {
     'notes': { name: 'Notes', icon: 'fa-sticky-note', color: '#FFD60A' },
     'settings': { name: 'Settings', icon: 'fa-cog', color: '#8E8E93' },
     'store': { name: 'App Store', icon: 'fa-layer-group', color: '#007AFF' },
-    'safari': { name: 'Safari', icon: 'fa-compass', color: '#007AFF' },
+    'browser': { name: 'Browser', icon: 'fa-globe', color: '#007AFF' },
     'music': { name: 'Music', icon: 'fa-music', color: '#FF2D55' },
     'files': { name: 'Files', icon: 'fa-folder', color: '#007AFF' },
     'health': { name: 'Health', icon: 'fa-heart', color: '#FF2D55' },
@@ -28,7 +28,7 @@ const defaultPages = [
     ['files', 'health', 'wallet', 'store', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 ];
 
-const defaultDock = ['camera', 'safari', 'mail', 'music'];
+const defaultDock = ['camera', 'browser', 'mail', 'music'];
 const info = {
     news: {}
 };
