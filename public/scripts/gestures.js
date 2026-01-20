@@ -47,7 +47,7 @@ hammer.on('panstart', (e) => {
         shade.style.transition = 'none';
         return;
     }
-
+    
     // 3. APP GESTURES (Close App)
     if (openApp && yRatio > DRAWER_TRIGGER_ZONE) {
         activeGesture = 'app_close';
@@ -70,6 +70,14 @@ hammer.on('panstart', (e) => {
     }
 });
 
+hammer.on('swipeup', (e) => {
+    alert('bruh')
+    if(e.pointer===3){
+        alert('screenshot')
+    } else if (infoPopup.classList.contains('open')){
+        infoPopup.classList.remove('open');
+    }
+})
 // ---------- PAN MOVE ----------
 hammer.on('panmove', (e) => {
     if (!activeGesture || isDragging) return;
@@ -161,6 +169,7 @@ hammer.on('panend', (e) => {
 
         case 'drawer_open':
             if ((distance > screenH * 0.2 && e.deltaY < 0) || velocity < -FLICK_VELOCITY) {
+                infoPopup.classList.remove('open')
                 appDrawer.classList.add('open');
                 appDrawer.style.transform = 'translateY(0)';
             } else {
@@ -172,6 +181,7 @@ hammer.on('panend', (e) => {
             // If swiped up enough, trigger the App Switcher
             if ((distance > 8) || velocity < -FLICK_VELOCITY) {
                 if (typeof openAppPreviews === 'function') {
+                    infoPopup.classList.remove('open')
                     openAppPreviews();
                 }
             }
@@ -204,37 +214,35 @@ hammer.on('swipeleft swiperight', (e) => {
     if (activeGesture || isDragging || isShadeOpen()) return;
     
     // Prevent swipes if drawer is open
-    if (appDrawer.classList.contains('open')) return;
+    //if (appDrawer.classList.contains('open')) return;
 
     if (e.type === 'swipeleft') {
+        console.log('l')
         // Next Page
         if (currentPage < pages.length - 1 && !infoPopup.classList.contains('open') && noAppOpen()) {
             currentPage++;
             render();
         } else if (infoPopup.classList.contains('open') && noAppOpen()) {
             infoPopup.classList.remove('open');
-        } else {
-            alert('back')
+        } else if(!noAppOpen()) {
+            alert('forward')
         }
     } 
     else if (e.type === 'swiperight') {
+        console.log('r')
         // Previous Page or Open News
-        if (currentPage > 0 && noAppOpen()) {
+        if (currentPage > 0 && noAppOpen() && !infoPopup.classList.contains('open')) {
             currentPage--;
             render();
-        } else if (currentPage === 0 && !infoPopup.classList.contains('open') && noAppOpen()) {
+        } else if (infoPopup.classList.contains('open') && noAppOpen()) {
+            infoPopup.classList.remove('open');} else if (currentPage === 0 && !infoPopup.classList.contains('open') && noAppOpen()) {
             openInfo('news');
-        } else {
-            alert('forward')
+        } else if(!noAppOpen()) {
+            alert('back')
         }
     }
 });
 
-hammer.on('swipeup', (e) => {
-    if(e.pointer===3){
-        alert('screenshot')
-    }
-})
 
 // ---------- REUSED HELPERS ----------
 function closeApp(app) {
