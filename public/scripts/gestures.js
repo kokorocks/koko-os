@@ -8,8 +8,8 @@ hammer.get('pan').set({
 
 // ---------- CONFIG & STATE ----------
 const SETTINGS_TRIGGER_ZONE = 0.10; // Top 10%
-const DRAWER_TRIGGER_ZONE = 0.85;   // Bottom 15%
-const PREVIEW_TRIGGER_ZONE = 0.95;  // Very bottom 5% (Home Bar area)
+const DRAWER_TRIGGER_ZONE = 0.80;   // Bottom 15%
+const PREVIEW_TRIGGER_ZONE = 0.92;  // Very bottom 5% (Home Bar area)
 const FLICK_VELOCITY = 0.4;         
 
 let activeGesture = null; 
@@ -170,7 +170,7 @@ hammer.on('panend', (e) => {
 
         case 'preview_open':
             // If swiped up enough, trigger the App Switcher
-            if (distance > 80 || velocity < -FLICK_VELOCITY) {
+            if ((distance > 8 && distance < 300) || velocity < -FLICK_VELOCITY) {
                 if (typeof openAppPreviews === 'function') {
                     openAppPreviews();
                 }
@@ -178,8 +178,14 @@ hammer.on('panend', (e) => {
             break;
 
         case 'app_close':
-            if ((distance > 100 && e.deltaY < 0) || velocity < -0.6) {
+            console.log('distance',distance)
+            console.log('e.deltaY',e.deltaY)
+            console.log('velocity',velocity)
+            if ((distance > 250 && e.deltaY < 0) || velocity < -0.6) {
                 closeApp(activeApp);
+            } else if((distance > 100 && e.deltaY < 0) || velocity < 0){
+                closeApp(activeApp);
+                openAppPreviews();
             } else {
                 resetAppStyles(activeApp);
             }
