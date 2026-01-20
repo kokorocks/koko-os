@@ -25,7 +25,7 @@ const isShadeOpen = () => shade.classList.contains('open');
 
 // ---------- PAN START ----------
 hammer.on('panstart', (e) => {
-    if (window.isDragging) return; 
+    if (isDragging) return; 
 
     const yRatio = e.center.y / window.innerHeight;
     const openApp = document.querySelector('#appFrame.open');
@@ -72,7 +72,7 @@ hammer.on('panstart', (e) => {
 
 // ---------- PAN MOVE ----------
 hammer.on('panmove', (e) => {
-    if (!activeGesture || window.isDragging) return;
+    if (!activeGesture || isDragging) return;
     currentDeltaY = e.deltaY;
 
     if (!rafPending) {
@@ -121,7 +121,7 @@ function handleDragFrame() {
 
 // ---------- PAN END ----------
 hammer.on('panend', (e) => {
-    if (!activeGesture || window.isDragging) return;
+    if (!activeGesture || isDragging) return;
 
     const velocity = e.velocityY;
     const distance = Math.abs(e.deltaY);
@@ -170,7 +170,7 @@ hammer.on('panend', (e) => {
 
         case 'preview_open':
             // If swiped up enough, trigger the App Switcher
-            if ((distance > 8 && distance < 300) || velocity < -FLICK_VELOCITY) {
+            if ((distance > 8) || velocity < -FLICK_VELOCITY) {
                 if (typeof openAppPreviews === 'function') {
                     openAppPreviews();
                 }
@@ -184,8 +184,8 @@ hammer.on('panend', (e) => {
             if ((distance > 250 && e.deltaY < 0) || velocity < -0.6) {
                 closeApp(activeApp);
             } else if((distance > 100 && e.deltaY < 0) || velocity < 0){
-                closeApp(activeApp);
                 openAppPreviews();
+                closeApp(activeApp);
             } else {
                 resetAppStyles(activeApp);
             }
@@ -200,27 +200,32 @@ hammer.on('panend', (e) => {
 
 // ---------- HORIZONTAL SWIPES (Home Pages) ----------
 hammer.on('swipeleft swiperight', (e) => {
-    if (activeGesture || isDragging || !noAppOpen() || isShadeOpen()) return;
+    
+    if (activeGesture || isDragging || isShadeOpen()) return;
     
     // Prevent swipes if drawer is open
     if (appDrawer.classList.contains('open')) return;
 
     if (e.type === 'swipeleft') {
         // Next Page
-        if (currentPage < pages.length - 1 && !infoPopup.classList.contains('open')) {
+        if (currentPage < pages.length - 1 && !infoPopup.classList.contains('open') && noAppOpen()) {
             currentPage++;
             render();
-        } else if (infoPopup.classList.contains('open')) {
+        } else if (infoPopup.classList.contains('open') && noAppOpen()) {
             infoPopup.classList.remove('open');
+        } else {
+            alert('back')
         }
     } 
     else if (e.type === 'swiperight') {
         // Previous Page or Open News
-        if (currentPage > 0) {
+        if (currentPage > 0 && noAppOpen()) {
             currentPage--;
             render();
-        } else if (currentPage === 0 && !infoPopup.classList.contains('open')) {
+        } else if (currentPage === 0 && !infoPopup.classList.contains('open') && noAppOpen()) {
             openInfo('news');
+        } else {
+            alert('forward')
         }
     }
 });
