@@ -715,3 +715,14 @@ input:checked + .qs-btn-round { background: white; color: black; }
     cursor: pointer;
 }
 
+.installing{
+    background: rgba(86, 86, 86, 0.189);
+    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+    max-width: 50px;
+    max-height: 50px;
+    border-radius: 12px;
+}
+
+.installing>*{
+    transform: scale(0.5);
+}

@@ -61,6 +61,111 @@ function onDragIntent(e, slot) {
     window.addEventListener('mouseup', handleEnd);
 }
 
+// APP DRAGGING WITH ONDRAGSTART (like drawer)
+function onAppDragStart(e, slot) {
+    e.preventDefault();
+    e.dataTransfer.effectAllowed = 'move';
+    
+    // Kill native ghost
+    const img = new Image();
+    img.src = '';
+    e.dataTransfer.setDragImage(img, 0, 0);
+
+    isDragging = true;
+
+    // Haptic feedback
+    if(navigator.vibrate) navigator.vibrate(50);
+
+    // Close drawer on drag
+    appDrawer.classList.remove('open');
+    appDrawer.style.transform = 'translateY(100%)';
+
+    // Set drag source
+    const loc = slot.dataset.loc;
+    const p = slot.dataset.p ? parseInt(slot.dataset.p) : 0;
+    const i = parseInt(slot.dataset.i);
+    dragSrc = { loc, p, i };
+
+    // Create ghost
+    const rect = slot.getBoundingClientRect();
+    dragGhost = slot.cloneNode(true);
+    dragGhost.className = 'dragging-clone';
+    dragGhost.style.width = rect.width + 'px';
+    dragGhost.style.height = rect.height + 'px';
+    dragGhost.style.position = 'fixed';
+    dragGhost.style.pointerEvents = 'none';
+    dragGhost.style.zIndex = '9999';
+
+    const label = dragGhost.querySelector('.app-name');
+    if(label) label.style.display = 'none';
+
+    document.body.appendChild(dragGhost);
+    slot.style.opacity = '0';
+    
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+}
+
+function handleAppDrag(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    updateGhostPosition(e);
+}
+
+function handleAppDragEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+
+    if(dragGhost) dragGhost.style.display = 'none';
+
+    const x = e.clientX;
+    const y = e.clientY;
+    const elBelow = document.elementFromPoint(x, y);
+
+    if(dragGhost) {
+        dragGhost.remove();
+        dragGhost = null;
+    }
+    document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
+
+    // Handle delete zone
+    if (overDeleteZone) {
+        deleteZone.classList.remove('active');
+        overDeleteZone = false;
+        if (dragSrc.loc !== 'drawer') {
+            setItem(dragSrc, null);
+            cleanupEmptyPages();
+            saveState();
+            render();
+        }
+        window.removeEventListener('mousemove', handleMove);
+        window.removeEventListener('mouseup', handleEnd);
+        return;
+    }
+
+    // Handle drop
+    if (elBelow) {
+        const targetSlot = elBelow.closest('.app-slot');
+        if (targetSlot) {
+            const tgtLoc = targetSlot.dataset.loc;
+            const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
+            const tgtI = parseInt(targetSlot.dataset.i);
+
+            handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI });
+        } else {
+            if (dragSrc.loc === 'folder' && !folderModal.classList.contains('open')) {
+                const emptyIdx = pages[currentPage].findIndex(x => x === null);
+                if (emptyIdx !== -1) {
+                    handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
+                }
+            }
+        }
+    }
+    
+    window.removeEventListener('mousemove', handleMove);
+    window.removeEventListener('mouseup', handleEnd);
+}
+
 
 function startDrawerDrag(e, appKey) {
     //e.preventDefault();
@@ -99,12 +204,19 @@ function startDrawerDrag(e, appKey) {
 
 function addDragEvents(slot) {
     if(!slot.classList.contains('app-drawer')){
+        // Make app slots draggable using ondragstart (like drawer)
+        slot.draggable = true;
+        slot.ondragstart = (e) => onAppDragStart(e, slot);
+        slot.ondrag = handleAppDrag;
+        slot.ondragend = handleAppDragEnd;
+        
+        // Keep touch events as fallback for mobile
         slot.addEventListener('touchstart', (e) => handleStart(e, slot), {passive:false});
         slot.addEventListener('touchmove', handleMove, {passive:false});
         slot.addEventListener('touchend', handleEnd);
-        slot.addEventListener('mousedown', (e) => handleStart(e, slot));
     } else {
         console.log('here')
+        slot.draggable = true;
         slot.ondragstart=(e)=>onDragIntent(e, slot)
         slot.addEventListener('touchmove', handleMove, {passive:false});
         slot.addEventListener('touchend', handleEnd);

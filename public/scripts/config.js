@@ -10,7 +10,7 @@ const appDB = {
     'cal':  { name: 'Calendar', icon: 'fa-calendar-alt', color: '#FF3B30' },
     'photos': { name: 'Photos', icon: 'fa-images', color: 'linear-gradient(to bottom right, #ff9a9e, #fad0c4)' },
     'camera': { name: 'Camera', icon: 'fa-camera', color: '#333' },
-    'maps': { name: 'Maps', icon: 'fa-map-marked-alt', color: '#34C759', app: 'maps-app.htm' },
+    'maps': { name: 'Maps', icon: 'fa-map-marked-alt', color: '#34C759', app: 'maps-app.htm', installing: true },
     'weather': { name: 'Weather', icon: 'fa-cloud-sun', color: '#5AC8FA', app: 'weather-app.htm' },
     'clock': { name: 'Clock', icon: 'fa-clock', color: '#000', app: 'clock-app.htm' },
     'notes': { name: 'Notes', icon: 'fa-sticky-note', color: '#FFD60A' },
