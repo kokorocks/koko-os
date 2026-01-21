@@ -3,6 +3,12 @@ let dragTimer = null;
 let dragGhost = null;
 let dragSrc = null; // { loc, p, i }
 let overDeleteZone = false;
+// Add these with your other let variables
+let longPressTimer = null;
+
+const HOLD_DURATION = 500; // ms to hold before drag starts
+const DRAG_THRESHOLD = 10; // pixels to move before cancelling the hold (allows scrolling)
+
 // At the top of your file
 //let dock = JSON.parse(localStorage.getItem('dock')) || [null, null, null, null];
 
@@ -95,8 +101,6 @@ function onAppDragStart(e, slot) {
     dragGhost.style.position = 'fixed';
     dragGhost.style.pointerEvents = 'none';
     dragGhost.style.zIndex = '9999';
-    dragGhost.style.left = (rect.left) + 'px';
-    dragGhost.style.top = (rect.top) + 'px';
 
     const label = dragGhost.querySelector('.app-name');
     if(label) label.style.display = 'none';
@@ -190,15 +194,11 @@ function startDrawerDrag(e, appKey) {
     dragGhost.className = 'dragging-clone';
     dragGhost.style.width = rect.width + 'px';
     dragGhost.style.height = rect.height + 'px';
-    dragGhost.style.position = 'fixed';
-    dragGhost.style.pointerEvents = 'none';
-    dragGhost.style.zIndex = '9999';
-    dragGhost.style.left = (rect.left) + 'px';
-    dragGhost.style.top = (rect.top) + 'px';
 
     const label = dragGhost.querySelector('.app-name');
     if (label) label.style.display = 'none';
 
+    updateGhostPosition(e);
     document.body.appendChild(dragGhost);
     isDragging = true;
 
@@ -210,15 +210,22 @@ function startDrawerDrag(e, appKey) {
 
 function addDragEvents(slot) {
     if(!slot.classList.contains('app-drawer')){
-        // Make app slots draggable using ondragstart (desktop)
+        // Make app slots draggable using ondragstart (like drawer)
         slot.draggable = true;
         slot.ondragstart = (e) => onAppDragStart(e, slot);
         slot.ondrag = handleAppDrag;
         slot.ondragend = handleAppDragEnd;
+        
+        // Keep touch events as fallback for mobile
+        slot.addEventListener('touchstart', (e) => handleStart(e, slot), {passive:false});
+        slot.addEventListener('touchmove', handleMove, {passive:false});
+        slot.addEventListener('touchend', handleEnd);
     } else {
-        // Drawer slots
+        console.log('here')
         slot.draggable = true;
-        slot.ondragstart = (e) => onDragIntent(e, slot)
+        slot.ondragstart=(e)=>onDragIntent(e, slot)
+        slot.addEventListener('touchmove', handleMove, {passive:false});
+        slot.addEventListener('touchend', handleEnd);
     }
 }
     
@@ -240,57 +247,106 @@ function cleanupEmptyPages() {
 
 cleanupEmptyPages()
 
-function handleStart(e, slot) {
-    document.getElementById('appDrawer').style.transform='translateY(100%)'
-    appDrawer.classList.remove('open');
+function initiateDrag(e, slot) {
     isDragging = true;
-    // Determine location
-    const loc = slot.dataset.loc; // 'page', 'dock', 'folder'
+
+    // Haptic Feedback (crucial for mobile feel)
+    if (navigator.vibrate) navigator.vibrate(50);
+
+    // Close drawer if open
+    document.getElementById('appDrawer').style.transform = 'translateY(100%)';
+    appDrawer.classList.remove('open');
+
+    // Set Data Source
+    const loc = slot.dataset.loc;
     const p = slot.dataset.p ? parseInt(slot.dataset.p) : 0;
     const i = parseInt(slot.dataset.i);
     dragSrc = { loc, p, i };
-    
-    if(navigator.vibrate) navigator.vibrate(50);
-    
+
+    // Create Ghost
     const rect = slot.getBoundingClientRect();
     dragGhost = slot.cloneNode(true);
     dragGhost.className = 'dragging-clone';
+    
+    // Styling the ghost
     dragGhost.style.width = rect.width + 'px';
     dragGhost.style.height = rect.height + 'px';
-    
-    // Remove text from ghost for cleaner look
+    dragGhost.style.position = 'fixed';
+    dragGhost.style.zIndex = '9999';
+    dragGhost.style.pointerEvents = 'none'; // Critical: lets events pass through to element below
+    dragGhost.style.opacity = '0.9';
+    dragGhost.style.transform = 'scale(1.1)'; // Slight pop effect
+    dragGhost.style.transition = 'none'; // No lag during move
+
+    // Hide label for cleaner look
     const label = dragGhost.querySelector('.app-name');
-    if(label) label.style.display = 'none';
+    if (label) label.style.display = 'none';
+
+    // Position immediately
     updateGhostPosition(e);
     document.body.appendChild(dragGhost);
-    slot.style.opacity = '0'; 
-    if(e.type === 'mousedown') {
+
+    // Hide original
+    slot.style.opacity = '0';
+}
+
+function handleStart(e, slot) {
+    // 1. Reset states
+    isDragging = false;
+    clearTimeout(longPressTimer);
+    
+    // 2. Record initial touch position
+    if (e.touches) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+    } else {
+        startX = e.clientX;
+        startY = e.clientY;
+    }
+
+    // 3. Start the Long Press Timer
+    longPressTimer = setTimeout(() => {
+        // If this runs, the user held down long enough -> Start Drag
+        initiateDrag(e, slot); 
+    }, HOLD_DURATION);
+
+    // 4. Bind move/end events immediately to track the gesture
+    if (e.type === 'touchstart') {
+        window.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchend', handleEnd);
+    } else {
         window.addEventListener('mousemove', handleMove);
         window.addEventListener('mouseup', handleEnd);
     }
-    
 }
 
 //const topGuard = document.getElementById('top-guard');
 //const bottomGuard = document.getElementById('bottom-guard');
 
 function handleMove(e) {
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+
+    // A. Logic BEFORE drag starts (waiting for long press)
     if (!isDragging) {
-        const x = e.touches ? e.touches[0].clientX : e.clientX;
-        const y = e.touches ? e.touches[0].clientY : e.clientY;
-        const dist = Math.hypot(x - startX, y - startY);
-    
-        if (dist > 8) clearTimeout(dragTimer); // allow slight movement
-        return;
+        const diffX = Math.abs(x - startX);
+        const diffY = Math.abs(y - startY);
+
+        // If user moves finger significantly before timer fires, 
+        // assume they are scrolling or swiping pages -> CANCEL DRAG TIMER
+        if (diffX > DRAG_THRESHOLD || diffY > DRAG_THRESHOLD) {
+            clearTimeout(longPressTimer);
+        }
+        return; // Allow native scrolling
     }
-    e.preventDefault();
+
+    // B. Logic DURING drag
+    if (e.cancelable) e.preventDefault(); // Stop screen from scrolling while dragging app
     updateGhostPosition(e);
-    // DRAG OUT OF FOLDER LOGIC
+
+    // Drag out of folder logic (Keep your existing logic here)
     if (dragSrc.loc === 'folder' && folderModal.classList.contains('open')) {
         const folderRect = folderInner.getBoundingClientRect();
-        const x = e.touches ? e.touches[0].clientX : e.clientX;
-        const y = e.touches ? e.touches[0].clientY : e.clientY;
-        // If dragged outside the folder box, close modal
         if (x < folderRect.left || x > folderRect.right || y < folderRect.top || y > folderRect.bottom) {
             folderModal.classList.remove('open');
         }
@@ -305,21 +361,14 @@ function handleMove(e) {
 
     let lastEdgeSwitchTime = 0;
     const EDGE_MARGIN = 40;
-    
-    // Refresh background animation for current page
-    function updateBackgroundForPage() {
-        if (typeof updateAnimatedBackground === 'function') {
-            updateAnimatedBackground();
-        }
-    }
 
     function updateGhostPosition(e) {
         const x = e.touches ? e.touches[0].clientX : e.clientX;
         const y = e.touches ? e.touches[0].clientY : e.clientY;
 
         if (dragGhost) {
-            dragGhost.style.left = (x - dragGhost.offsetWidth / 2) + 'px';
-            dragGhost.style.top = (y - dragGhost.offsetHeight / 2) + 'px';
+            dragGhost.style.left = (x - dragGhost.offsetWidth / 3) + 'px';
+            dragGhost.style.top = (y - dragGhost.offsetHeight / 3) + 'px';
         }
 
         overDeleteZone = y < DELETE_ZONE_HEIGHT;
@@ -328,36 +377,101 @@ function handleMove(e) {
             deleteZone.classList.toggle('active', overDeleteZone);
         }
 
-        // Page Switching - use screencontainer width
-        const screenRect = screen.getBoundingClientRect();
-        const screenLeft = screenRect.left-25;
-        const screenRight = screenRect.right+25;
-        
+        // Page Switching
         const now = Date.now();
         if (now - lastEdgeSwitchTime > 600 && !folderModal.classList.contains('open')) {
-            if (x < screenLeft + EDGE_MARGIN && currentPage > 0) {
+            if (x < EDGE_MARGIN && currentPage > 0) {
                 currentPage--;
                 lastEdgeSwitchTime = now;
                 slider.style.transform = `translateX(-${currentPage * 100}%)`;
-                render();
-                updateBackgroundForPage();
-            } else if (x > screenRight - EDGE_MARGIN && currentPage < 12) {
+            } else if (x > window.innerWidth - EDGE_MARGIN && currentPage < 12) {
                 // If dragging beyond last page → create one
                 if (currentPage === pages.length - 1 && pages.length<13) {
                     pages.push(new Array(grid).fill(null)); // empty page
                 }
-                                
+
+                
                 currentPage++;
                 lastEdgeSwitchTime = now;
                 slider.style.transform = `translateX(-${currentPage * 100}%)`;
-                render();
-                updateBackgroundForPage();
+                render()
             }
 
             }
         }
 
 function handleEnd(e) {
+    // 1. Always clear the hold timer
+    clearTimeout(longPressTimer);
+
+    // 2. Clean up listeners
+    window.removeEventListener('mousemove', handleMove);
+    window.removeEventListener('mouseup', handleEnd);
+    window.removeEventListener('touchmove', handleMove);
+    window.removeEventListener('touchend', handleEnd);
+
+    // 3. Was this just a click? (No drag happened)
+    if (!isDragging) {
+        // Reset opacity just in case
+        document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
+        
+        // --- PUT YOUR APP OPENING LOGIC HERE ---
+        // e.g., clickHandler(e.target);
+        alert('App opened!');
+        return;
+    }
+
+    // 4. Drag Cleanup (Your existing logic)
+    isDragging = false;
+    
+    if (dragGhost) {
+        dragGhost.remove();
+        dragGhost = null;
+    }
+    document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
+
+    // ... (Rest of your drop logic remains identical) ...
+    
+    // 4. Handle Delete Zone
+    if (overDeleteZone) {
+        deleteZone.classList.remove('active');
+        overDeleteZone = false;
+        if (dragSrc.loc !== 'drawer') {
+            setItem(dragSrc, null);
+            cleanupEmptyPages();
+            saveState();
+            render();
+        }
+        return;
+    }
+
+    // 5. Handle Drop
+    if (elBelow) {
+        const targetSlot = elBelow.closest('.app-slot');
+        if (targetSlot) {
+            const tgtLoc = targetSlot.dataset.loc;
+            const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
+            const tgtI = parseInt(targetSlot.dataset.i);
+
+            handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI });
+        } else {
+            // Logic for dropping on empty page space
+            if (dragSrc.loc === 'folder' && !folderModal.classList.contains('open')) {
+                const emptyIdx = pages[currentPage].findIndex(x => x === null);
+                if (emptyIdx !== -1) {
+                    handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
+                }
+            }
+        }
+    }
+
+    window.removeEventListener('mousemove', handleMove);
+    window.removeEventListener('mouseup', handleEnd);
+    window.removeEventListener('touchmove', handleMove);
+    window.removeEventListener('touchend', handleEnd);
+}
+
+/*function handleEnd(e) {
     clearTimeout(dragTimer);
     if (!isDragging) return;
     
@@ -415,7 +529,7 @@ function handleEnd(e) {
     window.removeEventListener('mouseup', handleEnd);
     window.removeEventListener('touchmove', handleMove);
     window.removeEventListener('touchend', handleEnd);
-}
+}*/
 function getItem(ref) {
     if (ref.loc === 'page') return pages[ref.p] ? pages[ref.p][ref.i] : null;
     if (ref.loc === 'dock') return dock[ref.i] || null; // Force null if undefined
@@ -528,143 +642,9 @@ if (src.loc === 'drawer') {
     saveState();
     cleanupEmptyPages()
     render();
-    
-    // Update background animation after changes
-    if (typeof updateAnimatedBackground === 'function') {
-        updateAnimatedBackground();
-    }
-    
+    //render()
     // If we moved something out of a folder, re-render folder modal if open
     if (src.loc === 'folder' && folderModal.classList.contains('open')) {
          openFolder(pages[currentOpenFolder.p][currentOpenFolder.i], true);
     }
 }
-
-// Global touch handlers for mobile drag (mirrors the drawer approach)
-let touchStartX = 0;
-let touchStartY = 0;
-let touchStartTime = 0;
-let touchDragActive = false;
-let touchSource = null;
-
-document.addEventListener('touchstart', (e) => {
-    if (isDragging) return;
-    
-    const slot = e.target.closest('.app-slot');
-    if (!slot || slot.classList.contains('app-drawer')) return;
-    
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    touchStartTime = Date.now();
-    touchDragActive = false;
-    touchSource = slot;
-}, {passive: true});
-
-document.addEventListener('touchmove', (e) => {
-    if (isDragging || touchDragActive || !touchSource) return;
-    
-    const moveX = e.touches[0].clientX - touchStartX;
-    const moveY = e.touches[0].clientY - touchStartY;
-    const distance = Math.sqrt(moveX * moveX + moveY * moveY);
-    const timeDelta = Date.now() - touchStartTime;
-    
-    // Require at least 10px movement or 300ms hold to activate drag
-    if (distance > 10 || timeDelta > 300) {
-        touchDragActive = true;
-        
-        // Activate drag just like onAppDragStart
-        const slot = touchSource;
-        isDragging = true;
-        
-        if(navigator.vibrate) navigator.vibrate(50);
-        
-        appDrawer.classList.remove('open');
-        appDrawer.style.transform = 'translateY(100%)';
-        
-        const loc = slot.dataset.loc;
-        const p = slot.dataset.p ? parseInt(slot.dataset.p) : 0;
-        const i = parseInt(slot.dataset.i);
-        dragSrc = { loc, p, i };
-        
-        const rect = slot.getBoundingClientRect();
-        dragGhost = slot.cloneNode(true);
-        dragGhost.className = 'dragging-clone';
-        dragGhost.style.width = rect.width + 'px';
-        dragGhost.style.height = rect.height + 'px';
-        dragGhost.style.position = 'fixed';
-        dragGhost.style.pointerEvents = 'none';
-        dragGhost.style.zIndex = '9999';
-        
-        const label = dragGhost.querySelector('.app-name');
-        if(label) label.style.display = 'none';
-        
-        document.body.appendChild(dragGhost);
-        slot.style.opacity = '0';
-    }
-}, {passive: true});
-
-document.addEventListener('touchmove', (e) => {
-    if (!isDragging || !touchDragActive) return;
-    
-    const y = e.touches[0].clientY;
-    
-    // Update delete zone
-    overDeleteZone = y < DELETE_ZONE_HEIGHT;
-    if (deleteZone) {
-        deleteZone.classList.toggle('active', overDeleteZone);
-    }
-    
-    // Update ghost position and page switching
-    updateGhostPosition(e);
-}, {passive: true});
-
-document.addEventListener('touchend', (e) => {
-    if (!isDragging || !touchDragActive) {
-        touchDragActive = false;
-        touchSource = null;
-        return;
-    }
-    
-    isDragging = false;
-    touchDragActive = false;
-    
-    if(dragGhost) dragGhost.style.display = 'none';
-    
-    const x = e.changedTouches[0].clientX;
-    const y = e.changedTouches[0].clientY;
-    const elBelow = document.elementFromPoint(x, y);
-    
-    if(dragGhost) {
-        dragGhost.remove();
-        dragGhost = null;
-    }
-    document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
-    
-    // Handle delete zone
-    if (overDeleteZone) {
-        deleteZone.classList.remove('active');
-        overDeleteZone = false;
-        if (dragSrc.loc !== 'drawer') {
-            setItem(dragSrc, null);
-            cleanupEmptyPages();
-            saveState();
-            render();
-        }
-        touchSource = null;
-        return;
-    }
-    
-    // Handle drop
-    if (elBelow) {
-        const targetSlot = elBelow.closest('.app-slot');
-        if (targetSlot) {
-            const tgtLoc = targetSlot.dataset.loc;
-            const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
-            const tgtI = parseInt(targetSlot.dataset.i);
-            
-            handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI });
-        }
-    }
-    
-    touchSource = null;
-}, {passive: true});
