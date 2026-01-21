@@ -3,11 +3,10 @@ let dragTimer = null;
 let dragGhost = null;
 let dragSrc = null; // { loc, p, i }
 let overDeleteZone = false;
-// Add these with your other let variables
-let longPressTimer = null;
-
-const HOLD_DURATION = 500; // ms to hold before drag starts
-const DRAG_THRESHOLD = 10; // pixels to move before cancelling the hold (allows scrolling)
+const HOLD_DELAY = 500;   // ms (iOS-like)
+const MOVE_THRESHOLD = 60; // px
+let pressTimer = null;
+let pendingSlot = null;
 
 // At the top of your file
 //let dock = JSON.parse(localStorage.getItem('dock')) || [null, null, null, null];
@@ -67,111 +66,6 @@ function onDragIntent(e, slot) {
     window.addEventListener('mouseup', handleEnd);
 }
 
-// APP DRAGGING WITH ONDRAGSTART (like drawer)
-function onAppDragStart(e, slot) {
-    e.preventDefault();
-    e.dataTransfer.effectAllowed = 'move';
-    
-    // Kill native ghost
-    const img = new Image();
-    img.src = '';
-    e.dataTransfer.setDragImage(img, 0, 0);
-
-    isDragging = true;
-
-    // Haptic feedback
-    if(navigator.vibrate) navigator.vibrate(50);
-
-    // Close drawer on drag
-    appDrawer.classList.remove('open');
-    appDrawer.style.transform = 'translateY(100%)';
-
-    // Set drag source
-    const loc = slot.dataset.loc;
-    const p = slot.dataset.p ? parseInt(slot.dataset.p) : 0;
-    const i = parseInt(slot.dataset.i);
-    dragSrc = { loc, p, i };
-
-    // Create ghost
-    const rect = slot.getBoundingClientRect();
-    dragGhost = slot.cloneNode(true);
-    dragGhost.className = 'dragging-clone';
-    dragGhost.style.width = rect.width + 'px';
-    dragGhost.style.height = rect.height + 'px';
-    dragGhost.style.position = 'fixed';
-    dragGhost.style.pointerEvents = 'none';
-    dragGhost.style.zIndex = '9999';
-
-    const label = dragGhost.querySelector('.app-name');
-    if(label) label.style.display = 'none';
-
-    document.body.appendChild(dragGhost);
-    slot.style.opacity = '0';
-    
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleEnd);
-}
-
-function handleAppDrag(e) {
-    if (!isDragging) return;
-    e.preventDefault();
-    updateGhostPosition(e);
-}
-
-function handleAppDragEnd(e) {
-    if (!isDragging) return;
-    isDragging = false;
-
-    if(dragGhost) dragGhost.style.display = 'none';
-
-    const x = e.clientX;
-    const y = e.clientY;
-    const elBelow = document.elementFromPoint(x, y);
-    console.log(elBelow);
-    if(dragGhost) {
-        dragGhost.remove();
-        dragGhost = null;
-    }
-    document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
-
-    // Handle delete zone
-    if (overDeleteZone) {
-        deleteZone.classList.remove('active');
-        overDeleteZone = false;
-        if (dragSrc.loc !== 'drawer') {
-            setItem(dragSrc, null);
-            cleanupEmptyPages();
-            saveState();
-            render();
-        }
-        window.removeEventListener('mousemove', handleMove);
-        window.removeEventListener('mouseup', handleEnd);
-        return;
-    }
-
-    // Handle drop
-    if (elBelow) {
-        const targetSlot = elBelow.closest('.app-slot');
-        if (targetSlot) {
-            const tgtLoc = targetSlot.dataset.loc;
-            const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
-            const tgtI = parseInt(targetSlot.dataset.i);
-
-            handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI });
-        } else {
-            if (dragSrc.loc === 'folder' && !folderModal.classList.contains('open')) {
-                const emptyIdx = pages[currentPage].findIndex(x => x === null);
-                if (emptyIdx !== -1) {
-                    handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
-                }
-            }
-        }
-    }
-    
-    window.removeEventListener('mousemove', handleMove);
-    window.removeEventListener('mouseup', handleEnd);
-}
-
 
 function startDrawerDrag(e, appKey) {
     //e.preventDefault();
@@ -210,19 +104,12 @@ function startDrawerDrag(e, appKey) {
 
 function addDragEvents(slot) {
     if(!slot.classList.contains('app-drawer')){
-        // Make app slots draggable using ondragstart (like drawer)
-        slot.draggable = true;
-        slot.ondragstart = (e) => onAppDragStart(e, slot);
-        slot.ondrag = handleAppDrag;
-        slot.ondragend = handleAppDragEnd;
-        
-        // Keep touch events as fallback for mobile
         slot.addEventListener('touchstart', (e) => handleStart(e, slot), {passive:false});
         slot.addEventListener('touchmove', handleMove, {passive:false});
         slot.addEventListener('touchend', handleEnd);
+        slot.addEventListener('mousedown', (e) => handleStart(e, slot));
     } else {
         console.log('here')
-        slot.draggable = true;
         slot.ondragstart=(e)=>onDragIntent(e, slot)
         slot.addEventListener('touchmove', handleMove, {passive:false});
         slot.addEventListener('touchend', handleEnd);
@@ -247,78 +134,60 @@ function cleanupEmptyPages() {
 
 cleanupEmptyPages()
 
-function initiateDrag(e, slot) {
+function beginDrag(e, slot) {
+    if (!pendingSlot) return;
+
     isDragging = true;
+    pendingSlot = null;
 
-    // Haptic Feedback (crucial for mobile feel)
-    if (navigator.vibrate) navigator.vibrate(50);
+    if (navigator.vibrate) navigator.vibrate(30);
 
-    // Close drawer if open
-    document.getElementById('appDrawer').style.transform = 'translateY(100%)';
-    appDrawer.classList.remove('open');
-
-    // Set Data Source
     const loc = slot.dataset.loc;
     const p = slot.dataset.p ? parseInt(slot.dataset.p) : 0;
     const i = parseInt(slot.dataset.i);
     dragSrc = { loc, p, i };
 
-    // Create Ghost
     const rect = slot.getBoundingClientRect();
     dragGhost = slot.cloneNode(true);
     dragGhost.className = 'dragging-clone';
-    
-    // Styling the ghost
     dragGhost.style.width = rect.width + 'px';
     dragGhost.style.height = rect.height + 'px';
     dragGhost.style.position = 'fixed';
+    dragGhost.style.pointerEvents = 'none';
     dragGhost.style.zIndex = '9999';
-    dragGhost.style.pointerEvents = 'none'; // Critical: lets events pass through to element below
-    dragGhost.style.opacity = '0.9';
-    dragGhost.style.transform = 'scale(1.1)'; // Slight pop effect
-    dragGhost.style.transition = 'none'; // No lag during move
+    dragGhost.style.left = '-9999px';
+    dragGhost.style.top = '-9999px';
 
-    // Hide label for cleaner look
     const label = dragGhost.querySelector('.app-name');
     if (label) label.style.display = 'none';
 
-    // Position immediately
     updateGhostPosition(e);
     document.body.appendChild(dragGhost);
-
-    // Hide original
     slot.style.opacity = '0';
+
 }
+
 
 function handleStart(e, slot) {
-    // 1. Reset states
+    if (e.cancelable) e.preventDefault();
+
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
+    startY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    pendingSlot = slot;
     isDragging = false;
-    clearTimeout(longPressTimer);
-    
-    // 2. Record initial touch position
-    if (e.touches) {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-    } else {
-        startX = e.clientX;
-        startY = e.clientY;
-    }
 
-    // 3. Start the Long Press Timer
-    longPressTimer = setTimeout(() => {
-        // If this runs, the user held down long enough -> Start Drag
-        initiateDrag(e, slot); 
-    }, HOLD_DURATION);
+    // Start intent timer
+    pressTimer = setTimeout(() => {
+        beginDrag(e, slot);
+    }, HOLD_DELAY);
 
-    // 4. Bind move/end events immediately to track the gesture
-    if (e.type === 'touchstart') {
-        window.addEventListener('touchmove', handleMove, { passive: false });
-        window.addEventListener('touchend', handleEnd);
-    } else {
-        window.addEventListener('mousemove', handleMove);
-        window.addEventListener('mouseup', handleEnd);
-    }
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleEnd);
 }
+
 
 //const topGuard = document.getElementById('top-guard');
 //const bottomGuard = document.getElementById('bottom-guard');
@@ -327,26 +196,26 @@ function handleMove(e) {
     const x = e.touches ? e.touches[0].clientX : e.clientX;
     const y = e.touches ? e.touches[0].clientY : e.clientY;
 
-    // A. Logic BEFORE drag starts (waiting for long press)
+    // BEFORE drag starts → check intent
     if (!isDragging) {
-        const diffX = Math.abs(x - startX);
-        const diffY = Math.abs(y - startY);
+        const dx = Math.abs(x - startX);
+        const dy = Math.abs(y - startY);
 
-        // If user moves finger significantly before timer fires, 
-        // assume they are scrolling or swiping pages -> CANCEL DRAG TIMER
-        if (diffX > DRAG_THRESHOLD || diffY > DRAG_THRESHOLD) {
-            clearTimeout(longPressTimer);
+        if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
+            clearTimeout(pressTimer);
+            pendingSlot = null; // treat as scroll / tap
         }
-        return; // Allow native scrolling
+        return;
     }
 
-    // B. Logic DURING drag
-    if (e.cancelable) e.preventDefault(); // Stop screen from scrolling while dragging app
+    if (e.cancelable) e.preventDefault();
     updateGhostPosition(e);
 
-    // Drag out of folder logic (Keep your existing logic here)
     if (dragSrc.loc === 'folder' && folderModal.classList.contains('open')) {
         const folderRect = folderInner.getBoundingClientRect();
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
+        // If dragged outside the folder box, close modal
         if (x < folderRect.left || x > folderRect.right || y < folderRect.top || y > folderRect.bottom) {
             folderModal.classList.remove('open');
         }
@@ -401,82 +270,9 @@ function handleMove(e) {
         }
 
 function handleEnd(e) {
-    // 1. Always clear the hold timer
-    clearTimeout(longPressTimer);
+    clearTimeout(pressTimer);
+    pendingSlot = null;
 
-    // 2. Clean up listeners
-    window.removeEventListener('mousemove', handleMove);
-    window.removeEventListener('mouseup', handleEnd);
-    window.removeEventListener('touchmove', handleMove);
-    window.removeEventListener('touchend', handleEnd);
-
-
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-const y = e.touches ? e.touches[0].clientY : e.clientY;
-const elBelow = document.elementFromPoint(x, y);
-
-    // 3. Was this just a click? (No drag happened)
-    if (!isDragging) {
-        // Reset opacity just in case
-        document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
-        
-        // --- PUT YOUR APP OPENING LOGIC HERE ---
-        // e.g., clickHandler(e.target);
-        alert('App opened!');
-        return;
-    }
-
-    // 4. Drag Cleanup (Your existing logic)
-    isDragging = false;
-    
-    if (dragGhost) {
-        dragGhost.remove();
-        dragGhost = null;
-    }
-    document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
-
-    // ... (Rest of your drop logic remains identical) ...
-    
-    // 4. Handle Delete Zone
-    if (overDeleteZone) {
-        deleteZone.classList.remove('active');
-        overDeleteZone = false;
-        if (dragSrc.loc !== 'drawer') {
-            setItem(dragSrc, null);
-            cleanupEmptyPages();
-            saveState();
-            render();
-        }
-        return;
-    }
-
-    // 5. Handle Drop
-    if (elBelow) {
-        const targetSlot = elBelow.closest('.app-slot');
-        if (targetSlot) {
-            const tgtLoc = targetSlot.dataset.loc;
-            const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
-            const tgtI = parseInt(targetSlot.dataset.i);
-
-            handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI });
-        } else {
-            // Logic for dropping on empty page space
-            if (dragSrc.loc === 'folder' && !folderModal.classList.contains('open')) {
-                const emptyIdx = pages[currentPage].findIndex(x => x === null);
-                if (emptyIdx !== -1) {
-                    handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
-                }
-            }
-        }
-    }
-
-    window.removeEventListener('mousemove', handleMove);
-    window.removeEventListener('mouseup', handleEnd);
-    window.removeEventListener('touchmove', handleMove);
-    window.removeEventListener('touchend', handleEnd);
-}
-
-/*function handleEnd(e) {
     clearTimeout(dragTimer);
     if (!isDragging) return;
     
@@ -534,7 +330,7 @@ const elBelow = document.elementFromPoint(x, y);
     window.removeEventListener('mouseup', handleEnd);
     window.removeEventListener('touchmove', handleMove);
     window.removeEventListener('touchend', handleEnd);
-}*/
+}
 function getItem(ref) {
     if (ref.loc === 'page') return pages[ref.p] ? pages[ref.p][ref.i] : null;
     if (ref.loc === 'dock') return dock[ref.i] || null; // Force null if undefined
