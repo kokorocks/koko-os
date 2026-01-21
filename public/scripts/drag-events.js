@@ -95,6 +95,8 @@ function onAppDragStart(e, slot) {
     dragGhost.style.position = 'fixed';
     dragGhost.style.pointerEvents = 'none';
     dragGhost.style.zIndex = '9999';
+    dragGhost.style.left = (rect.left) + 'px';
+    dragGhost.style.top = (rect.top) + 'px';
 
     const label = dragGhost.querySelector('.app-name');
     if(label) label.style.display = 'none';
@@ -188,11 +190,15 @@ function startDrawerDrag(e, appKey) {
     dragGhost.className = 'dragging-clone';
     dragGhost.style.width = rect.width + 'px';
     dragGhost.style.height = rect.height + 'px';
+    dragGhost.style.position = 'fixed';
+    dragGhost.style.pointerEvents = 'none';
+    dragGhost.style.zIndex = '9999';
+    dragGhost.style.left = (rect.left) + 'px';
+    dragGhost.style.top = (rect.top) + 'px';
 
     const label = dragGhost.querySelector('.app-name');
     if (label) label.style.display = 'none';
 
-    updateGhostPosition(e);
     document.body.appendChild(dragGhost);
     isDragging = true;
 
@@ -312,8 +318,8 @@ function handleMove(e) {
         const y = e.touches ? e.touches[0].clientY : e.clientY;
 
         if (dragGhost) {
-            dragGhost.style.left = (x - dragGhost.offsetWidth / 3) + 'px';
-            dragGhost.style.top = (y - dragGhost.offsetHeight / 3) + 'px';
+            dragGhost.style.left = (x - dragGhost.offsetWidth / 2) + 'px';
+            dragGhost.style.top = (y - dragGhost.offsetHeight / 2) + 'px';
         }
 
         overDeleteZone = y < DELETE_ZONE_HEIGHT;
@@ -600,13 +606,7 @@ document.addEventListener('touchmove', (e) => {
 document.addEventListener('touchmove', (e) => {
     if (!isDragging || !touchDragActive) return;
     
-    const x = e.touches[0].clientX;
     const y = e.touches[0].clientY;
-    
-    if (dragGhost) {
-        dragGhost.style.left = (x - dragGhost.offsetWidth / 2) + 'px';
-        dragGhost.style.top = (y - dragGhost.offsetHeight / 2) + 'px';
-    }
     
     // Update delete zone
     overDeleteZone = y < DELETE_ZONE_HEIGHT;
@@ -614,7 +614,7 @@ document.addEventListener('touchmove', (e) => {
         deleteZone.classList.toggle('active', overDeleteZone);
     }
     
-    // Page switching during touch drag
+    // Update ghost position and page switching
     updateGhostPosition(e);
 }, {passive: true});
 

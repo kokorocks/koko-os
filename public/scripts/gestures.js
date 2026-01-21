@@ -29,7 +29,12 @@ const isShadeOpen = () => shade.classList.contains('open');
 hammer.on('panstart', (e) => {
     if (isDragging || shadeIsMoving) return;
 
-    const yRatio = e.center.y / window.innerHeight;
+    // Use screen container rect for accurate positioning
+    const screenRect = screen.getBoundingClientRect();
+    const centerY = screenRect.top + screenRect.height / 2;
+    const relativeY = e.center.y - screenRect.top;
+    const yRatio = relativeY / screenRect.height;
+    
     const openApp = document.querySelector('#appFrame.open');
 
     activeGesture = null;
@@ -98,7 +103,9 @@ hammer.on('swipeup', (e) => {
 // ---------- PAN MOVE ----------
 hammer.on('panmove', (e) => {
     if (!activeGesture || isDragging) return;
-    currentDeltaY = e.deltaY;
+    
+    // Ensure deltaY is a number and handle properly
+    currentDeltaY = e.deltaY || 0;
 
     if (!rafPending) {
         rafPending = true;
@@ -113,25 +120,31 @@ function handleDragFrame() {
 
     switch (activeGesture) {
         case 'shade_open':
-            if (currentDeltaY < 0) currentDeltaY = 0;
-            shade.style.transform = `translateY(calc(-100% + ${currentDeltaY}px))`;
+            // Pulling down (positive deltaY) opens the shade
+            if (currentDeltaY > 0) {
+                shade.style.transform = `translateY(${Math.min(currentDeltaY, 0)}px)`;
+            }
             break;
 
         case 'shade_toggle':
             // Smooth transition when dragging to toggle
-            const toggleProgress = Math.max(0, currentDeltaY) / 100;
+            const toggleProgress = Math.max(0, Math.abs(currentDeltaY)) / 100;
             const toggleOpacity = 1 - (toggleProgress * 0.3);
             shade.style.transform = `translateY(0) scale(${toggleOpacity})`;
             break;
 
         case 'shade_close':
-            const safeDelta = Math.min(0, currentDeltaY); 
-            shade.style.transform = `translateY(${safeDelta}px)`;
+            // Pulling up (negative deltaY) closes the shade
+            if (currentDeltaY < 0) {
+                shade.style.transform = `translateY(${currentDeltaY}px)`;
+            }
             break;
 
         case 'drawer_open':
-            if (currentDeltaY > 0) currentDeltaY *= 0.2; 
-            appDrawer.style.transform = `translateY(calc(100% + ${currentDeltaY}px))`;
+            // Pulling up (negative deltaY) opens drawer
+            if (currentDeltaY < 0) {
+                appDrawer.style.transform = `translateY(calc(100% + ${currentDeltaY}px))`;
+            }
             break;
 
         case 'preview_open':
@@ -143,10 +156,12 @@ function handleDragFrame() {
             break;
 
         case 'app_close':
-            if (currentDeltaY > 0) return;
-            const progress = Math.min(Math.abs(currentDeltaY) / (screenH * 0.5), 1);
-            const scale = 1 - (progress * 0.15);
-            activeApp.style.transform = `translateY(${currentDeltaY * 0.5}px) scale(${scale})`; 
+            // Pull up (negative) to close app
+            if (currentDeltaY < 0) {
+                const progress = Math.min(Math.abs(currentDeltaY) / (window.innerHeight * 0.5), 1);
+                const scale = 1 - (progress * 0.15);
+                activeApp.style.transform = `translateY(${currentDeltaY * 0.5}px) scale(${scale})`; 
+            }
             break;
     }
 }
@@ -174,7 +189,8 @@ hammer.on('panend', (e) => {
 
     switch (activeGesture) {
         case 'shade_open':
-            if (distance > screenH * 0.2 || (velocity > FLICK_VELOCITY && e.deltaY > 0)) {
+            // Pulled down enough or flicked down → open
+            if (distance > screenH * 0.2 || (velocity < -FLICK_VELOCITY && e.deltaY > 0)) {
                 shade.classList.add('open');
                 shade.style.transform = 'translateY(0)';
             } else {
@@ -200,7 +216,8 @@ hammer.on('panend', (e) => {
             break;
 
         case 'shade_close':
-            if (distance > screenH * 0.2 || (velocity < -FLICK_VELOCITY && e.deltaY < 0)) {
+            // Pulled up enough or flicked up → close
+            if (distance > screenH * 0.2 || (velocity > FLICK_VELOCITY && e.deltaY < 0)) {
                 shade.classList.remove('open');
                 shade.style.transform = 'translateY(-100%)';
             } else {
@@ -209,7 +226,8 @@ hammer.on('panend', (e) => {
             break;
 
         case 'drawer_open':
-            if ((distance > screenH * 0.2 && e.deltaY < 0) || velocity < -FLICK_VELOCITY) {
+            // Pull up (negative deltaY) opens drawer
+            if ((distance > screenH * 0.2 && e.deltaY < 0) || velocity > FLICK_VELOCITY) {
                 infoPopup.classList.remove('open')
                 appDrawer.classList.add('open');
                 appDrawer.style.transform = 'translateY(0)';
