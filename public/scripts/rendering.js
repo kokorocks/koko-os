@@ -68,7 +68,7 @@ function animateBackground(pageIndex) {
         vw,
         vh
     );
-    let width = (currentPage+1)*document.querySelector('.screen-container').clientWidth>= cover.width? cover.width:(currentPage+1)*document.querySelector('.screen-container').clientWidth ;
+    let width = (currentPage+1)*document.querySelector('.screen-container').clientWidth >= cover.width? cover.width:(currentPage+1)*document.querySelector('.screen-container').clientWidth ;
     const maxOffsetX = Math.max(0, width - vw);
 
     // 🔑 distribute movement across all pages

@@ -16,7 +16,8 @@ body {
     display: flex; justify-content: center; align-items: center;
     background: #1c1c1e;
     font-family: var(--font-main);
-    overflow: auto;
+    overflow: hidden;
+    text-align: center;
 }
     
 #buttons {
@@ -38,13 +39,21 @@ body {
 
 /* --- Device Chassis --- */
 .phone-frame {
-    width: 360px; height: 760px;
+    width: 360px;
+    height: 730px;
+
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+
     background: #1a1a1a;
     border-radius: 48px;
     padding: 10px;
-    box-shadow: 0 30px 60px -10px rgba(0,0,0,0.6), inset 0 0 0 2px #333;
-    position: relative;
+    box-shadow: 0 30px 60px -10px rgba(0,0,0,0.6),
+                inset 0 0 0 2px #333;
 }
+
 
 .screen-container {
     width: 100%; height: 99%;
