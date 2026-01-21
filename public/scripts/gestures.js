@@ -17,6 +17,7 @@ let activeApp = null;
 let rafPending = false;
 let currentDeltaY = 0;
 let shadeState = 'compact'; // 'compact' or 'expanded'
+let shadeIsMoving = false; // Prevent shade re-triggering
 
 const shade = document.getElementById('notifShade');
 const appDrawer = document.getElementById('appDrawer');
@@ -26,7 +27,7 @@ const isShadeOpen = () => shade.classList.contains('open');
 
 // ---------- PAN START ----------
 hammer.on('panstart', (e) => {
-    if (isDragging) return; 
+    if (isDragging || shadeIsMoving) return;
 
     const yRatio = e.center.y / window.innerHeight;
     const openApp = document.querySelector('#appFrame.open');
@@ -40,10 +41,12 @@ hammer.on('panstart', (e) => {
         // If pulling from top and shade is open, toggle between compact and expanded
         if (yRatio < SETTINGS_TRIGGER_ZONE) {
             activeGesture = 'shade_toggle';
+            shadeIsMoving = true;
             shade.style.transition = 'none';
         } else {
             // Otherwise close the shade
             activeGesture = 'shade_close';
+            shadeIsMoving = true;
             shade.style.transition = 'none';
         }
         return;
@@ -57,6 +60,7 @@ hammer.on('panstart', (e) => {
         document.getElementById('shade-expanded').classList.remove('active');
         
         activeGesture = 'shade_open';
+        shadeIsMoving = true;
         shade.style.transition = 'none';
         return;
     }
@@ -170,11 +174,12 @@ hammer.on('panend', (e) => {
 
     switch (activeGesture) {
         case 'shade_open':
-            if (distance > screenH * 0.3 || (velocity > FLICK_VELOCITY && e.deltaY > 0)) {
+            if (distance > screenH * 0.2 || (velocity > FLICK_VELOCITY && e.deltaY > 0)) {
                 shade.classList.add('open');
                 shade.style.transform = 'translateY(0)';
             } else {
                 shade.style.transform = 'translateY(-100%)';
+                shade.classList.remove('open');
             }
             break;
 
@@ -240,6 +245,7 @@ hammer.on('panend', (e) => {
 
     activeGesture = null;
     rafPending = false;
+    shadeIsMoving = false;
 });
 
 // (Keep your swipeleft/swiperight and helpers as they were)

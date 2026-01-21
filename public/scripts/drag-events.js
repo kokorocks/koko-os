@@ -420,6 +420,7 @@ function handleMove(e) {
 
     let lastEdgeSwitchTime = 0;
     const EDGE_MARGIN = 40;
+    const screen = document.getElementById('mainScreen');
 
     function updateGhostPosition(e) {
         const x = e.touches ? e.touches[0].clientX : e.clientX;
@@ -436,14 +437,19 @@ function handleMove(e) {
             deleteZone.classList.toggle('active', overDeleteZone);
         }
 
-        // Page Switching
+        // Page Switching - use screencontainer width
+        const screenRect = screen.getBoundingClientRect();
+        const screenLeft = screenRect.left-25;
+        const screenRight = screenRect.right+25;
+        console.log(screenLeft, screenRight)
+        
         const now = Date.now();
         if (now - lastEdgeSwitchTime > 600 && !folderModal.classList.contains('open')) {
-            if (x < EDGE_MARGIN && currentPage > 0) {
+            if (x < screenLeft + EDGE_MARGIN && currentPage > 0) {
                 currentPage--;
                 lastEdgeSwitchTime = now;
                 slider.style.transform = `translateX(-${currentPage * 100}%)`;
-            } else if (x > window.innerWidth - EDGE_MARGIN && currentPage < 12) {
+            } else if (x > screenRight - EDGE_MARGIN && currentPage < 12) {
                 // If dragging beyond last page → create one
                 if (currentPage === pages.length - 1 && pages.length<13) {
                     pages.push(new Array(grid).fill(null)); // empty page
