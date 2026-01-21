@@ -127,7 +127,7 @@ function handleAppDragEnd(e) {
     const x = e.clientX;
     const y = e.clientY;
     const elBelow = document.elementFromPoint(x, y);
-
+    console.log(elBelow);
     if(dragGhost) {
         dragGhost.remove();
         dragGhost = null;
@@ -409,6 +409,11 @@ function handleEnd(e) {
     window.removeEventListener('mouseup', handleEnd);
     window.removeEventListener('touchmove', handleMove);
     window.removeEventListener('touchend', handleEnd);
+
+
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+const y = e.touches ? e.touches[0].clientY : e.clientY;
+const elBelow = document.elementFromPoint(x, y);
 
     // 3. Was this just a click? (No drag happened)
     if (!isDragging) {
