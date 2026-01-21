@@ -68,7 +68,13 @@ function animateBackground(pageIndex) {
         vw,
         vh
     );
-    let width = (currentPage+1)*document.querySelector('.screen-container').clientWidth >= cover.width? cover.width:(currentPage+1)*document.querySelector('.screen-container').clientWidth ;
+const container = document.querySelector('.screen-container');
+const containerWidth = container.clientWidth; // width of one page
+const totalCoverWidth = cover.width;
+
+// Compute width based on page index
+let width = Math.min(currentPage * containerWidth, totalCoverWidth - containerWidth) + containerWidth;
+
     const maxOffsetX = Math.max(0, width - vw);
 
     // 🔑 distribute movement across all pages
