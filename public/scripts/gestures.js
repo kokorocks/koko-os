@@ -16,6 +16,7 @@ let activeGesture = null;
 let activeApp = null;
 let rafPending = false;
 let currentDeltaY = 0;
+let shadeState = 'compact'; // 'compact' or 'expanded'
 
 const shade = document.getElementById('notifShade');
 const appDrawer = document.getElementById('appDrawer');
@@ -34,15 +35,27 @@ hammer.on('panstart', (e) => {
     activeApp = null;
     currentDeltaY = 0;
 
-    // 1. CLOSE SHADE (If open)
+    // 1. SHADE INTERACTION (Toggle or Close)
     if (isShadeOpen()) {
-        activeGesture = 'shade_close';
-        shade.style.transition = 'none';
+        // If pulling from top and shade is open, toggle between compact and expanded
+        if (yRatio < SETTINGS_TRIGGER_ZONE) {
+            activeGesture = 'shade_toggle';
+            shade.style.transition = 'none';
+        } else {
+            // Otherwise close the shade
+            activeGesture = 'shade_close';
+            shade.style.transition = 'none';
+        }
         return;
     }
 
     // 2. OPEN SHADE (Top)
     if (yRatio < SETTINGS_TRIGGER_ZONE && noAppOpen()) {
+        // Reset to compact state when opening shade
+        shadeState = 'compact';
+        document.getElementById('shade-compact').classList.add('active');
+        document.getElementById('shade-expanded').classList.remove('active');
+        
         activeGesture = 'shade_open';
         shade.style.transition = 'none';
         return;
@@ -98,6 +111,13 @@ function handleDragFrame() {
         case 'shade_open':
             if (currentDeltaY < 0) currentDeltaY = 0;
             shade.style.transform = `translateY(calc(-100% + ${currentDeltaY}px))`;
+            break;
+
+        case 'shade_toggle':
+            // Smooth transition when dragging to toggle
+            const toggleProgress = Math.max(0, currentDeltaY) / 100;
+            const toggleOpacity = 1 - (toggleProgress * 0.3);
+            shade.style.transform = `translateY(0) scale(${toggleOpacity})`;
             break;
 
         case 'shade_close':
@@ -156,6 +176,22 @@ hammer.on('panend', (e) => {
             } else {
                 shade.style.transform = 'translateY(-100%)';
             }
+            break;
+
+        case 'shade_toggle':
+            // Toggle between compact and expanded on drag
+            if (distance > 50 || Math.abs(velocity) > 0.3) {
+                if (shadeState === 'compact') {
+                    shadeState = 'expanded';
+                    document.getElementById('shade-compact').classList.remove('active');
+                    document.getElementById('shade-expanded').classList.add('active');
+                } else {
+                    shadeState = 'compact';
+                    document.getElementById('shade-expanded').classList.remove('active');
+                    document.getElementById('shade-compact').classList.add('active');
+                }
+            }
+            shade.style.transform = 'translateY(0)';
             break;
 
         case 'shade_close':

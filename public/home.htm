@@ -29,106 +29,139 @@
         </div>
 
         <div class="overlay-panel" id="notifShade">
-        <div id="settings">
-            <div class="shade-header">
-                <div class="time-stack">
-                    <span class="clock-large">12:00</span>
-                    <span class="date-small">Mon, Jan 1</span>
+            <!-- COMPACT STATE (first pull down) -->
+            <div id="shade-compact" class="shade-state active">
+                <div class="shade-header-compact">
+                    <span class="time-compact">12:00</span>
                 </div>
-                <div class="shade-actions">
-                    <div class="icon-btn-ghost"><i class="fas fa-pencil-alt"></i></div>
-                    <div class="icon-btn-ghost"><i class="fas fa-cog"></i></div>
+                <div class="quick-settings-compact">
+                    <div class="qs-btn-small"><i class="fas fa-wifi"></i></div>
+                    <div class="qs-btn-small"><i class="fab fa-bluetooth-b"></i></div>
+                    <div class="qs-btn-small"><i class="fas fa-sync-alt"></i></div>
+                    <div class="qs-btn-small"><i class="fas fa-flashlight"></i></div>
+                </div>
+                <div class="notif-section-compact">
+                    <div class="notif-label">Notifications</div>
+                    <div class="glass-notif">
+                        <div class="notif-icon-box" style="background: #34C759;"><i class="fas fa-comment"></i></div>
+                        <div class="notif-content">
+                            <div class="notif-title">Messages</div>
+                            <div class="notif-desc">Mom: Dinner at 6?</div>
+                        </div>
+                        <div class="notif-time">2m</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="shade-group control-card">
-
-                <div class="qs-grid-main">
-                    <div class="qs-pill-wrapper">
-                        <input type="checkbox" id="wifi" hidden checked>
-                        <label for="wifi" class="qs-pill">
-                            <div class="icon-box"><i class="fas fa-wifi"></i></div>
-                            <div class="text-box">
-                                <span class="qs-title">Wi-Fi</span>
-                                <span class="qs-status">Connected</span>
-                            </div>
-                        </label>
+            <!-- EXPANDED STATE (pull down again) -->
+            <div id="shade-expanded" class="shade-state">
+                <div class="shade-header">
+                    <div class="time-stack">
+                        <span class="clock-large">12:00</span>
+                        <span class="date-small">Mon, Jan 1</span>
                     </div>
-
-                    <div class="qs-pill-wrapper">
-                        <input type="checkbox" id="bt" hidden checked>
-                        <label for="bt" class="qs-pill">
-                            <div class="icon-box"><i class="fab fa-bluetooth-b"></i></div>
-                            <div class="text-box">
-                                <span class="qs-title">Bluetooth</span>
-                                <span class="qs-status">On</span>
-                            </div>
-                        </label>
+                    <div class="shade-actions">
+                        <div class="icon-btn-ghost"><i class="fas fa-pencil-alt"></i></div>
+                        <div class="icon-btn-ghost"><i class="fas fa-cog"></i></div>
                     </div>
                 </div>
 
-                <div class="qs-row-small">
-                    <input type="checkbox" id="airplane" hidden>
-                    <label for="airplane" class="qs-btn-round">
-                        <i class="fas fa-plane"></i>
-                    </label>
+                <div class="shade-group control-card">
+                    <div class="sliders-stack">
+                        <div class="slider-container">
+                            <i class="fas fa-sun slider-icon"></i>
+                            <input type="range" class="glass-slider" value="80">
+                        </div>
+                        <div class="slider-container">
+                            <i class="fas fa-volume-up slider-icon"></i>
+                            <input type="range" class="glass-slider" value="45">
+                        </div>
+                    </div>
+                </div>
 
-                    <input type="checkbox" id="dnd" hidden>
-                    <label for="dnd" class="qs-btn-round">
-                        <i class="fas fa-moon"></i>
-                    </label>
-
-                    <input type="checkbox" id="flash" hidden>
-                    <label for="flash" class="qs-btn-round">
-                        <i class="fas fa-flashlight"></i>
-                    </label>
-
-                    <input type="checkbox" id="rotate" hidden>
-                    <label for="rotate" class="qs-btn-round">
+                <!-- QUICK SETTINGS GRID (Origin OS Style) -->
+                <div class="qs-grid-expanded">
+                    <div class="qs-tile">
+                        <i class="fas fa-power-off"></i>
+                        <span>Power off</span>
+                    </div>
+                    <div class="qs-tile">
+                        <i class="fab fa-bluetooth-b"></i>
+                        <span>Bluetooth</span>
+                    </div>
+                    <div class="qs-tile">
                         <i class="fas fa-sync-alt"></i>
-                    </label>
+                        <span>Auto-rotate</span>
+                    </div>
+                    <div class="qs-tile">
+                        <i class="fas fa-flashlight"></i>
+                        <span>Flashlight</span>
+                    </div>
+                    <div class="qs-tile">
+                        <i class="fas fa-battery-half"></i>
+                        <span>Battery Saver</span>
+                    </div>
+                    <div class="qs-tile">
+                        <i class="fas fa-location-dot"></i>
+                        <span>Location</span>
+                    </div>
+                    <div class="qs-tile">
+                        <i class="fas fa-wifi"></i>
+                        <span>Hotspot</span>
+                    </div>
+                    <div class="qs-tile">
+                        <i class="fas fa-wallet"></i>
+                        <span>Wallet</span>
+                    </div>
+                    <div class="qs-tile">
+                        <i class="fas fa-calculator"></i>
+                        <span>Calculator</span>
+                    </div>
+                    <div class="qs-tile">
+                        <i class="fas fa-gamepad"></i>
+                        <span>Game Mode</span>
+                    </div>
+                    <div class="qs-tile">
+                        <i class="fas fa-qrcode"></i>
+                        <span>Scan</span>
+                    </div>
+                    <div class="qs-tile">
+                        <i class="fas fa-bolt"></i>
+                        <span>Speed up</span>
+                    </div>
                 </div>
 
-                <div class="sliders-stack">
-                    <div class="slider-container">
-                        <i class="fas fa-sun slider-icon"></i>
-                        <input type="range" class="glass-slider" value="80">
+                <!-- MEDIA WIDGET -->
+                <div class="shade-group media-compact">
+                    <div class="media-art" style="background-image: url('https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=150&auto=format&fit=crop');"></div>
+                    <div class="media-details">
+                        <div class="media-track">Midnight City</div>
+                        <div class="media-artist">M83</div>
                     </div>
-                    <div class="slider-container">
-                        <i class="fas fa-volume-up slider-icon"></i>
-                        <input type="range" class="glass-slider" value="45">
+                    <div class="media-actions">
+                        <i class="fas fa-backward"></i>
+                        <i class="fas fa-play"></i>
+                        <i class="fas fa-forward"></i>
+                    </div>
+                </div>
+
+                <!-- NOTIFICATIONS -->
+                <div id="notifs">
+                    <div class="notif-section">
+                        <div class="notif-label">Notifications</div>
+                        <div class="glass-notif">
+                            <div class="notif-icon-box" style="background: #34C759;"><i class="fas fa-comment"></i></div>
+                            <div class="notif-content">
+                                <div class="notif-title">Messages</div>
+                                <div class="notif-desc">Mom: Dinner at 6?</div>
+                            </div>
+                            <div class="notif-time">2m</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div id="notifs">
 
-            <div class="shade-group media-compact">
-                <div class="media-art" style="background-image: url('https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=150&auto=format&fit=crop');"></div>
-                <div class="media-details">
-                    <div class="media-track">Midnight City</div>
-                    <div class="media-artist">M83</div>
-                </div>
-                <div class="media-actions">
-                    <i class="fas fa-backward"></i>
-                    <i class="fas fa-play"></i>
-                    <i class="fas fa-forward"></i>
-                </div>
-            </div>
-        
-            <div class="notif-section">
-                <div class="notif-label">Notifications</div>
-                <div class="glass-notif">
-                    <div class="notif-icon-box" style="background: #34C759;"><i class="fas fa-comment"></i></div>
-                    <div class="notif-content">
-                        <div class="notif-title">Messages</div>
-                        <div class="notif-desc">Mom: Dinner at 6?</div>
-                    </div>
-                    <div class="notif-time">2m</div>
-                </div>
-            </div></div>
-        
-            <div class="close-handle" onclick="closeShade()"></div>
+            <div class="close-handle" onclick="toggleShadeState()"></div>
         </div>
 
             <div class="pages-slider" id="pagesSlider"></div>

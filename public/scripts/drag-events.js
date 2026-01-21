@@ -210,10 +210,124 @@ function addDragEvents(slot) {
         slot.ondrag = handleAppDrag;
         slot.ondragend = handleAppDragEnd;
         
-        // Keep touch events as fallback for mobile
-        //slot.addEventListener('touchstart', (e) => handleStart(e, slot), {passive:false});
-        //slot.addEventListener('touchmove', handleMove, {passive:false});
-        //slot.addEventListener('touchend', handleEnd);
+        // Touch events for mobile - only activate drag on significant movement
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let touchDragActive = false;
+        
+        slot.addEventListener('touchstart', (e) => {
+            if (isDragging) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = Date.now();
+            touchDragActive = false;
+        }, {passive: true});
+        
+        slot.addEventListener('touchmove', (e) => {
+            if (isDragging || touchDragActive) return;
+            
+            const moveX = e.touches[0].clientX - touchStartX;
+            const moveY = e.touches[0].clientY - touchStartY;
+            const distance = Math.sqrt(moveX * moveX + moveY * moveY);
+            const timeDelta = Date.now() - touchStartTime;
+            
+            // Require at least 10px movement or 300ms hold to activate drag
+            if (distance > 10 || timeDelta > 300) {
+                touchDragActive = true;
+                // Simulate drag start
+                const rect = slot.getBoundingClientRect();
+                dragGhost = slot.cloneNode(true);
+                dragGhost.className = 'dragging-clone';
+                dragGhost.style.width = rect.width + 'px';
+                dragGhost.style.height = rect.height + 'px';
+                dragGhost.style.position = 'fixed';
+                dragGhost.style.pointerEvents = 'none';
+                dragGhost.style.zIndex = '9999';
+                
+                const label = dragGhost.querySelector('.app-name');
+                if(label) label.style.display = 'none';
+                
+                document.body.appendChild(dragGhost);
+                slot.style.opacity = '0';
+                
+                isDragging = true;
+                const loc = slot.dataset.loc;
+                const p = slot.dataset.p ? parseInt(slot.dataset.p) : 0;
+                const i = parseInt(slot.dataset.i);
+                dragSrc = { loc, p, i };
+                
+                appDrawer.classList.remove('open');
+                appDrawer.style.transform = 'translateY(100%)';
+                
+                if(navigator.vibrate) navigator.vibrate(50);
+            }
+        }, {passive: true});
+        
+        slot.addEventListener('touchmove', (e) => {
+            if (!isDragging || !touchDragActive) return;
+            
+            const x = e.touches[0].clientX;
+            const y = e.touches[0].clientY;
+            
+            if (dragGhost) {
+                dragGhost.style.left = (x - dragGhost.offsetWidth / 2) + 'px';
+                dragGhost.style.top = (y - dragGhost.offsetHeight / 2) + 'px';
+            }
+            
+            // Update delete zone
+            overDeleteZone = y < DELETE_ZONE_HEIGHT;
+            if (deleteZone) {
+                deleteZone.classList.toggle('active', overDeleteZone);
+            }
+        }, {passive: true});
+        
+        slot.addEventListener('touchend', (e) => {
+            if (!isDragging || !touchDragActive) {
+                touchDragActive = false;
+                return;
+            }
+            
+            isDragging = false;
+            touchDragActive = false;
+            
+            if(dragGhost) dragGhost.style.display = 'none';
+            
+            const x = e.changedTouches[0].clientX;
+            const y = e.changedTouches[0].clientY;
+            const elBelow = document.elementFromPoint(x, y);
+            
+            if(dragGhost) {
+                dragGhost.remove();
+                dragGhost = null;
+            }
+            document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
+            
+            // Handle delete zone
+            if (overDeleteZone) {
+                deleteZone.classList.remove('active');
+                overDeleteZone = false;
+                if (dragSrc.loc !== 'drawer') {
+                    setItem(dragSrc, null);
+                    cleanupEmptyPages();
+                    saveState();
+                    render();
+                }
+                return;
+            }
+            
+            // Handle drop
+            if (elBelow) {
+                const targetSlot = elBelow.closest('.app-slot');
+                if (targetSlot) {
+                    const tgtLoc = targetSlot.dataset.loc;
+                    const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
+                    const tgtI = parseInt(targetSlot.dataset.i);
+                    
+                    handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI });
+                }
+            }
+        }, {passive: true});
     } else {
         console.log('here')
         slot.draggable = true;

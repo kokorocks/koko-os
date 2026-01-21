@@ -3,6 +3,23 @@ let infoPopup = document.getElementById('infopopup')
 function closeShade() { shade.classList.remove('open'); }
 function closeDrawer() { drawer.classList.remove('open'); document.getElementById('appDrawer').style.transform='translateY(100%)'}
 
+function toggleShadeState() {
+    const shadeCompact = document.getElementById('shade-compact');
+    const shadeExpanded = document.getElementById('shade-expanded');
+    
+    if (shadeState === 'compact') {
+        // Switch to expanded
+        shadeState = 'expanded';
+        shadeCompact.classList.remove('active');
+        shadeExpanded.classList.add('active');
+    } else {
+        // Switch to compact
+        shadeState = 'compact';
+        shadeExpanded.classList.remove('active');
+        shadeCompact.classList.add('active');
+    }
+}
+
 function updateRootVars() {
     const root = document.documentElement;
     const w = window.innerWidth;
