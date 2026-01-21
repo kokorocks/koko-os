@@ -55,6 +55,10 @@ function onDragIntent(e, slot) {
     dragGhost.className = 'dragging-clone';
     dragGhost.style.width = rect.width + 'px';
     dragGhost.style.height = rect.height + 'px';
+    dragGhost.style.position = 'fixed';
+    dragGhost.style.pointerEvents = 'none';
+    dragGhost.style.zIndex = '9999';
+
 
     const label = dragGhost.querySelector('.app-name');
     if (label) label.style.display = 'none';
@@ -88,6 +92,10 @@ function startDrawerDrag(e, appKey) {
     dragGhost.className = 'dragging-clone';
     dragGhost.style.width = rect.width + 'px';
     dragGhost.style.height = rect.height + 'px';
+    dragGhost.style.position = 'fixed';
+dragGhost.style.pointerEvents = 'none';
+dragGhost.style.zIndex = '9999';
+
 
     const label = dragGhost.querySelector('.app-name');
     if (label) label.style.display = 'none';
@@ -135,6 +143,8 @@ function cleanupEmptyPages() {
 cleanupEmptyPages()
 
 function beginDrag(e, slot) {
+    if (e.cancelable) e.preventDefault();
+
     if (!pendingSlot) return;
 
     isDragging = true;
@@ -169,7 +179,7 @@ function beginDrag(e, slot) {
 
 
 function handleStart(e, slot) {
-    if (e.cancelable) e.preventDefault();
+    //if (e.cancelable) e.preventDefault();
 
     startX = e.touches ? e.touches[0].clientX : e.clientX;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
