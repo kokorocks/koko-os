@@ -211,9 +211,9 @@ function addDragEvents(slot) {
         slot.ondragend = handleAppDragEnd;
         
         // Keep touch events as fallback for mobile
-        slot.addEventListener('touchstart', (e) => handleStart(e, slot), {passive:false});
-        slot.addEventListener('touchmove', handleMove, {passive:false});
-        slot.addEventListener('touchend', handleEnd);
+        //slot.addEventListener('touchstart', (e) => handleStart(e, slot), {passive:false});
+        //slot.addEventListener('touchmove', handleMove, {passive:false});
+        //slot.addEventListener('touchend', handleEnd);
     } else {
         console.log('here')
         slot.draggable = true;
