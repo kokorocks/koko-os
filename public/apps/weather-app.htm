@@ -5,17 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>weather 'cause why not</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
         body {
             text-align: center;
             font-family: Arial, sans-serif;
             background-color: #e0f7fa;
             color: #00796b;
-            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .app-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
             padding: 20px;
+            max-height: calc(100% - 30px);
+        }
+        
+        .app-footer {
+            height: 30px;
+            flex-shrink: 0;
+            background: transparent;
         }
     </style>
 </head>
 <body>
-    some weather content here
+    <div class="app-content">
+        some weather content here
+    </div>
+    <div class="app-footer"></div>
 </body>
 </html>
