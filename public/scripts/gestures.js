@@ -25,6 +25,14 @@ const appDrawer = document.getElementById('appDrawer');
 const noAppOpen = () => !document.querySelector('#appFrame.open');
 const isShadeOpen = () => shade.classList.contains('open');
 
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+// iOS-style rubber banding
+function rubberBand(distance, dimension, resistance = 0.55) {
+    return (distance * dimension * resistance) / (dimension + resistance * distance);
+}
+
+
 // ---------- PAN START ----------
 hammer.on('panstart', (e) => {
     if (isDragging || shadeIsMoving) return;
@@ -116,55 +124,76 @@ hammer.on('panmove', (e) => {
 // ---------- ANIMATION FRAME ----------
 function handleDragFrame() {
     rafPending = false;
+
     const screenH = window.innerHeight;
+    const maxPull = screenH * 0.9;
 
     switch (activeGesture) {
-        case 'shade_open':
-            // Pulling down (positive deltaY) opens the shade
-            if (currentDeltaY > 0) {
-                shade.style.transform = `translateY(${Math.min(currentDeltaY, 0)}px)`;
-            }
-            break;
 
-        case 'shade_toggle':
-            // Smooth transition when dragging to toggle
-            const toggleProgress = Math.max(0, Math.abs(currentDeltaY)) / 100;
-            const toggleOpacity = 1 - (toggleProgress * 0.3);
-            shade.style.transform = `translateY(0) scale(${toggleOpacity})`;
-            break;
+        /* ================= SHADE OPEN ================= */
+        case 'shade_open': {
+            if (currentDeltaY <= 0) return;
 
-        case 'shade_close':
-            // Pulling up (negative deltaY) closes the shade
-            if (currentDeltaY < 0) {
-                shade.style.transform = `translateY(${currentDeltaY}px)`;
-            }
-            break;
+            const pull = rubberBand(currentDeltaY, screenH);
+            const progress = clamp(pull / (screenH * 0.6), 0, 1);
 
-        case 'drawer_open':
-            // Pulling up (negative deltaY) opens drawer
-            if (currentDeltaY < 0) {
-                appDrawer.style.transform = `translateY(calc(100% + ${currentDeltaY}px))`;
-            }
+            shade.style.transform = `translateY(${(-100 + progress * 100)}%)`;
+            shade.style.opacity = 0.6 + progress * 0.4;
             break;
+        }
 
-        case 'preview_open':
-            // Visual feedback: Shrink the home screen slightly as you pull up
-            const previewProgress = Math.min(Math.abs(currentDeltaY) / 200, 1);
-            const previewScale = 1 - (previewProgress * 0.05);
-            screen.style.transform = `scale(${previewScale})`;
-            screen.style.borderRadius = `${previewProgress * 30}px`;
-            break;
+        /* ================= SHADE CLOSE ================= */
+        case 'shade_close': {
+            if (currentDeltaY >= 0) return;
 
-        case 'app_close':
-            // Pull up (negative) to close app
-            if (currentDeltaY < 0) {
-                const progress = Math.min(Math.abs(currentDeltaY) / (window.innerHeight * 0.5), 1);
-                const scale = 1 - (progress * 0.15);
-                activeApp.style.transform = `translateY(${currentDeltaY * 0.5}px) scale(${scale})`; 
-            }
+            const pull = rubberBand(Math.abs(currentDeltaY), screenH);
+            const progress = clamp(pull / (screenH * 0.6), 0, 1);
+
+            shade.style.transform = `translateY(${-progress * 100}%)`;
+            shade.style.opacity = 1 - progress * 0.4;
             break;
+        }
+
+        /* ================= SHADE TOGGLE ================= */
+        case 'shade_toggle': {
+            const pull = clamp(currentDeltaY, -120, 120);
+            shade.style.transform = `translateY(${pull * 0.2}px)`;
+            break;
+        }
+
+        /* ================= DRAWER ================= */
+        case 'drawer_open': {
+            if (currentDeltaY >= 0) return;
+
+            const pull = rubberBand(Math.abs(currentDeltaY), screenH);
+            appDrawer.style.transform = `translateY(calc(100% - ${pull}px))`;
+            break;
+        }
+
+        /* ================= PREVIEW ================= */
+        case 'preview_open': {
+            if (currentDeltaY >= 0) return;
+
+            const progress = clamp(Math.abs(currentDeltaY) / 240, 0, 1);
+            screen.style.transform = `scale(${1 - progress * 0.06})`;
+            screen.style.borderRadius = `${progress * 30}px`;
+            break;
+        }
+
+        /* ================= APP CLOSE ================= */
+        case 'app_close': {
+            if (currentDeltaY >= 0) return;
+
+            const pull = rubberBand(Math.abs(currentDeltaY), screenH);
+            const progress = clamp(pull / (screenH * 0.5), 0, 1);
+
+            activeApp.style.transform =
+                `translateY(${-pull * 0.6}px) scale(${1 - progress * 0.15})`;
+            break;
+        }
     }
 }
+
 
 // ---------- PAN END ----------
 hammer.on('panend', (e) => {
@@ -173,6 +202,9 @@ hammer.on('panend', (e) => {
     const velocity = e.velocityY;
     const distance = Math.abs(e.deltaY);
     const screenH = window.innerHeight;
+    const absVelocity = Math.abs(velocity);
+    const isFast = absVelocity > 0.45;
+
     
     // Reset screen styles if they were modified by preview gesture
     screen.style.transition = 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)';
@@ -190,50 +222,49 @@ hammer.on('panend', (e) => {
     switch (activeGesture) {
         case 'shade_open':
             // Pulled down enough or flicked down → open
-            if (distance > screenH * 0.2 || (velocity < -FLICK_VELOCITY && e.deltaY > 0)) {
+            if (currentDeltaY > screenH * 0.18 || velocity > FLICK_VELOCITY) {
                 shade.classList.add('open');
                 shade.style.transform = 'translateY(0)';
             } else {
                 shade.style.transform = 'translateY(-100%)';
                 shade.classList.remove('open');
             }
+
             break;
 
         case 'shade_toggle':
             // Toggle between compact and expanded on drag
-            if (distance > 50 || Math.abs(velocity) > 0.3) {
-                if (shadeState === 'compact') {
-                    shadeState = 'expanded';
-                    document.getElementById('shade-compact').classList.remove('active');
-                    document.getElementById('shade-expanded').classList.add('active');
-                } else {
-                    shadeState = 'compact';
-                    document.getElementById('shade-expanded').classList.remove('active');
-                    document.getElementById('shade-compact').classList.add('active');
-                }
+            if (Math.abs(currentDeltaY) > 60 || isFast) {
+                shadeState = shadeState === 'compact' ? 'expanded' : 'compact';
+                document.getElementById('shade-compact').classList.toggle('active', shadeState === 'compact');
+                document.getElementById('shade-expanded').classList.toggle('active', shadeState === 'expanded');
             }
+            //shade.style.transform = 'translateY(0)';
+            shade.style.opacity=1
+
             shade.style.transform = 'translateY(0)';
             break;
 
         case 'shade_close':
             // Pulled up enough or flicked up → close
-            if (distance > screenH * 0.2 || (velocity > FLICK_VELOCITY && e.deltaY < 0)) {
-                shade.classList.remove('open');
-                shade.style.transform = 'translateY(-100%)';
-            } else {
-                shade.style.transform = 'translateY(0)';
-            }
+            if (Math.abs(currentDeltaY) > screenH * 0.18 || velocity < -FLICK_VELOCITY) {
+    shade.classList.remove('open');
+    shade.style.transform = 'translateY(-100%)';
+} else {
+    shade.style.transform = 'translateY(0)';
+}
+
             break;
 
         case 'drawer_open':
             // Pull up (negative deltaY) opens drawer
-            if ((distance > screenH * 0.2 && e.deltaY < 0) || velocity > FLICK_VELOCITY) {
-                infoPopup.classList.remove('open')
-                appDrawer.classList.add('open');
-                appDrawer.style.transform = 'translateY(0)';
-            } else {
-                appDrawer.style.transform = 'translateY(100%)';
-            }
+            if (currentDeltaY < -screenH * 0.15 || velocity < -FLICK_VELOCITY) {
+    appDrawer.classList.add('open');
+    appDrawer.style.transform = 'translateY(0)';
+} else {
+    appDrawer.style.transform = 'translateY(100%)';
+}
+
             break;
 
         case 'preview_open':
@@ -247,17 +278,15 @@ hammer.on('panend', (e) => {
             break;
 
         case 'app_close':
-            console.log('distance',distance)
-            console.log('e.deltaY',e.deltaY)
-            console.log('velocity',velocity)
-            if ((distance > 250 && e.deltaY < 0) || velocity < -0.6) {
-                closeApp(activeApp);
-            } else if((distance > 100 && e.deltaY < 0) || velocity < 0){
-                openAppPreviews();
-                closeApp(activeApp);
-            } else {
-                resetAppStyles(activeApp);
-            }
+            if (currentDeltaY < -screenH * 0.25 || velocity < -0.6) {
+    closeApp(activeApp);
+} else if (currentDeltaY < -screenH * 0.15) {
+    openAppPreviews();
+    closeApp(activeApp);
+} else {
+    resetAppStyles(activeApp);
+}
+
             break;
     }
 

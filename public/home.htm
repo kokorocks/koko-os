@@ -82,19 +82,23 @@
                         <i class="fas fa-power-off"></i>
                         <span>Power off</span>
                     </div>
-                    <div class="qs-tile">
+                    <div class="qs-tile is-toggle" data-toggle aria-checked="false">
+                        <input type="checkbox" class="qs-checkbox" hidden>
                         <i class="fab fa-bluetooth-b"></i>
                         <span>Bluetooth</span>
                     </div>
-                    <div class="qs-tile">
+                    <div class="qs-tile is-toggle" data-toggle aria-checked="false">
+                        <input type="checkbox" class="qs-checkbox" hidden>
                         <i class="fas fa-sync-alt"></i>
                         <span>Auto-rotate</span>
                     </div>
-                    <div class="qs-tile">
+                    <div class="qs-tile is-toggle" data-toggle aria-checked="false">
+                        <input type="checkbox" class="qs-checkbox" hidden>
                         <i class="fas fa-flashlight"></i>
                         <span>Flashlight</span>
                     </div>
-                    <div class="qs-tile">
+                    <div class="qs-tile is-toggle" data-toggle aria-checked="false">
+                        <input type="checkbox" class="qs-checkbox" hidden>
                         <i class="fas fa-battery-half"></i>
                         <span>Battery Saver</span>
                     </div>
@@ -102,7 +106,8 @@
                         <i class="fas fa-location-dot"></i>
                         <span>Location</span>
                     </div>
-                    <div class="qs-tile">
+                    <div class="qs-tile is-toggle" data-toggle aria-checked="false">
+                        <input type="checkbox" class="qs-checkbox" hidden>
                         <i class="fas fa-wifi"></i>
                         <span>Hotspot</span>
                     </div>
@@ -114,7 +119,8 @@
                         <i class="fas fa-calculator"></i>
                         <span>Calculator</span>
                     </div>
-                    <div class="qs-tile">
+                    <div class="qs-tile is-toggle" data-toggle aria-checked="false">
+                        <input type="checkbox" class="qs-checkbox" hidden>
                         <i class="fas fa-gamepad"></i>
                         <span>Game Mode</span>
                     </div>
@@ -185,9 +191,10 @@
             <div id="multiappspreviewarea"></div>
             <!--div id="screenshot"><i class="fa-solid fa-border-none"></i> take a screenshot</div-->
 
-           <div id="bottom-guard"></div>
-           <div id="side-guard-left"></div>
-           <div id="side-guard-right"></div>
+           <div id="bottom-guard" class="gesture-guard"></div>
+           <div id="top-guard" class="gesture-guard"></div>
+           <div id="left-guard" class="gesture-guard"></div>
+           <div id="right-guard" class="gesture-guard"></div>
         </div>
     </div>
 
@@ -198,6 +205,7 @@
     <script src="scripts/app-processing.js"></script>
     <script src="scripts/app-previews.js"></script>
     <script src="scripts/gestures.js"></script>
+    <script src="scripts/quick-setting-controls.js"></script>
     <script src="scripts/misc.js"></script>
     <script src="scripts/button-navigation.js"></script>
     <script src="scripts/rss.js"></script>

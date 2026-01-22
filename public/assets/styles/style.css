@@ -57,6 +57,12 @@ body {
 .app-slot {
   touch-action: none;
   user-select: none;
+
+    /*width: var(--app-size); height: var(--app-size);*/
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    transition: transform 0.2s;
+
 }
 
 
@@ -103,13 +109,6 @@ body {
     width: var(--app-size); height: var(--app-size);
 }
 
-.app-slot {
-    /*width: var(--app-size); height: var(--app-size);*/
-    position: relative;
-    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-    transition: transform 0.2s;
-}
-
 .app-icon {
     width: var(--app-size); height: var(--app-size);
     border-radius: 14px;
@@ -154,6 +153,14 @@ body {
 .dragging-clone {
     position: fixed; pointer-events: none; z-index: 9999;
     transform: scale(1.1); opacity: 0.9; width: 100; height: 100;
+
+    position: fixed;
+    pointer-events: none;   /* 🔥 REQUIRED */
+    z-index: 9999;
+
+    z-index: 1000;
+    opacity: 0.8;
+    transition: none !important;
 }
 
 /* --- Overlays --- */
@@ -274,6 +281,35 @@ body {
     border: 0;
 }
 
+
+
+.qs-tile:active {
+    transform: scale(0.96);
+}
+
+/* Toggle tiles */
+.qs-tile.is-toggle {
+    background: rgba(255,255,255,0.12);
+}
+
+/* ON state */
+.qs-tile.is-toggle.active {
+    background: linear-gradient(
+        135deg,
+        rgba(0,122,255,0.45),
+        rgba(0,200,255,0.35)
+    );
+    /*box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.25),
+        0 8px 20px rgba(0,122,255,0.25);*/
+}
+
+/* Icon glow when ON */
+.qs-tile.is-toggle.active i {
+    filter: drop-shadow(0 0 6px rgba(0,180,255,0.8));
+}
+
+
 .qs-tile span {
     font-size: 9px;
     text-align: center;
@@ -323,12 +359,6 @@ body {
 
 /* --- Notification UI --- */
 .control-row { display: flex; gap: 15px; margin-bottom: 25px; }
-.toggle-btn {
-    width: 60px; height: 60px; border-radius: 16px; background: rgba(255,255,255,0.15);
-    display: flex; align-items: center; justify-content: center; font-size: 22px; transition:0.2s;
-}
-
-.toggle-btn.active { background: var(--accent); color: white; }
 
 .notif-item {
     background: rgba(255,255,255,0.1); border-radius: 16px; padding: 15px;
@@ -412,6 +442,9 @@ body {
     background: transparent;
     pointer-events: all;
 
+    bottom: 0;
+    height: 25px;
+
 }
 
 #appFrame {
@@ -492,17 +525,46 @@ body {
   pointer-events: none; /* Allow underlying gestures */
 }
 
+/* Shared guard base */
+.gesture-guard {
+    position: fixed;
+    z-index: 99999;
+    pointer-events: auto;
+    touch-action: none; /* IMPORTANT for Hammer */
+}
 
-
+/* Top guard */
 #top-guard {
     top: 0;
+    left: 0;
+    right: 0;
     height: 60px;
 }
 
-#bottom-guard {
+/* Left & right guards */
+#left-guard,
+#right-guard {
+    top: 0;
     bottom: 0;
-    height: 25px;
+    width: 18px; /* thin, but reliable */
 }
+
+#left-guard {
+    left: 0;
+}
+
+#right-guard {
+    right: 0;
+}
+
+
+#top-guard {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 18px;
+}
+
 .control-row {
   display: flex;
   gap: 12px;
@@ -568,27 +630,23 @@ input:checked + .toggle-btn {
     flex: 0 0 auto;
     scroll-snap-align: center;
     cursor: grab;
-}
-.app-wrapper iframe {
-    pointer-events: auto; /* allow clicking iframe once centered */
-}
 
-
-
-
-/* Hide scrollbars */
-#multiappspreviewarea::-webkit-scrollbar { display: none; }
-#multiappspreviewarea { scrollbar-width: none; }
-
-.app-wrapper {
     width: 250px;
     height: 75%;
     flex: 0 0 auto;
     position: relative;
     scroll-snap-align: center;
     transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
+
 }
+
+/* Hide scrollbars */
+#multiappspreviewarea::-webkit-scrollbar { display: none; }
+#multiappspreviewarea { scrollbar-width: none; }
+
+
 .app-wrapper iframe {
+    pointer-events: auto; /* allow clicking iframe once centered */
     width: 100%;
     height: 100%;
     border-radius: 22px;
@@ -658,20 +716,6 @@ input:checked + .toggle-btn {
 
 #delete-zone.active{
     display: flex;
-}
-
-.dragging-clone {
-    position: fixed;
-    pointer-events: none;   /* 🔥 REQUIRED */
-    z-index: 9999;
-}
-
-.dragging-clone {
-    position: fixed;
-    pointer-events: none; /* CRITICAL: Allows dropping "through" the ghost */
-    z-index: 1000;
-    opacity: 0.8;
-    transition: none !important;
 }
 
 /* --- Notification Shade Container --- */
