@@ -44,6 +44,16 @@ hammer.on('panstart', (e) => {
     const yRatio = relativeY / screenRect.height;
     
     const openApp = document.querySelector('#appFrame.open');
+    
+    // IMPORTANT: Disable pointer-events on app in gesture zones so Hammer gets the events
+    // Re-enable it for the middle content area
+    if (openApp) {
+        if (yRatio < SETTINGS_TRIGGER_ZONE || yRatio > DRAWER_TRIGGER_ZONE) {
+            openApp.style.pointerEvents = 'none';
+        } else {
+            openApp.style.pointerEvents = 'auto';
+        }
+    }
 
     activeGesture = null;
     activeApp = null;
@@ -65,8 +75,8 @@ hammer.on('panstart', (e) => {
         return;
     }
 
-    // 2. OPEN SHADE (Top)
-    if (yRatio < SETTINGS_TRIGGER_ZONE && noAppOpen()) {
+    // 2. OPEN SHADE (Top) - Works even when app is open
+    if (yRatio < SETTINGS_TRIGGER_ZONE) {
         // Reset to compact state when opening shade
         shadeState = 'compact';
         document.getElementById('shade-compact').classList.add('active');
@@ -293,6 +303,12 @@ hammer.on('panend', (e) => {
     activeGesture = null;
     rafPending = false;
     shadeIsMoving = false;
+    
+    // Restore pointer-events to auto for app frame after gesture ends
+    const openApp = document.querySelector('#appFrame.open');
+    if (openApp) {
+        openApp.style.pointerEvents = 'auto';
+    }
 });
 
 // (Keep your swipeleft/swiperight and helpers as they were)
@@ -301,6 +317,15 @@ hammer.on('panend', (e) => {
 hammer.on('swipeleft swiperight', (e) => {
     
     if (activeGesture || isDragging || isShadeOpen()) return;
+    
+    // Temporarily disable pointer-events on app to allow swipe through
+    const openApp = document.querySelector('#appFrame.open');
+    if (openApp) {
+        openApp.style.pointerEvents = 'none';
+        setTimeout(() => {
+            openApp.style.pointerEvents = 'auto';
+        }, 100);
+    }
     
     // Prevent swipes if drawer is open
     //if (appDrawer.classList.contains('open')) return;
@@ -314,7 +339,11 @@ hammer.on('swipeleft swiperight', (e) => {
         } else if (infoPopup.classList.contains('open') && noAppOpen()) {
             infoPopup.classList.remove('open');
         } else if(!noAppOpen()) {
-            alert('forward')
+            // Allow swiping through pages even with app open
+            if (currentPage < pages.length - 1) {
+                currentPage++;
+                render();
+            }
         }
     } 
     else if (e.type === 'swiperight') {
@@ -324,10 +353,15 @@ hammer.on('swipeleft swiperight', (e) => {
             currentPage--;
             render();
         } else if (infoPopup.classList.contains('open') && noAppOpen()) {
-            infoPopup.classList.remove('open');} else if (currentPage === 0 && !infoPopup.classList.contains('open') && noAppOpen()) {
+            infoPopup.classList.remove('open');
+        } else if (currentPage === 0 && !infoPopup.classList.contains('open') && noAppOpen()) {
             openInfo('news');
         } else if(!noAppOpen()) {
-            alert('back')
+            // Allow swiping back through pages even with app open
+            if (currentPage > 0) {
+                currentPage--;
+                render();
+            }
         }
     }
 });
