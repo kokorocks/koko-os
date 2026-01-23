@@ -68,19 +68,23 @@ function animateBackground(pageIndex) {
         vw,
         vh
     );
-    
-    const container = document.querySelector('.screen-container');
-    const containerWidth = container.clientWidth; // width of one page
-    const totalCoverWidth = cover.width;
+    const maxIndex = Math.max(1, getPageCount() - 1);
 
-    // Compute width based on page index
-    let width = Math.min(currentPage * containerWidth, totalCoverWidth - containerWidth) + containerWidth;
+// how much background CAN scroll
+const bgExtra = Math.max(0, cover.width - vw);
 
-    const maxOffsetX = Math.max(0, width - vw);
+// how much scrolling pages WANT
+const pageScrollWidth = maxIndex * vw;
 
-    // 🔑 distribute movement across all pages
-    const progress = pageIndex / pageCount;
-    const targetOffset = maxOffsetX * progress;
+// final allowed background travel
+const totalTravel = Math.min(bgExtra, pageScrollWidth);
+
+// pixels per page
+const pixelsPerPage = totalTravel / maxIndex;
+
+// final offset
+const targetOffset = pageIndex * pixelsPerPage;
+//render()
 
     screenEl.style.backgroundSize =
         `${cover.width}px ${cover.height}px`;

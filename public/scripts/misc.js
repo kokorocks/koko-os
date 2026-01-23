@@ -58,7 +58,12 @@ function openInfo(type) {
    5. FOLDER MODAL
    ========================================= */
 const folderModal = document.getElementById('folderModal');
-const folderInner = document.getElementById('folderInner');
+const folderPages = document.getElementById('folderPages');
+const folderDots = document.getElementById('folderDots');
+const folderPager = document.getElementById('folderPager');
+
+let currentFolderPage = 0;
+const ITEMS_PER_PAGE = 12; // 3 columns x 4 rows
 
 function openFolder(folderData, isRefresh = false) {
     // Find location of this folder for saving state
@@ -75,23 +80,60 @@ function openFolder(folderData, isRefresh = false) {
         if(!found) return;
     }
 
-    folderInner.innerHTML = '';
+    // Reset to first page
+    currentFolderPage = 0;
+    folderPages.innerHTML = '';
+    folderDots.innerHTML = '';
     
-    folderData.apps.forEach((appId, idx) => {
-        const slot = document.createElement('div');
-        slot.className = 'app-slot';
-        slot.dataset.loc = 'folder';
-        slot.dataset.i = idx;
-        // No P index needed for folder items, but we need the slot to work
+    // Calculate number of pages needed
+    const totalItems = folderData.apps.length;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+    
+    // Create pages
+    for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
+        const page = document.createElement('div');
+        page.className = 'folder-page';
         
-        const appIcon = createIcon(appId);
-        slot.appendChild(appIcon);
-        addDragEvents(slot);
+        const startIdx = pageIdx * ITEMS_PER_PAGE;
+        const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, totalItems);
         
-        folderInner.appendChild(slot);
-    });
-
+        for (let i = startIdx; i < endIdx; i++) {
+            const appId = folderData.apps[i];
+            const slot = document.createElement('div');
+            slot.className = 'app-slot';
+            slot.dataset.loc = 'folder';
+            slot.dataset.i = i;
+            
+            const appIcon = createIcon(appId);
+            slot.appendChild(appIcon);
+            addDragEvents(slot);
+            
+            page.appendChild(slot);
+        }
+        
+        folderPages.appendChild(page);
+    }
+    
+    // Create pagination dots
+    for (let i = 0; i < totalPages; i++) {
+        const dot = document.createElement('div');
+        dot.className = `folder-dot ${i === 0 ? 'active' : ''}`;
+        dot.onclick = () => goToFolderPage(i);
+        folderDots.appendChild(dot);
+    }
+    
     if(!isRefresh) folderModal.classList.add('open');
+}
+
+function goToFolderPage(pageIdx) {
+    currentFolderPage = pageIdx;
+    const offset = pageIdx * 100;
+    folderPages.style.transform = `translateX(-${offset}%)`;
+    
+    // Update dots
+    document.querySelectorAll('.folder-dot').forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === pageIdx);
+    });
 }
 
 folderModal.onclick = (e) => {

@@ -332,6 +332,16 @@ hammer.on('swipeleft swiperight', (e) => {
 
     if (e.type === 'swipeleft') {
         console.log('l')
+        
+        // Check if folder is open and allow page navigation within folder
+        if (folderModal.classList.contains('open')) {
+            const totalDots = document.querySelectorAll('.folder-dot').length;
+            if (currentFolderPage < totalDots - 1) {
+                goToFolderPage(currentFolderPage + 1);
+            }
+            return;
+        }
+        
         // Next Page
         if (currentPage < pages.length - 1 && !infoPopup.classList.contains('open') && noAppOpen()) {
             currentPage++;
@@ -348,6 +358,15 @@ hammer.on('swipeleft swiperight', (e) => {
     } 
     else if (e.type === 'swiperight') {
         console.log('r')
+        
+        // Check if folder is open and allow page navigation within folder
+        if (folderModal.classList.contains('open')) {
+            if (currentFolderPage > 0) {
+                goToFolderPage(currentFolderPage - 1);
+            }
+            return;
+        }
+        
         // Previous Page or Open News
         if (currentPage > 0 && noAppOpen() && !infoPopup.classList.contains('open')) {
             currentPage--;
