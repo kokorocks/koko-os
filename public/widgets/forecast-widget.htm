@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .widget {
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: white;
+      padding: 12px;
+      gap: 8px;
+      overflow: hidden;
+    }
+    
+    .forecast-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      width: 100%;
+    }
+    
+    .day {
+      min-width: 30px;
+      opacity: 0.8;
+    }
+    
+    .icon {
+      font-size: 14px;
+      min-width: 14px;
+    }
+    
+    .temp {
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="widget">
+    <div class="forecast-item">
+      <div class="day">Today</div>
+      <div class="icon">☀️</div>
+      <div class="temp">72°</div>
+    </div>
+    <div class="forecast-item">
+      <div class="day">Tue</div>
+      <div class="icon">⛅</div>
+      <div class="temp">68°</div>
+    </div>
+    <div class="forecast-item">
+      <div class="day">Wed</div>
+      <div class="icon">🌧️</div>
+      <div class="temp">65°</div>
+    </div>
+  </div>
+</body>
+</html>

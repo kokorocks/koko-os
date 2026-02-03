@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Simple Clock</title>
+<style>
+    html, body {
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      width: 100%;
+      height: 100%;
+    }
+
+    .clock div {
+        white-space: nowrap;
+    }
+</style>
+</head>
+<body>
+
+<div class="clock" id="clock"></div>
+
+<script>
+function updateClock() {
+    const now = new Date();
+
+    const data = {
+        Date: now.toLocaleDateString(),
+        Day: now.toLocaleDateString(undefined, { weekday: "long" }),
+        Hour: now.getHours(),
+        Minute: now.getMinutes()
+    };
+
+    document.getElementById("clock").innerHTML = `
+        <div style="font-size:32px;font-weight:700;">
+            ${((h = data.Hour % 12) || 12)}:${String(data.Minute).padStart(2,'0')} ${data.Hour >= 12 ? 'PM' : 'AM'}
+        </div>
+        <div style="font-size:14px;opacity:0.8;">
+            ${data.Day}, ${data.Date}
+        </div>
+    `;
+}
+
+// Initial paint (instant)
+updateClock();
+
+// ms until the next exact minute boundary
+const now = new Date();
+const msToNextMinute =
+    (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+
+// Align to minute, then tick every minute
+setTimeout(() => {
+    updateClock();
+    setInterval(updateClock, 60000);
+}, msToNextMinute);
+
+</script>
+
+</body>
+</html>

@@ -15,16 +15,23 @@ let pendingSlot = null;
 // Posted by Eugene Lazutkin, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-01-15, License - CC BY-SA 4.0
 
-var mouseDown = 0;
-document.body.onmousedown = function() { 
-  ++mouseDown;
-}
-document.body.onmouseup = function() {
-  --mouseDown;
-}
-
 const DELETE_ZONE_HEIGHT = 50; // px from top
 const deleteZone = document.getElementById('delete-zone');
+
+function fits(item, x, y, page, items, cols, rows) {
+    if (x < 0 || y < 0 || x + item.w > cols || y + item.h > rows) {
+        return false;
+    }
+
+    return !items.some(o =>
+        o.page === page &&
+        o.id !== item.id &&
+        x < o.x + o.w &&
+        x + item.w > o.x &&
+        y < o.y + o.h &&
+        y + item.h > o.y
+    );
+}
 
 
 function onDragIntent(e, slot) {
@@ -222,12 +229,15 @@ function handleMove(e) {
     updateGhostPosition(e);
 
     if (dragSrc.loc === 'folder' && folderModal.classList.contains('open')) {
-        const folderRect = folderInner.getBoundingClientRect();
-        const x = e.touches ? e.touches[0].clientX : e.clientX;
-        const y = e.touches ? e.touches[0].clientY : e.clientY;
-        // If dragged outside the folder box, close modal
-        if (x < folderRect.left || x > folderRect.right || y < folderRect.top || y > folderRect.bottom) {
-            folderModal.classList.remove('open');
+        const folderPager = document.getElementById('folderPager');
+        if (folderPager) {
+            const folderRect = folderPager.getBoundingClientRect();
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+            // If dragged outside the folder box, close modal
+            if (x < folderRect.left || x > folderRect.right || y < folderRect.top || y > folderRect.bottom) {
+                folderModal.classList.remove('open');
+            }
         }
     }
 }
@@ -329,7 +339,17 @@ function handleEnd(e) {
         } else {
             // Logic for dropping on empty page space
             if (dragSrc.loc === 'folder' && !folderModal.classList.contains('open')) {
-                const emptyIdx = pages[currentPage].findIndex(x => x === null);
+                let emptyIdx = pages[currentPage].findIndex(x => x === null);
+                
+                // If no empty slot on current page, create a new page and drop there
+                if (emptyIdx === -1 && pages.length < 13) {
+                    pages.push(new Array(grid).fill(null));
+                    currentPage = pages.length - 1;
+                    slider.style.transform = `translateX(-${currentPage * 100}%)`;
+                    emptyIdx = 0;
+                }
+                
+                // Drop the app
                 if (emptyIdx !== -1) {
                     handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
                 }
@@ -355,16 +375,14 @@ function getItem(ref) {
 
 function setItem(ref, val) {
     if(ref.loc === 'page') pages[ref.p][ref.i] = val;
-
     else if(ref.loc === 'dock') dock[ref.i] = val;
-
     else if (ref.loc === 'folder') {
         const folderSlot = pages[currentOpenFolder.p][currentOpenFolder.i];
         if (!folderSlot || folderSlot.type !== 'folder') return;
 
         if (val === null) {
             // Remove app from folder
-            folderSlot.apps.splice(ref.i, 1);
+            const removed = folderSlot.apps.splice(ref.i, 1)[0];
 
             // Folder empty → remove it
             if (folderSlot.apps.length === 0) {
@@ -380,12 +398,13 @@ function setItem(ref, val) {
                 currentOpenFolder = null;
             }
 
+            return removed; // <-- return removed app
         } else {
             folderSlot.apps[ref.i] = val;
         }
     }
-
 }
+
 
 function handleDrop(src, tgt) {
     // Prevent drop on self
@@ -460,3 +479,52 @@ if (src.loc === 'drawer') {
          openFolder(pages[currentOpenFolder.p][currentOpenFolder.i], true);
     }
 }
+
+
+
+
+let presstimer;
+const element = document.querySelector('.appsbar')
+const holdDuration = 500; // Time in milliseconds for a "hold"
+
+// Function to call when the hold is detected
+function onHold() {
+    console.log('Touch and hold detected!');
+    if ('virtualKeyboard' in navigator) {
+      navigator.virtualKeyboard.show();
+    }
+
+}
+
+// Function to call on a normal tap/end
+function onRelease() {
+    console.log('Touch released (normal tap or after hold)');
+    // Perform cleanup or other actions here
+}
+
+// Start the timer on touchstart
+element.addEventListener('touchstart', function(e) {
+    // Prevent default browser behavior like context menus if needed
+    // e.preventDefault(); 
+    pressTimer = setTimeout(onHold, holdDuration);
+}, false);
+
+// Clear the timer on touchend or touchcancel
+element.addEventListener('touchend', function(e) {
+    clearTimeout(pressTimer);
+    onRelease();
+}, false);
+
+element.addEventListener('touchcancel', function(e) {
+    clearTimeout(pressTimer);
+    onRelease();
+}, false);
+
+// Optional: For desktop compatibility, you can also use mousedown/mouseup
+element.addEventListener('mousedown', function(e) {
+    pressTimer = setTimeout(onHold, holdDuration);
+}, false);
+
+element.addEventListener('mouseup', function(e) {
+    clearTimeout(pressTimer);
+}, false);

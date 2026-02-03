@@ -70,21 +70,21 @@ function animateBackground(pageIndex) {
     );
     const maxIndex = Math.max(1, getPageCount() - 1);
 
-// how much background CAN scroll
-const bgExtra = Math.max(0, cover.width - vw);
-
-// how much scrolling pages WANT
-const pageScrollWidth = maxIndex * vw;
-
-// final allowed background travel
-const totalTravel = Math.min(bgExtra, pageScrollWidth);
-
-// pixels per page
-const pixelsPerPage = totalTravel / maxIndex;
-
-// final offset
-const targetOffset = pageIndex * pixelsPerPage;
-//render()
+    // how much background CAN scroll
+    const bgExtra = Math.max(0, cover.width - vw);
+    
+    // how much scrolling pages WANT
+    const pageScrollWidth = maxIndex * vw;
+    
+    // final allowed background travel
+    const totalTravel = Math.min(bgExtra, pageScrollWidth);
+    
+    // pixels per page
+    const pixelsPerPage = totalTravel / maxIndex;
+    
+    // final offset
+    const targetOffset = pageIndex * pixelsPerPage;
+    //render()
 
     screenEl.style.backgroundSize =
         `${cover.width}px ${cover.height}px`;
@@ -120,7 +120,15 @@ function render() {
         const pageDiv = document.createElement('div');
         pageDiv.className = 'page';
 
+        // Track which cells are occupied by multi-cell widgets
+        const occupiedCells = new Set();
+
         for (let i = 0; i < grid; i++) {
+            // Skip cells covered by multi-cell widgets
+            if (occupiedCells.has(i)) {
+                continue;
+            }
+
             const item = page[i];
             const slot = document.createElement('div');
 
@@ -130,6 +138,29 @@ function render() {
             slot.dataset.i = i;
 
             if (item) {
+                // Check if item is a multi-cell widget
+                if (typeof item === 'object' && item.type === 'widget') {
+                    const width = item.width || 1;
+                    const height = item.height || 1;
+                    const cols = Math.sqrt(grid); // assuming square grid (e.g., 4x5)
+                    
+                    // Mark occupied cells
+                    const currentCol = i % cols;
+                    const currentRow = Math.floor(i / cols);
+                    
+                    for (let h = 0; h < height; h++) {
+                        for (let w = 0; w < width; w++) {
+                            const cellIdx = (currentRow + h) * cols + (currentCol + w);
+                            if (cellIdx < grid) {
+                                occupiedCells.add(cellIdx);
+                            }
+                        }
+                    }
+                    
+                    slot.style.gridColumn = `span ${width}`;
+                    slot.style.gridRow = `span ${height}`;
+                }
+
                 slot.appendChild(createIcon(item));
                 addDragEvents(slot);
             }
@@ -190,6 +221,27 @@ function render() {
 
         drawerList.appendChild(slot);
     });
+
+    //drawerList.innerHTML = '';
+    document.querySelector('.bottom-menu')
+    Object.keys(appDB).forEach(key => {
+        const slot = document.createElement('div');
+        //const slot = document.querySelector('.bottom-menu')
+
+        slot.className = 'app-slot';
+        //slot.setAttribute('draggable', 'true');
+        slot.dataset.loc = 'split-view';
+        slot.dataset.key = key;
+
+        const icon = createIcon(key);
+        icon.querySelector('.app-icon').dataset.key = key;
+
+        slot.appendChild(icon);
+        //addDragEvents(slot);
+
+        document.querySelector('.bottom-menu').appendChild(slot);
+    });
+    
 }
 
 /* =========================================

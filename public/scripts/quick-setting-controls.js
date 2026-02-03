@@ -21,3 +21,20 @@ document.addEventListener('click', (e) => {
     // NORMAL BUTTON
     console.log('Button pressed:', tile.innerText.trim());
 });
+
+// QUICK SETTINGS TOGGLE
+document.querySelectorAll('.qs-tile.is-toggle').forEach(tile => {
+    tile.addEventListener('click', () => {
+        const checkbox = tile.querySelector('.qs-checkbox');
+        checkbox.checked = !checkbox.checked;
+        tile.setAttribute('aria-checked', checkbox.checked);
+    });
+});
+
+// COMPACT QUICK SETTINGS (from notification shade)
+document.querySelectorAll('.qs-btn-small').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        btn.classList.toggle('active');
+    });
+});

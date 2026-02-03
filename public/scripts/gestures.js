@@ -5,6 +5,8 @@ hammer.get('pan').set({
     direction: Hammer.DIRECTION_ALL,
     threshold: 5 
 });
+openAppFunc=openApp
+//console.log(openApp)
 
 // ---------- CONFIG & STATE ----------
 const SETTINGS_TRIGGER_ZONE = 0.10; // Top 10%
@@ -18,6 +20,7 @@ let rafPending = false;
 let currentDeltaY = 0;
 let shadeState = 'compact'; // 'compact' or 'expanded'
 let shadeIsMoving = false; // Prevent shade re-triggering
+let appOpen=false;
 
 const shade = document.getElementById('notifShade');
 const appDrawer = document.getElementById('appDrawer');
@@ -42,6 +45,8 @@ hammer.on('panstart', (e) => {
     const centerY = screenRect.top + screenRect.height / 2;
     const relativeY = e.center.y - screenRect.top;
     const yRatio = relativeY / screenRect.height;
+    const xRatio = (e.center.x - screenRect.left) / screenRect.width;
+    console.log(xRatio)
     
     const openApp = document.querySelector('#appFrame.open');
     
@@ -90,12 +95,21 @@ hammer.on('panstart', (e) => {
     
     // 3. APP GESTURES (Close App)
     if (openApp && yRatio > DRAWER_TRIGGER_ZONE) {
+    if (xRatio > 0.92 && false) { //made impossible for now
+        activeGesture = 'split_open';
+        splitApp = openApp;
+        splitApp.classList.add('is-dragging');
+        splitApp.style.transition = 'none';
+        return;
+    } else {
         activeGesture = 'app_close';
         activeApp = openApp;
         activeApp.classList.add('is-dragging');
         activeApp.style.transition = 'none';
         return;
     }
+}
+
 
     // 4. HOME SCREEN BOTTOM GESTURES
     if (noAppOpen() && yRatio > DRAWER_TRIGGER_ZONE) {
@@ -115,7 +129,7 @@ hammer.on('swipeup', (e) => {
     if(e.pointer===3){
         alert('screenshot')
     } else if (infoPopup.classList.contains('open')){
-        infoPopup.classList.remove('open');
+        //infoPopup.classList.remove('open');
     }
 })
 // ---------- PAN MOVE ----------
@@ -142,6 +156,10 @@ function handleDragFrame() {
 
         /* ================= SHADE OPEN ================= */
         case 'shade_open': {
+            if(infoPopup.classList.contains('open')){
+                infoPopup.classList.remove('open');
+                return;
+            }
             if (currentDeltaY <= 0) return;
 
             const pull = rubberBand(currentDeltaY, screenH);
@@ -201,6 +219,23 @@ function handleDragFrame() {
                 `translateY(${-pull * 0.6}px) scale(${1 - progress * 0.15})`;
             break;
         }
+        /*case 'split_open': {
+    if (currentDeltaY >= 0) return;
+
+    const pull = rubberBand(Math.abs(currentDeltaY), screenH);
+    splitProgress = clamp(pull / (screenH * 0.35), 0, 1);
+
+    // Move app into top half
+    splitApp.style.transform = `
+        translateY(${-pull * 0.4}px)
+        scale(${1 - splitProgress * 0.08})
+    `;
+
+    // Optional dim background
+    screen.style.background = `rgba(0,0,0,${splitProgress * 0.15})`;
+    break;
+}*/
+
     }
 }
 
@@ -231,10 +266,16 @@ hammer.on('panend', (e) => {
 
     switch (activeGesture) {
         case 'shade_open':
+            if(infoPopup.classList.contains('open')){
+                infoPopup.classList.remove('open');
+                break;
+            }
             // Pulled down enough or flicked down → open
             if (currentDeltaY > screenH * 0.18 || velocity > FLICK_VELOCITY) {
                 shade.classList.add('open');
+                //shade.classList.add('active');
                 shade.style.transform = 'translateY(0)';
+                shade.style.opacity=1
             } else {
                 shade.style.transform = 'translateY(-100%)';
                 shade.classList.remove('open');
@@ -258,46 +299,73 @@ hammer.on('panend', (e) => {
         case 'shade_close':
             // Pulled up enough or flicked up → close
             if (Math.abs(currentDeltaY) > screenH * 0.18 || velocity < -FLICK_VELOCITY) {
-    shade.classList.remove('open');
-    shade.style.transform = 'translateY(-100%)';
-} else {
-    shade.style.transform = 'translateY(0)';
-}
+                shade.classList.remove('open');
+                shade.style.transform = 'translateY(-100%)';
+            } else {
+                shade.style.transform = 'translateY(0)';
+            }
 
             break;
 
         case 'drawer_open':
+            // Close info popup if open
+            if(infoPopup.classList.contains('open')){
+                infoPopup.classList.remove('open');
+            }
             // Pull up (negative deltaY) opens drawer
             if (currentDeltaY < -screenH * 0.15 || velocity < -FLICK_VELOCITY) {
-    appDrawer.classList.add('open');
-    appDrawer.style.transform = 'translateY(0)';
-} else {
-    appDrawer.style.transform = 'translateY(100%)';
-}
+                appDrawer.classList.add('open');
+                appDrawer.style.transform = 'translateY(0)';
+            } else {
+                appDrawer.style.transform = 'translateY(100%)';
+            }
 
             break;
 
         case 'preview_open':
             // If swiped up enough, trigger the App Switcher
-            if ((distance > 8) || velocity < -FLICK_VELOCITY) {
+            if ((distance > 80) || velocity < -FLICK_VELOCITY) {
                 if (typeof openAppPreviews === 'function') {
+                    if(!infoPopup.classList.contains('open') && document.getElementById('multiappsarea').innerHTML.length > 0) openAppPreviews(); // && document.getElementById('multiappspreviewarea').innerHTML.length > 0
+                    //if(document.getElementById('multiappspreviewarea').innerHTML.length > 0) return
                     infoPopup.classList.remove('open')
-                    openAppPreviews();
                 }
             }
             break;
 
         case 'app_close':
             if (currentDeltaY < -screenH * 0.25 || velocity < -0.6) {
-    closeApp(activeApp);
-} else if (currentDeltaY < -screenH * 0.15) {
-    openAppPreviews();
-    closeApp(activeApp);
-} else {
-    resetAppStyles(activeApp);
-}
+                closeApp(activeApp);
+            } else if (currentDeltaY < -screenH * 0.15) {
+                openAppPreviews();
+                closeApp(activeApp);
+            } else {
+                resetAppStyles(activeApp);
+            }
 
             break;
+        
+        case 'split_open': {
+            splitApp.style.transition = 'all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)';
+            screen.style.transition = 'background 0.3s ease';
+
+            if (currentDeltaY < -screenH * 0.22 || velocity < -0.6) {
+                openSplitView(splitApp);
+            } else {
+                // Cancel
+                splitApp.style.transform = '';
+                screen.style.background = '';
+            }
+        
+            splitApp.classList.remove('is-dragging');
+            splitApp = null;
+            break;
+        }
+        case 'split_close': {
+            document.querySelector('.bottom-menu').classList.remove('open');
+            break;
+        }
+
     }
 
     activeGesture = null;
@@ -312,18 +380,17 @@ hammer.on('panend', (e) => {
 });
 
 // (Keep your swipeleft/swiperight and helpers as they were)
-
 // ---------- HORIZONTAL SWIPES (Home Pages) ----------
 hammer.on('swipeleft swiperight', (e) => {
     
     if (activeGesture || isDragging || isShadeOpen()) return;
     
     // Temporarily disable pointer-events on app to allow swipe through
-    const openApp = document.querySelector('#appFrame.open');
-    if (openApp) {
-        openApp.style.pointerEvents = 'none';
+    const openAppEl = document.querySelector('#appFrame.open');
+    if (openAppEl) {
+        openAppEl.style.pointerEvents = 'none';
         setTimeout(() => {
-            openApp.style.pointerEvents = 'auto';
+            openAppEl.style.pointerEvents = 'auto';
         }, 100);
     }
     
@@ -351,9 +418,24 @@ hammer.on('swipeleft swiperight', (e) => {
         } else if(!noAppOpen()) {
             // Allow swiping through pages even with app open
             if (currentPage < pages.length - 1) {
-                currentPage++;
-                render();
+                //currentPage++;
+                //render();
             }
+
+            // Swipe through apps
+            if(e.pointers === 3 || true){
+                const area = document.getElementById('multiappsarea');
+                const frames = Array.from(area.getElementsByClassName('all-apps'));
+                const currentIndex = frames.indexOf(openAppEl);
+
+                if (currentIndex !== -1 && currentIndex - 1 >= 0) {
+                    const nextApp = frames[currentIndex + 1];
+                    closeApp(openAppEl);
+                    console.log(nextApp.classList[0].toLocaleLowerCase())
+                    openAppFunc(nextApp.classList[0].toLocaleLowerCase()); // use app id to open
+                }
+            }
+            //alert('left')
         }
     } 
     else if (e.type === 'swiperight') {
@@ -378,18 +460,41 @@ hammer.on('swipeleft swiperight', (e) => {
         } else if(!noAppOpen()) {
             // Allow swiping back through pages even with app open
             if (currentPage > 0) {
-                currentPage--;
-                render();
+                //currentPage--;
+                //render();
             }
+
+            // Swipe through apps
+            if(e.pointers === 3){
+                const area = document.getElementById('multiappsarea');
+                const frames = Array.from(area.getElementsByClassName('all-apps'));
+                const currentIndex = frames.indexOf(openAppEl);
+
+                if (currentIndex !== -1 && currentIndex + 1 < frames.length) {
+                    const prevApp = frames[currentIndex - 1];
+                    closeApp(openAppEl);
+                    console.log(prevApp.classList[0].toLocaleLowerCase())
+                    openAppFunc(prevApp.classList[0].toLocaleLowerCase()); // use app id to open
+                }
+            }
+            //alert('right')
         }
     }
 });
 
 
 // ---------- REUSED HELPERS ----------
-function closeApp(app) {
+function closeApp(app, isSplit = false) {
+    if(isSplit){
+        app=null;
+        //document.querySelector('.bottom-menu').classList.remove('open');
+        const splitAppFrame = document.getElementById('splitAppFrame');
+        splitAppFrame.remove();
+        return;
+    } else {
+    console.log(app)
     app.classList.remove('open');
-    app.classList.add('closing');
+    app.classList.add('closing');}
     
     // Animate off screen
     app.style.transform = 'scale(0.8) translateY(20px)';
@@ -407,4 +512,32 @@ function resetAppStyles(app) {
     app.style.transform = '';
     app.style.opacity = '';
     app.style.transition = '';
+}
+
+function openSplitView(app) {
+    const menu = document.querySelector('.bottom-menu');
+    console.log('is split',document.getElementById('splitAppFrame'))
+    if(document.getElementById('splitAppFrame') !== null){
+        closeApp(app, true)
+        return;
+    } else {
+    menu.classList.toggle('open');}
+        //appOpen=!appOpen;
+
+
+    //const el=document.createElement('ul>')
+    //for()
+
+    /*app.classList.add('split-top');
+
+    app.style.transform = 'translateY(0) scale(0.92)';
+    screen.style.background = '';
+
+    // Lock app to top half
+    app.style.height = '50%';
+    app.style.top = '0';*/
+
+    // TODO:
+    // - show app picker for bottom half
+    // - or auto-open last app
 }

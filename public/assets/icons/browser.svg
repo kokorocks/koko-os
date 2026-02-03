@@ -1,0 +1,16 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+	<defs>
+		<linearGradient id="g1" x2="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(49.42,86.935,-86.935,49.42,82.757,-4.177)">
+			<stop offset="0" stop-color="#00a6ff"/>
+			<stop offset="1" stop-color="#0fe6d9"/>
+		</linearGradient>
+	</defs>
+	<style>
+		.s0 { fill: url(#g1) } 
+		.s1 { opacity: .62;fill: #00ff74 } 
+	</style>
+	<g id="Layer 1">
+		<path id="Shape 2" fill-rule="evenodd" class="s0" d="m20.53 88.7c-13.66-24.03-5.27-54.51 18.77-68.17 24.03-13.66 54.51-5.27 68.17 18.77 13.66 24.03 5.27 54.51-18.77 68.17-24.03 13.66-54.51 5.27-68.17-18.77z"/>
+		<path id="Shape 3" fill-rule="evenodd" class="s1" d="m66.99 74.6c-33.68 9.79-62.29 12.94-64.01 7.05-1.71-5.9 24.13-18.57 57.81-28.36 33.68-9.79 62.29-12.94 64-7.04 1.72 5.89-24.12 18.57-57.8 28.35z"/>
+	</g>
+</svg>

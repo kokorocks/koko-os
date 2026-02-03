@@ -103,6 +103,7 @@ function openFolder(folderData, isRefresh = false) {
             slot.className = 'app-slot';
             slot.dataset.loc = 'folder';
             slot.dataset.i = i;
+            slot.dataset.p = currentOpenFolder.p;
             
             const appIcon = createIcon(appId);
             slot.appendChild(appIcon);
