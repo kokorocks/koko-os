@@ -334,9 +334,9 @@ hammer.on('panend', (e) => {
             break;
 
         case 'app_close':
-            if (currentDeltaY < -screenH * 0.25 || velocity < -0.6) {
+            if (currentDeltaY < -screenH * 0.45 || velocity < -0.6) {
                 closeApp(activeApp);
-            } else if (currentDeltaY < -screenH * 0.15) {
+            } else if (currentDeltaY < -screenH * 0.05) {
                 openAppPreviews();
                 closeApp(activeApp);
             } else {
@@ -384,6 +384,15 @@ hammer.on('panend', (e) => {
 hammer.on('swipeleft swiperight', (e) => {
     
     if (activeGesture || isDragging || isShadeOpen()) return;
+
+    const screenRect = screen.getBoundingClientRect();
+    const centerY = screenRect.top + screenRect.height / 2;
+    const relativeY = e.center.y - screenRect.top;
+    const yRatio = relativeY / screenRect.height;
+    console.log(yRatio)
+    console.log(e)
+    console.log(relativeY)
+    console.log(centerY)
     
     // Temporarily disable pointer-events on app to allow swipe through
     const openAppEl = document.querySelector('#appFrame.open');
@@ -423,7 +432,7 @@ hammer.on('swipeleft swiperight', (e) => {
             }
 
             // Swipe through apps
-            if(e.pointers === 3 || true){
+            if(centerY <= 1000 || yRatio <= 0.75 ){
                 const area = document.getElementById('multiappsarea');
                 const frames = Array.from(area.getElementsByClassName('all-apps'));
                 const currentIndex = frames.indexOf(openAppEl);
@@ -465,7 +474,7 @@ hammer.on('swipeleft swiperight', (e) => {
             }
 
             // Swipe through apps
-            if(e.pointers === 3){
+            if(yRatio <= 0.75 || true){
                 const area = document.getElementById('multiappsarea');
                 const frames = Array.from(area.getElementsByClassName('all-apps'));
                 const currentIndex = frames.indexOf(openAppEl);

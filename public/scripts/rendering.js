@@ -173,7 +173,7 @@ function render() {
 
     /* ---------- Dock ---------- */
     dockEl.innerHTML = '';
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) { // REMEMBER: dock size is found here
         const item = dock[i];
         const slot = document.createElement('div');
 
@@ -198,10 +198,11 @@ function render() {
     });
 
     /* ---------- Page Slide ---------- */
+    
     slider.style.transform =
         `translateX(-${currentPage * 100}%)`;
 
-    animateBackground(currentPage);
+    if (backgroundMove) animateBackground(currentPage);
 
     /* ---------- Drawer ---------- */
     drawerList.innerHTML = '';

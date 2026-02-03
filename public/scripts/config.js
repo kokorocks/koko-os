@@ -53,7 +53,7 @@ const defaultPages = [
 // Widget examples (can be added to pages)
 // { type: 'widget', app: 'weather', widget: 'weather-widget.htm', width: 2, height: 2 }
 
-const defaultDock = ['camera', 'browser', 'mail', 'music'];
+const defaultDock = ['store', 'browser', 'mail', 'music', 'camera'];
 const info = {
     news: {}
 };
@@ -64,7 +64,7 @@ const info = {
         2: {title: 'System Maintenance', content: 'Scheduled maintenance on June 15th.', icon: 'fa-wrench', url: '#', thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2670'}
     }
 }*/
-let savedState = JSON.parse(localStorage.getItem('glass_os_state_v2'));
+let savedState = JSON.parse(localStorage.getItem('state'));
 let pages = savedState ? savedState.pages : JSON.parse(JSON.stringify(defaultPages));
 let dock = savedState ? savedState.dock : JSON.parse(JSON.stringify(defaultDock));
 
@@ -72,7 +72,7 @@ let currentPage = 0;
 let currentOpenFolder = null; // Stores {p, i} of current folder
 
 function saveState() {
-    localStorage.setItem('glass_os_state_v2', JSON.stringify({ pages, dock }));
+    localStorage.setItem('state', JSON.stringify({ pages, dock }));
 }
 
 let rows=window.getComputedStyle(document.body).getPropertyValue('--grid-rows');

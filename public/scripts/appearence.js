@@ -1,5 +1,8 @@
 let appIconShapes='squircle'
 appIconShapes = 'circle'
+
+let backgroundMove=true;
+
 switch (appIconShapes) {
     case 'squircle':
         //document.documentElement.style.setProperty('--app-icon-border-radius', '20%');
@@ -14,3 +17,4 @@ switch (appIconShapes) {
         });
         break;
 }
+

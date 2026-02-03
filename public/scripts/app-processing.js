@@ -73,12 +73,12 @@ function createIcon(itemData, isDock = false) {
         let widgetClickTime = 0;
         container.addEventListener('mousedown', () => widgetClickTime = Date.now());
 
-        container.addEventListener('click', e => {
+        container.addEventListener('dblclick', e => {
             if (!isDragging && (Date.now() - widgetClickTime) < 300) {
                 cancelDrag();
                 e.preventDefault();
                 e.stopPropagation();
-                if (app && app.app) openApp(appId, document.querySelector('.bottom-menu').classList.contains('open'));
+                if (app && app.app) openApp(appId)//, document.querySelector('.bottom-menu').classList.contains('open'));
                 else console.log('Widget for ' + appId + ' has no associated app');
             }
         });
@@ -98,8 +98,8 @@ function createIcon(itemData, isDock = false) {
     if (app.icon && app.icon.startsWith('img:')) {
         const img = document.createElement('img');
         img.src = app.icon.slice(4);
-        img.style.width = '60%';
-        img.style.height = '60%';
+        img.style.width = '70%';
+        img.style.height = '70%';
         img.style.userSelect = 'none';
         //img.style.pointerEvents = 'auto'; // <-- allow events to bubble to parent
         img.draggable = false;

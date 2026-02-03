@@ -233,12 +233,12 @@ body {
 .dock {
     position: absolute; bottom: 14px; left: 15px; right: 15px;
     height: 80px;
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
+    /*background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);*/
     border-radius: 32px;
     display: flex; justify-content: space-around; align-items: center;
     z-index: 50;
-    border: 1px solid rgba(255,255,255,0.1);
+    /*border: 1px solid rgba(255,255,255,0.1);*/
 }
 
 /* --- Dragging Ghost --- */
@@ -396,26 +396,6 @@ body {
     gap: 10px;
 }
 
-.qs-btn-small {
-    width: 45px;
-    height: 45px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    border: 0;
-}
-
-.qs-btn-small:active {
-    background: rgba(255,255,255,0.25);
-    transform: scale(0.92);
-}
-
 .notif-section-compact {
     max-height: 120px;
     overflow-y: auto;
@@ -453,12 +433,6 @@ body {
     color: white;
     font-size: 20px;
     border: 0;
-}
-
-
-
-.qs-tile:active {
-    transform: scale(0.96);
 }
 
 /* Toggle tiles */
@@ -1325,11 +1299,6 @@ input:checked + .qs-btn-round { background: white; color: black; }
     opacity: 0;
 }
 
-.phone-frame .system-notif {
-    position: absolute; /* attach it inside the phone frame */
-}
-
-
 /* Show animation */
 .system-notif.show {
     transform: translateX(-50%) translateY(0);
@@ -1360,19 +1329,6 @@ input:checked + .qs-btn-round { background: white; color: black; }
     font-size: 14px;
     color: white;
     margin-bottom: 4px;
-}
-
-.system-notif .notif-desc {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-/* Buttons container */
-.system-notif .notif-buttons {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    justify-content: flex-end;
 }
 
 /* Button style */
@@ -1476,10 +1432,6 @@ input:checked + .qs-btn-round { background: white; color: black; }
     margin-bottom: 2px;
 }
 
-.phone-frame .system-notif .notif-desc {
-    font-size: 12px;
-    color: rgba(255,255,255,0.7);
-}
 
 /* Buttons container */
 .phone-frame .system-notif .notif-buttons {
@@ -1605,7 +1557,7 @@ input:checked + .qs-btn-round { background: white; color: black; }
     font-size: 13px;
 }
 
-.bottom-menu {
+/*.bottom-menu {
     padding: 5px;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -1630,16 +1582,17 @@ input:checked + .qs-btn-round { background: white; color: black; }
     transform: translateY(0);
     opacity: 1;
 }
+
 #splitAppFrame {
     will-change: transform, opacity;
     transform-origin: center bottom;
-    /* Starting State (Hidden/Small) */
+
     opacity: 0;
     transform: scale(0.9) translateY(20px);
-    pointer-events: none; /* Prevent clicking while closed */
-    touch-action: none; /* Allow gestures to pass through */
+    pointer-events: none; 
+    touch-action: none; 
     
-    /* Layout */
+
     position: absolute;
     top: 0;
     left: 0;
@@ -1650,42 +1603,21 @@ input:checked + .qs-btn-round { background: white; color: black; }
     background: white;
     z-index: 500;
 
-    /* Animation Settings */
+
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); 
 }
 #splitAppFrame.open {
-    /* Ending State (Visible/Full) */
+
     opacity: 1;
     transform: scale(1) translateY(0);
     pointer-events: auto;
-    touch-action: none; /* Allow gestures to pass through */
+    touch-action: none; 
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
-}    /* Closing animation */
+}   
 
 #splitAppFrame.closing {
     opacity: 0;
     transform: scale(0.85) translateY(20px);
     transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
 }
-/* Ensure the browser doesn't capture swipes for native history navigation */
-#mainScreen, #appFrame, #notifShade, #appDrawer {
-    touch-action: none; 
-    will-change: transform, opacity, border-radius; /* Hint to browser to use GPU */
-}
-
-/* iOS-style Spring Curves */
-:root {
-    --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
-    --ease-bouncy: cubic-bezier(0.175, 0.885, 0.32, 1.1); /* Slight overshoot */
-}
-
-.animate-spring {
-    transition: transform 0.5s var(--ease-spring), 
-                opacity 0.5s var(--ease-spring), 
-                border-radius 0.3s ease,
-                scale 0.5s var(--ease-spring) !important;
-}
-
-.is-dragging {
-    transition: none !important; /* Zero latency while finger is down */
-}
+*/
