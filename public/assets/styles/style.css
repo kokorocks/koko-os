@@ -131,6 +131,13 @@ body {
     animation:
         install-pulse 2.4s ease-in-out infinite,
         install-hue 6s linear infinite;
+        
+    background: rgba(86, 86, 86, 0.189);
+    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+    max-width: 50px;
+    max-height: 50px;
+    border-radius: 12px;
+
 }
 
 /* Glow + energy ring */
@@ -331,10 +338,22 @@ body {
     width: 100%;
     transform: translateY(-100%);
     padding: 0;
+    overflow: hidden;
+    /* More transparent, lighter background */
+    background: rgba(20, 20, 25, 0.253); 
+    /* Heavier blur for readability without darkness */
+    backdrop-filter: blur(24px) saturate(115%);
+    -webkit-backdrop-filter: blur(24px) saturate(115%);
+    padding: 15px 18px; /* Tighter padding */
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    gap: 12px;
+    color: white;
+    /* Subtle border for definition */
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
 }
+
+
 
 #notifShade.open { transform: translateY(0); }
 
@@ -390,11 +409,16 @@ body {
     color: white;
 }
 
-.quick-settings-compact {
+.quick-settings-compact { /*come back to this*/
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 20px;
 }
+
 
 .notif-section-compact {
     max-height: 120px;
@@ -505,8 +529,6 @@ body {
     overflow-y: auto; padding-bottom: 50px;
 }
 
-/* --- Notification UI --- */
-.control-row { display: flex; gap: 15px; margin-bottom: 25px; }
 
 .notif-item {
     background: rgba(255,255,255,0.1); border-radius: 16px; padding: 15px;
@@ -625,7 +647,7 @@ body {
     text-decoration: none; color: white; margin-bottom: 12px;
 }
 #infopopup .news:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
-#infopopup .news-header { display: flex; align-items: center; gap: 10px; }
+#infopopup .news-header { display: flex; gap: 10px; }
 #infopopup .news-header i, #infopopup .news-header img {
     width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
     background: rgba(255,255,255,0.2); display: flex;
@@ -649,7 +671,7 @@ body {
 }
 
 #appFrame {
-    will-change: transform, opacity;
+    will-change: transform, opacity border-radius;
     transform-origin: center bottom;
     /* Starting State (Hidden/Small) */
     opacity: 0;
@@ -716,12 +738,6 @@ body {
     will-change: transform, opacity, border-radius;
 }
 
-/* 3. Ensure the app frame is ready for transforms */
-#appFrame {
-    will-change: transform, opacity, border-radius;
-    transform-origin: center bottom;
-}
-
 #multiappsarea {
   position: absolute;
   inset: 0;
@@ -738,10 +754,12 @@ body {
 
 /* Top guard */
 #top-guard {
-    top: 0;
+
+    bottom: 0;
     left: 0;
     right: 0;
-    height: 60px;
+    height: 18px;
+
 }
 
 /* Left & right guards */
@@ -761,16 +779,12 @@ body {
 }
 
 
-#top-guard {
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 18px;
-}
-
 .control-row {
   display: flex;
   gap: 12px;
+  
+  margin-bottom: 25px
+/* --- Notification UI --- */
 }
 
 .toggle-btn {
@@ -815,7 +829,12 @@ input:checked + .toggle-btn {
     box-sizing: content-box; /* important so padding doesn’t shrink children */
     pointer-events: none;    /* default: let clicks pass through */
     opacity: 0;              /* default: hidden */
+    scrollbar-width: none; 
 }
+
+#multiappspreviewarea::-webkit-scrollbar { display: none; }
+
+
 #multiappspreviewarea > .app-wrapper {
     margin-top: 50px; /* shift all apps up */
 }
@@ -830,6 +849,8 @@ input:checked + .toggle-btn {
 
 
 .app-wrapper {
+    
+    pointer-events: auto;
     flex: 0 0 auto;
     scroll-snap-align: center;
     cursor: grab;
@@ -842,11 +863,6 @@ input:checked + .toggle-btn {
     transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
 
 }
-
-/* Hide scrollbars */
-#multiappspreviewarea::-webkit-scrollbar { display: none; }
-#multiappspreviewarea { scrollbar-width: none; }
-
 
 .app-wrapper iframe {
     pointer-events: auto; /* allow clicking iframe once centered */
@@ -904,10 +920,6 @@ input:checked + .toggle-btn {
     z-index: 999;
 }
 
-.app-wrapper{
-    pointer-events: auto;
-}
-
 #delete-zone{
     position: absolute;
     background-image: linear-gradient(rgb(255, 0, 0), rgba(255,255,255,0));
@@ -921,21 +933,7 @@ input:checked + .toggle-btn {
     display: flex;
 }
 
-/* --- Notification Shade Container --- */
-#notifShade {
-    /* More transparent, lighter background */
-    background: rgba(20, 20, 25, 0.253); 
-    /* Heavier blur for readability without darkness */
-    backdrop-filter: blur(24px) saturate(115%);
-    -webkit-backdrop-filter: blur(24px) saturate(115%);
-    padding: 15px 18px; /* Tighter padding */
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    color: white;
-    /* Subtle border for definition */
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
-}
+
 
 /* Header */
 .shade-header {
@@ -1105,10 +1103,10 @@ input:checked + .qs-btn-round { background: white; color: black; }
 }
 
 .notif-title {
-    font-size: 14px;
     font-weight: 600;
     color: white;
     line-height: 1.2;
+    font-size: 15px;
 }
 
 .notif-desc {
@@ -1132,14 +1130,6 @@ input:checked + .qs-btn-round { background: white; color: black; }
     width: 36px; height: 4px; background: rgba(255,255,255,0.3);
     border-radius: 4px; align-self: center; margin-top: auto;
     cursor: pointer;
-}
-
-.installing{
-    background: rgba(86, 86, 86, 0.189);
-    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-    max-width: 50px;
-    max-height: 50px;
-    border-radius: 12px;
 }
 
 .installing>*{
@@ -1262,13 +1252,6 @@ input:checked + .qs-btn-round { background: white; color: black; }
 .qs-btn-small.active {
     background: rgba(255, 255, 255, 0.25);
     transform: scale(0.95);
-}
-
-.quick-settings-compact {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    margin-bottom: 20px;
 }
 
 .system-notif {
@@ -1504,16 +1487,6 @@ input:checked + .qs-btn-round { background: white; color: black; }
 .system-notif.show {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
-}
-
-.notif-title {
-    font-weight: 600;
-    font-size: 15px;
-}
-
-.notif-desc {
-    font-size: 13px;
-    color: rgba(255,255,255,0.85);
 }
 
 .notif-buttons {

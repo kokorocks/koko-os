@@ -224,7 +224,7 @@ function renderAppPreviews() {
     function makeDraggable(el) {
         let startY = 0, currentY = 0, dragged = false;
         const DRAG_THRESHOLD = 8;
-        const CLOSE_THRESHOLD = 500;
+        const CLOSE_THRESHOLD = 250;
 
         el.addEventListener('mousedown', dragStart);
         el.addEventListener('touchstart', dragStart, { passive: true });
