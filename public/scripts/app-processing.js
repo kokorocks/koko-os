@@ -166,43 +166,42 @@ function openApp(id, data, splitView = false, change=0, transition = true) {
     // ---------- CREATE ----------
     const sanitizedName = appDB[id].name.replace(/\s+/g, '-');
     if (document.getElementsByClassName(sanitizedName).length === 0) {
-        el = document.createElement('iframe');
+    // Pass a "done" function
+    requestPermission(id, function done(grantedPermissions) {
+        const permissionsVar = grantedPermissions.length
+            ? grantedPermissions.join('; ') + ';'
+            : '';
+
+        // Create iframe **after permission is decided**
+        const el = document.createElement('iframe');
         el.src = 'apps/' + appDB[id].app;
         el.id = 'appFrame';
         el.classList.add(sanitizedName, 'all-apps');
         el.previewIndex = previewIdx++;
-        console.log(appDB[id].permissions ? appDB[id].permissions.join(';') + ';' : '')
-        el.allow = appDB[id].permissions ? appDB[id].permissions.join(';') + ';' : '';
-        if (splitView){
+        el.allow = permissionsVar;
+
+        if (splitView) {
             el.id = 'splitAppFrame';
             document.querySelector('.bottom-menu').appendChild(el);
-        }else{
+        } else {
             document.getElementById('multiappsarea').appendChild(el);
         }
-    }
-    // ---------- REOPEN ----------
-    else {
-        el = document.getElementsByClassName(sanitizedName)[0];
-        el.id = 'appFrame';
-        el.classList.remove('closed', 'closing');
-    }
 
-    appopen = el;
+        appopen = el;
 
-    // ---------- FORCE START STATE ----------
-    el.style.transition = 'none';
-    if(transition) el.style.transform = 'translateY(25vh) scale(0.4)';
-    transition ? el.style.opacity = '0' : el.style.opacity = '1';
+        // ---------- FORCE START STATE ----------
+        el.style.transition = 'none';
+        if (transition) el.style.transform = 'translateY(25vh) scale(0.4)';
+        el.style.opacity = transition ? '0' : '1';
+        if (transition) el.offsetHeight; // force reflow
 
-    // 🔥 FORCE REFLOW (this is the missing piece)
-    if(transition) el.offsetHeight;
-
-    // ---------- ANIMATE IN ----------
-    el.style.transition = '';
-    console.log('open app with transition:', transition);
-    transition ? el.classList.add('open') : el.classList.add('open-no-transition');
-    transition ? el.style.transform = '' : el.style.transform = 'translateY(0) scale(1)';
-    el.style.opacity = '';
+        // ---------- ANIMATE IN ----------
+        el.style.transition = '';
+        transition ? el.classList.add('open') : el.classList.add('open-no-transition');
+        transition ? el.style.transform = '' : el.style.transform = 'translateY(0) scale(1)';
+        el.style.opacity = '';
+    });
+}
 }
 
 function isAppOpen(id) {
