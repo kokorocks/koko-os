@@ -334,7 +334,7 @@ hammer.on('panend', (e) => {
             break;
 
         case 'app_close':
-            if (currentDeltaY < -screenH * 0.45 || velocity < -0.6) {
+            if (currentDeltaY < -screenH * 0.55 || velocity < -0.6) {
                 closeApp(activeApp);
             } else if (currentDeltaY < -screenH * 0.05) {
                 openAppPreviews();
