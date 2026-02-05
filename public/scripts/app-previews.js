@@ -162,7 +162,19 @@ function renderAppPreviews() {
         const icon = document.createElement('div');
         icon.className = 'preview-icon';
         icon.style.background = appDB[app.classList[0].toLowerCase()].color;
+        colorScheme==='dark' ? icon.style.backgroundImage='linear-gradient(rgb(0, 0, 0), rgb(20, 20, 25))' : icon.style.backgroundImage='linear-gradient(rgb(255, 255, 255), rgb(248, 248, 248))';
+        //colorScheme==='dark' ? icon.style.boxShadow=  '0 4px 10px rgba(0,0,0,0.5)' : icon.style.boxShadow='0 4px 10px rgba(0,0,0,0.2)';
+        colorScheme==='dark' ? icon.style.color=  'white' : icon.style.color='black';
         icon.innerHTML = `<i class="fas ${appDB[app.classList[0].toLowerCase()].icon}"></i>`;
+        if (appDB[app.classList[0].toLowerCase()].icon && appDB[app.classList[0].toLowerCase()].icon.startsWith('img:')) {
+            const img = document.createElement('img');
+            img.src = appDB[app.classList[0].toLowerCase()].icon.slice(4);
+            img.style.width = '100%';
+            img.style.height = '100%';
+            icon.appendChild(img);
+        } else {
+            icon.innerHTML = `<i class="fas ${appDB[app.classList[0].toLowerCase()].icon}"></i>`;
+        }
         icon.style.position = 'absolute';
         icon.style.top = '-25px'; // float above iframe
         icon.style.left = '50%';
@@ -224,7 +236,8 @@ function renderAppPreviews() {
     function makeDraggable(el) {
         let startY = 0, currentY = 0, dragged = false;
         const DRAG_THRESHOLD = 8;
-        const CLOSE_THRESHOLD = 250;
+        const CLOSE_THRESHOLD = -250;
+        const OPEN_THRESHOLD = 40;
 
         el.addEventListener('mousedown', dragStart);
         el.addEventListener('touchstart', dragStart, { passive: true });
@@ -244,8 +257,13 @@ function renderAppPreviews() {
             const y = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
             currentY = y - startY;
             if (Math.abs(currentY) > DRAG_THRESHOLD) dragged = true;
+            if (currentY < 0){
             el.style.transform = `translateY(${currentY}px) scale(1.05)`;
             el.style.opacity = 1 - Math.abs(currentY) / 400;
+        }else{
+            el.style.transform = `translateY(${(currentY/8.5)-2.5 > 22 ? 22 :(currentY/8.5)-2.5}px) scale(${(1 + currentY / 1000) > 1.36 ? 1.36 : (1 + currentY / 1000)})`;
+            //el.style.opacity = 1 - Math.abs(currentY) / 400;
+        }
         }
 
         function dragEnd() {
@@ -254,8 +272,17 @@ function renderAppPreviews() {
             document.removeEventListener('mouseup', dragEnd);
             document.removeEventListener('touchend', dragEnd);
 
-            if (Math.abs(currentY) > CLOSE_THRESHOLD) {
+            if (currentY < CLOSE_THRESHOLD) {
+                console.log('close app')
                 closePreviewApp(el);
+                return;
+            }
+            console.log(currentY)
+            if (currentY > OPEN_THRESHOLD) {
+                console.log('reopen app')
+                console.log(el.querySelector('iframe').classList[0])
+                openApp(el.querySelector('iframe').classList[0].toLowerCase(), null, false, 0, false);
+                closeAppPreviews();
                 return;
             }
 

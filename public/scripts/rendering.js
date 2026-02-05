@@ -30,6 +30,170 @@ function getPageCount() {
     return pages.length;
 }
 
+const pageEls = []; // cache page divs
+const dotEls = []; // cache dot divs
+
+function initRender() {
+    // ---------- Pages ----------
+    slider.innerHTML = '';
+    pages.forEach((page, pageIdx) => {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'page';
+        pageDiv.dataset.index = pageIdx;
+
+        const occupiedCells = new Set();
+
+        for (let i = 0; i < grid; i++) {
+            if (occupiedCells.has(i)) continue;
+
+            const item = page[i];
+            const slot = document.createElement('div');
+            slot.className = 'app-slot';
+            slot.dataset.loc = 'page';
+            slot.dataset.p = pageIdx;
+            slot.dataset.i = i;
+
+            if (item) {
+                if (typeof item === 'object' && item.type === 'widget') {
+                    const width = item.width || 1;
+                    const height = item.height || 1;
+                    const cols = Math.sqrt(grid);
+
+                    const currentCol = i % cols;
+                    const currentRow = Math.floor(i / cols);
+
+                    for (let h = 0; h < height; h++)
+                        for (let w = 0; w < width; w++) {
+                            const cellIdx = (currentRow + h) * cols + (currentCol + w);
+                            if (cellIdx < grid) occupiedCells.add(cellIdx);
+                        }
+
+                    slot.style.gridColumn = `span ${width}`;
+                    slot.style.gridRow = `span ${height}`;
+                }
+                slot.appendChild(createIcon(item));
+                addDragEvents(slot);
+            }
+
+            pageDiv.appendChild(slot);
+        }
+
+        slider.appendChild(pageDiv);
+        pageEls.push(pageDiv);
+    });
+
+    // ---------- Dock ----------
+    dockEl.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+        const item = dock[i];
+        const slot = document.createElement('div');
+        slot.className = 'app-slot dock-app-slot';
+        slot.dataset.loc = 'dock';
+        slot.dataset.i = i;
+
+        if (item) {
+            slot.appendChild(createIcon(item, true));
+            addDragEvents(slot);
+        }
+
+        dockEl.appendChild(slot);
+    }
+
+    // ---------- Dots ----------
+    dotsContainer.innerHTML = '';
+    pages.forEach((_, i) => {
+        const d = document.createElement('div');
+        d.className = `dot ${i === currentPage ? 'active' : ''}`;
+        dotsContainer.appendChild(d);
+        dotEls.push(d);
+    });
+
+    // ---------- Drawer ----------
+    drawerList.innerHTML = '';
+    Object.keys(appDB).forEach(key => {
+        const slot = document.createElement('div');
+        slot.className = 'app-slot app-drawer';
+        slot.setAttribute('draggable', 'true');
+        slot.dataset.loc = 'drawer';
+        slot.dataset.key = key;
+
+        const icon = createIcon(key);
+        icon.querySelector('.app-icon').dataset.key = key;
+
+        slot.appendChild(icon);
+        addDragEvents(slot);
+        drawerList.appendChild(slot);
+    });
+
+    // ---------- Bottom menu ----------
+    const bottomMenu = document.querySelector('.bottom-menu');
+    bottomMenu.innerHTML = '';
+    Object.keys(appDB).forEach(key => {
+        const slot = document.createElement('div');
+        slot.className = 'app-slot';
+        slot.dataset.loc = 'split-view';
+        slot.dataset.key = key;
+
+        const icon = createIcon(key);
+        icon.querySelector('.app-icon').dataset.key = key;
+
+        slot.appendChild(icon);
+        bottomMenu.appendChild(slot);
+    });
+
+    // Apply initial positions
+    slider.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+    slider.style.transform = `translateX(-${currentPage * 100}%)`;
+    if (backgroundMove) animateBackground(currentPage);
+}
+
+let bgCoverWidth = 0;
+let bgCoverHeight = 0;
+let pixelsPerPage = 0;
+
+function initBackground() {
+    const bg = getComputedStyle(screenEl).backgroundImage;
+    const match = /url\(["']?(.*?)["']?\)/.exec(bg);
+    if (!match) return;
+
+    const img = new Image();
+    img.onload = () => {
+        const vw = screenEl.clientWidth;
+        const vh = screenEl.clientHeight;
+
+        // compute scale to cover screen
+        const scale = Math.max(vw / img.naturalWidth, vh / img.naturalHeight);
+        bgCoverWidth = img.naturalWidth * scale;
+        bgCoverHeight = img.naturalHeight * scale;
+
+        const maxIndex = Math.max(1, pages.length - 1);
+        const bgExtra = Math.max(0, bgCoverWidth - vw);
+        pixelsPerPage = bgExtra / maxIndex;
+
+        // apply initial background
+        bgLayer.style.backgroundImage = `url(${match[1]})`;
+        bgLayer.style.width = `${bgCoverWidth}px`;
+        bgLayer.style.height = `${bgCoverHeight}px`;
+        bgLayer.style.transform = `translateX(0px)`;
+    };
+    img.src = match[1];
+}
+
+
+function switchPage(page) {
+    screenEl.style.pointerEvents = 'none';
+
+    bgLayer.style.setProperty('--bg-x', `${-page * pixelsPerPage}px`);
+
+    setTimeout(() => {
+        screenEl.style.pointerEvents = '';
+    }, 300);
+
+    currentPage = page;
+}
+
+
+
 
 function loadBackgroundImageSize(element, cb) {
     const bg = getComputedStyle(element).backgroundImage;
@@ -255,4 +419,10 @@ loadBackgroundImageSize(screenEl, () => {
 
 window.addEventListener('resize', () => {
     animateBackground(currentPage);
+});
+
+document.getElementById('dotsContainer').addEventListener('click', e => {
+
+    //make it open preview of all the pages
+
 });

@@ -25,8 +25,11 @@ function createIcon(itemData, isDock = false) {
             } else {
                 mini.innerHTML = `<i class="fas ${app.icon}"></i>`;
             }
-
-            mini.style.background = app.color;
+                        
+            colorScheme==='dark' ? mini.style.backgroundImage=  'linear-gradient(rgb(0, 0, 0), rgb(20, 20, 25))' : mini.style.backgroundImage='linear-gradient(rgb(255, 255, 255), rgb(248, 248, 248))';
+            //colorScheme==='dark' ? icon.style.boxShadow=  '0 4px 10px rgba(0,0,0,0.5)' : icon.style.boxShadow='0 4px 10px rgba(0,0,0,0.2)';
+            colorScheme==='dark' ? mini.style.color=  'white' : mini.style.color='black';
+            //mini.style.background = app.color;
             grid.appendChild(mini);
         });
 
@@ -67,6 +70,7 @@ function createIcon(itemData, isDock = false) {
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.pointerEvents = 'none';
+        //iframe.allow='scripted;camera;microphone;clipboard-read;clipboard-write;';
 
         container.appendChild(iframe);
 
@@ -148,7 +152,7 @@ function createIcon(itemData, isDock = false) {
     return wrapper;
 }
 
-function openApp(id, data, splitView = false, change=0) {
+function openApp(id, data, splitView = false, change=0, transition = true) {
     console.log(id)
     cancelDrag();
     console.log(splitView)
@@ -167,6 +171,8 @@ function openApp(id, data, splitView = false, change=0) {
         el.id = 'appFrame';
         el.classList.add(sanitizedName, 'all-apps');
         el.previewIndex = previewIdx++;
+        console.log(appDB[id].permissions ? appDB[id].permissions.join(';') + ';' : '')
+        el.allow = appDB[id].permissions ? appDB[id].permissions.join(';') + ';' : '';
         if (splitView){
             el.id = 'splitAppFrame';
             document.querySelector('.bottom-menu').appendChild(el);
@@ -185,16 +191,17 @@ function openApp(id, data, splitView = false, change=0) {
 
     // ---------- FORCE START STATE ----------
     el.style.transition = 'none';
-    el.style.transform = 'translateY(25vh) scale(0.4)';
-    el.style.opacity = '0';
+    if(transition) el.style.transform = 'translateY(25vh) scale(0.4)';
+    transition ? el.style.opacity = '0' : el.style.opacity = '1';
 
     // 🔥 FORCE REFLOW (this is the missing piece)
-    el.offsetHeight;
+    if(transition) el.offsetHeight;
 
     // ---------- ANIMATE IN ----------
     el.style.transition = '';
-    el.classList.add('open');
-    el.style.transform = '';
+    console.log('open app with transition:', transition);
+    transition ? el.classList.add('open') : el.classList.add('open-no-transition');
+    transition ? el.style.transform = '' : el.style.transform = 'translateY(0) scale(1)';
     el.style.opacity = '';
 }
 

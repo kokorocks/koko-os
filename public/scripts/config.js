@@ -36,12 +36,12 @@ const appDB = {
     'notes': { name: 'Notes', icon: 'fa-sticky-note' },
     'settings': { name: 'Settings', icon: 'fa-cog' },
     'store': { name: 'App Store', icon: 'fa-layer-group' },
-    'browser': { name: 'Browser', icon: 'img:assets/icons/browser.svg' },
+    'browser': { name: 'Browser', icon: 'img:assets/icons/browser.svg', app: 'browser-app.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] },
     'music': { name: 'Music', icon: 'fa-music' },
     'files': { name: 'Files', icon: 'fa-folder' },
     //'health': { name: 'Health', icon: 'fa-heart', color: '#FF2D55' },
     //'wallet': { name: 'Wallet', icon: 'fa-wallet', color: '#000' },
-    'test': { name: 'Test App', icon: 'fa-vial', app: 'test.htm' }
+    'test': { name: 'Test App', icon: 'fa-vial', app: 'test.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] }
 };
 
 const defaultPages = [
