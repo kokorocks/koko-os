@@ -152,7 +152,7 @@ function createIcon(itemData, isDock = false) {
     return wrapper;
 }
 
-function openApp(id, data, splitView = false, change=0, transition = true) {
+/*function openApp(id, data, splitView = false, change=0, transition = true) {
     console.log(id)
     cancelDrag();
     console.log(splitView)
@@ -166,27 +166,91 @@ function openApp(id, data, splitView = false, change=0, transition = true) {
     // ---------- CREATE ----------
     const sanitizedName = appDB[id].name.replace(/\s+/g, '-');
     if (document.getElementsByClassName(sanitizedName).length === 0) {
-    // Pass a "done" function
+        el = document.createElement('iframe');
+        el.src = 'apps/' + appDB[id].app;
+        el.id = 'appFrame';
+        el.classList.add(sanitizedName, 'all-apps');
+        el.previewIndex = previewIdx++;
+        console.log(appDB[id].permissions ? appDB[id].permissions.join(';') + ';' : '')
+        permissionsVar = requestPermission(appDB[id], appDB[id].permissions)
+        
+        el.allow = permissionsVar //appDB[id].permissions ? appDB[id].permissions.join(';') + ';' : '';
+        if (splitView){
+            el.id = 'splitAppFrame';
+            document.querySelector('.bottom-menu').appendChild(el);
+        }else{
+            document.getElementById('multiappsarea').appendChild(el);
+        }
+    }
+    // ---------- REOPEN ----------
+    else {
+        el = document.getElementsByClassName(sanitizedName)[0];
+        el.id = 'appFrame';
+        el.classList.remove('closed', 'closing');
+    }
+
+    appopen = el;
+
+    // ---------- FORCE START STATE ----------
+    el.style.transition = 'none';
+    if(transition) el.style.transform = 'translateY(25vh) scale(0.4)';
+    transition ? el.style.opacity = '0' : el.style.opacity = '1';
+
+    // 🔥 FORCE REFLOW (this is the missing piece)
+    if(transition) el.offsetHeight;
+
+    // ---------- ANIMATE IN ----------
+    el.style.transition = '';
+    console.log('open app with transition:', transition);
+    transition ? el.classList.add('open') : el.classList.add('open-no-transition');
+    transition ? el.style.transform = '' : el.style.transform = 'translateY(0) scale(1)';
+    el.style.opacity = '';
+}*/
+function openApp(id, data, splitView = false, change = 0, transition = true) {
+    console.log(id);
+    cancelDrag();
+    console.log(splitView);
+
+    document.getElementById('appDrawer').style.transform = 'translateY(100%)';
+
+    if (!appDB[id] || !appDB[id].app) return;
+
+    let el; // outer variable
+
+    const sanitizedName = appDB[id].name.replace(/\s+/g, '-');
+
+    // ---------- PASS TO requestPermission ----------
     requestPermission(id, function done(grantedPermissions) {
         const permissionsVar = grantedPermissions.length
             ? grantedPermissions.join('; ') + ';'
             : '';
 
-        // Create iframe **after permission is decided**
-        const el = document.createElement('iframe');
-        el.src = 'apps/' + appDB[id].app;
-        el.id = 'appFrame';
-        el.classList.add(sanitizedName, 'all-apps');
-        el.previewIndex = previewIdx++;
-        el.allow = permissionsVar;
+        // Check if iframe exists
+        const existing = document.getElementsByClassName(sanitizedName)[0];
 
-        if (splitView) {
-            el.id = 'splitAppFrame';
-            document.querySelector('.bottom-menu').appendChild(el);
+        if (!existing) {
+            // ---------- CREATE NEW IFRAME ----------
+            el = document.createElement('iframe'); // ✅ assign to outer el
+            el.src = 'apps/' + appDB[id].app;
+            el.id = 'appFrame';
+            el.classList.add(sanitizedName, 'all-apps');
+            el.previewIndex = previewIdx++;
+            el.allow = permissionsVar;
+
+            if (splitView) {
+                el.id = 'splitAppFrame';
+                document.querySelector('.bottom-menu').appendChild(el);
+            } else {
+                document.getElementById('multiappsarea').appendChild(el);
+            }
         } else {
-            document.getElementById('multiappsarea').appendChild(el);
+            // ---------- REOPEN EXISTING ----------
+            el = existing; // ✅ assign to outer el
+            el.id = 'appFrame';
+            el.classList.remove('closed', 'closing');
         }
 
+        // ---------- SET GLOBAL ----------
         appopen = el;
 
         // ---------- FORCE START STATE ----------
@@ -202,7 +266,7 @@ function openApp(id, data, splitView = false, change=0, transition = true) {
         el.style.opacity = '';
     });
 }
-}
+
 
 function isAppOpen(id) {
     const sanitizedName = appDB[id].name.replace(/\s+/g, '-');
