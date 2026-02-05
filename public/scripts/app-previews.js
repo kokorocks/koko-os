@@ -261,7 +261,8 @@ function renderAppPreviews() {
             el.style.transform = `translateY(${currentY}px) scale(1.05)`;
             el.style.opacity = 1 - Math.abs(currentY) / 400;
         }else{
-            el.style.transform = `translateY(${(currentY/8.5)-2.5 > 22 ? 22 :(currentY/8.5)-2.5}px) scale(${(1 + currentY / 1000) > 1.36 ? 1.36 : (1 + currentY / 1000)})`;
+
+            el.style.transform = `translateY(${(currentY/8.5)-2.5 > 30 ? 30 :(currentY/8.5)-2.5}px) scale(${(1 + currentY / 1000) > 1.36 ? 1.36 : (1 + currentY / 1000)})`;
             //el.style.opacity = 1 - Math.abs(currentY) / 400;
         }
         }
