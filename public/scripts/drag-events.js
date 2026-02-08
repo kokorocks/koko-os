@@ -214,16 +214,19 @@ function handleMove(e) {
     const y = e.touches ? e.touches[0].clientY : e.clientY;
 
     // BEFORE drag starts → check intent
+    const dx = Math.abs(x - startX);
+    const dy = Math.abs(y - startY);
     if (!isDragging) {
-        const dx = Math.abs(x - startX);
-        const dy = Math.abs(y - startY);
 
         if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
             clearTimeout(pressTimer);
             pendingSlot = null; // treat as scroll / tap
+            //alert(1)
         }
         return;
-    }
+    }else if (dx < MOVE_THRESHOLD || dy < MOVE_THRESHOLD){
+            alert(1)
+        }
 
     if (e.cancelable) e.preventDefault();
     updateGhostPosition(e);

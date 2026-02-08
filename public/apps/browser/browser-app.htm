@@ -1,0 +1,721 @@
+<!--DOCTYPE html>
+hia
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            font-family: Arial, sans-serif;
+        }
+        
+        .bottomBar {
+            position: fixed;
+            bottom: 0;
+            width: 99%;
+            background-color: #16002acc;
+            display: flex;
+            align-items: center;      /* vertically center */
+            justify-content: space-between; /* spread items */
+            height: 35px;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            padding: 0 6px;          /* add some horizontal padding */
+        }
+
+        #home {
+            display: flex;            /* make it a flex container */
+            align-items: center;      /* vertically center SVG inside button */
+            justify-content: center;  /* horizontally center SVG inside button */
+            width: 35px;              /* make it a square button */
+            height: 35px;
+            color: white;
+        }
+
+        .url {
+            height: 100%;
+            /*border: #ffffff 1px solid;*/
+            border: none;
+            flex-grow: 1;
+            padding: 0 10px;
+            background-color: #16002acc;
+            color: rgb(146, 146, 146);
+        }
+
+        .url:active{
+            border: none;
+        }
+
+        .btn {
+            background-color: #16002acc;
+            height: 100%;
+            color: white;
+            /*border: #ffffff 1px solid;*/
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #16002acc;
+        }
+
+        #home{
+            text-align: center;
+            justify-content: center;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="bottomBar">
+      <button id="home" class="btn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor">
+              <path d="M304 70.1C313.1 61.9 326.9 61.9 336 70.1L568 278.1C577.9 286.9 578.7 302.1 569.8 312C560.9 321.9 545.8 322.7 535.9 313.8L527.9 306.6L527.9 511.9C527.9 547.2 499.2 575.9 463.9 575.9L175.9 575.9C140.6 575.9 111.9 547.2 111.9 511.9L111.9 306.6L103.9 313.8C94 322.6 78.9 321.8 70 312C61.1 302.2 62 287 71.8 278.1L304 70.1zM320 120.2L160 263.7L160 512C160 520.8 167.2 528 176 528L224 528L224 424C224 384.2 256.2 352 296 352L344 352C383.8 352 416 384.2 416 424L416 528L464 528C472.8 528 480 520.8 480 512L480 263.7L320 120.3zM272 528L368 528L368 424C368 410.7 357.3 400 344 400L296 400C282.7 400 272 410.7 272 424L272 528z"/>
+          </svg>
+      </button>
+      
+      <input type="url" name="" id="url" class="url">
+      <button type="button" id="<" class="btn">
+        ❮
+      </button>
+      <button type="button" id=">" class="btn">
+        ❯
+      </button>
+      <button type="button" id="re" class="btn">
+        ⟳
+      </button>
+      <button id="more" class="btn">
+        ☰
+      </button>
+    </div>
+  </body>
+</html>
+</body>
+</html-->
+
+
+<!--iframe
+  id="proxyFrame"
+  src="https://proxy.qwksearch.com/?url=https://youtube.com"
+  width="100%"
+  height="500px"
+  origin="anonymouse"
+  sandbox="allow-scripts allow-forms allow-same-origin"
+  referrerpolicy="no-referrer"
+>
+
+<script>
+(() => {
+  const proxyBase = "https://proxy.qwksearch.com/?url=";
+  const iframe = document.getElementById("proxyFrame");
+
+  const toProxy = url => {
+    try {
+      return proxyBase + encodeURIComponent(new URL(url, location.href).href);
+    } catch {
+      return proxyBase + encodeURIComponent(url);
+    }
+  };
+
+  const load = url => iframe.src = toProxy(url);
+
+  /* =========================
+     HARD BLOCK PAGE NAVIGATION
+     ========================= */
+  window.addEventListener("beforeunload", e => {
+    e.preventDefault();
+    e.returnValue = "";
+  });
+
+  /* =========================
+     INTERCEPT ALL LINKS
+     ========================= */
+  document.addEventListener("click", e => {
+    const a = e.target.closest("a");
+    if (!a || !a.href) return;
+    e.preventDefault();
+    load(a.href);
+  }, true);
+
+  /* =========================
+     FORCE window.open → iframe
+     ========================= */
+  window.open = url => {
+    load(url);
+    return null;
+  };
+
+  /* =========================
+     HISTORY API HIJACK
+     ========================= */
+  const hijackHistory = fn => {
+    const orig = history[fn];
+    history[fn] = function (state, title, url) {
+      if (url) load(url);
+      return orig.apply(this, arguments);
+    };
+  };
+
+  hijackHistory("pushState");
+  hijackHistory("replaceState");
+
+  /* =========================
+     META REFRESH BLOCKER
+     ========================= */
+  new MutationObserver(() => {
+    document.querySelectorAll('meta[http-equiv="refresh"]').forEach(meta => {
+      const match = meta.content.match(/url=(.+)/i);
+      if (match) load(match[1]);
+      meta.remove();
+    });
+  }).observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+
+  /* =========================
+     FORM INTERCEPT
+     ========================= */
+  document.addEventListener("submit", e => {
+    e.preventDefault();
+    const f = e.target;
+    const url = f.action || location.href;
+    const params = new URLSearchParams(new FormData(f)).toString();
+    load(url + (params ? "?" + params : ""));
+  }, true);
+
+})();
+</script-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Browser Experience</title>
+    <style>
+        :root {
+            --app-bg: #000000;
+            --phone-border: #1a1a1a;
+            --bar-bg: rgba(255, 255, 255, 0.95);
+            --accent: #000;
+            --text-secondary: #666;
+            --shadow: 0 10px 30px rgba(0,0,0,0.15);
+            --radius-phone: 40px;
+            --radius-ui: 20px;
+        }
+
+        body {
+            background-color: #000000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* --- Phone Container --- */
+        .phone {
+            width: 375px;
+            height: 100vh;
+            background: rgb(0, 0, 0);
+            border-radius: var(--radius-phone);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2), 0 0 0 12px var(--phone-border);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column; /* Stack browser and menu vertically */
+        }
+
+        /* --- Main Content Area --- */
+        .browser-view {
+            flex: 1; /* Fills remaining space above menu */
+            position: relative;
+            background: #fff;
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), 
+                        border-radius 0.4s, 
+                        opacity 0.3s;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        iframe {
+            flex: 1;
+            border: none;
+            width: 100%;
+            height: 100%; /* Fill browser view exactly */
+            background: white;
+        }
+
+        /* --- Floating Address Bar --- */
+        .address-bar-container {
+            scale: 0.25;
+            position: absolute;
+            bottom: 10px; /* Floating 20px above the bottom-nav */
+            left: 20px;
+            right: 20px;
+            z-index: 10;
+            transition: transform 0.4s, opacity 0.3s;
+        }
+
+        .address-bar-container:hover {
+            scale: 1;
+        }
+
+
+        .address-bar {
+            background: white;
+            height: 50px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            font-size: 14px;
+        }
+
+        .address-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            text-align: center;
+            font-weight: 500;
+            color: #333;
+            background: transparent;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .icon-btn:active { background: #f0f0f0; }
+        .icon-btn svg { width: 18px; height: 18px; fill: #333; }
+        .icon-btn.shield-active svg { fill: #4CAF50; }
+
+        /* --- Ad Blocker Popup --- */
+        .adblock-modal {
+            position: absolute;
+            bottom: 80px; /* Above the address bar */
+            left: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            z-index: 20;
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .adblock-modal.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .adblock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .adblock-stat {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 15px;
+        }
+        
+        .power-btn {
+            width: 40px;
+            height: 40px;
+            background: black;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .power-btn.off { background: #ccc; }
+        .power-btn svg { fill: white; width: 20px; height: 20px; }
+
+        .stat-text h3 { margin: 0; font-size: 24px; }
+        .stat-text p { margin: 0; font-size: 12px; color: #888; }
+
+        /* --- Tab Switcher View --- */
+        .tab-switcher {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #f2f2f2;
+            z-index: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.4s;
+            overflow-y: auto;
+            display: none; /* Hidden by default */
+        }
+
+        .phone.tabs-active .browser-view {
+            transform: scale(0.8) translateY(-50px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .phone.tabs-active .address-bar-container {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .phone.tabs-active .tab-switcher {
+            display: block;
+            opacity: 1;
+            transform: scale(1);
+            z-index: 5;
+        }
+
+        .tab-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 40px;
+        }
+
+        .tab-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: relative;
+            aspect-ratio: 0.6;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .tab-card:hover { transform: translateY(-5px); }
+        .tab-card.active-tab { border: 2px solid #007AFF; }
+        
+        .tab-card-header {
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            background: #fafafa;
+        }
+
+        .tab-card-preview {
+            background: #eee;
+            flex: 1;
+            height: 100%;
+        }
+
+        /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: relative; /* Not absolute, so it pushes the iframe up */
+            height: 80px;
+            width: 100%;
+            background: var(--bar-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 20px; 
+            z-index: 100;
+            box-sizing: border-box;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            color: #333;
+        }
+        .nav-item svg { width: 24px; height: 24px; fill: currentColor; }
+        
+        .tab-counter {
+            width: 24px; height: 24px;
+            border: 2px solid currentColor;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .tab-search {
+            background: #fff;
+            padding: 15px;
+            border-radius: 30px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone" id="phone">
+        
+        <div class="browser-view" id="browserView">
+            <iframe id="mainFrame" src="https://proxy.qwksearch.com/?url=https://google.com"></iframe>
+
+            <div class="adblock-modal" id="adblockModal">
+                <div class="adblock-header">
+                    <span id="currentDomainDisplay">google.com</span>
+                    <span style="color:#007AFF; cursor:pointer" onclick="toggleAdModal()">Done</span>
+                </div>
+                <div class="adblock-stat">
+                    <div class="power-btn" id="blockerToggle" onclick="toggleBlocker()">
+                        <svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg>
+                    </div>
+                    <div class="stat-text">
+                        <h3 id="blockedCount">27</h3>
+                        <p>Ads blocked on this site</p>
+                    </div>
+                </div>
+                <div style="font-size:12px; color:#999; text-align:center;">
+                    If this site appears broken, try turning off the Ad Filter.
+                </div>
+            </div>
+
+            <div class="address-bar-container">
+                <div class="address-bar">
+                    <button class="icon-btn" title="Back" id="backBtn">
+                        <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                    </button>
+                    <input type="url" id="urlInput" class="address-input" value="google.com" onkeydown="handleUrl(event)">
+                    <button class="icon-btn" title="Forward" id="forwardBtn">
+                        <svg viewBox="0 0 24 24"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>
+                    </button>
+                    <button class="icon-btn shield-active" id="shieldBtn" title="Ad Blocker" onclick="toggleAdModal()">
+                        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-switcher" id="tabSwitcher">
+            <div class="tab-search">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#999"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <span style="color:#999">Search tabs</span>
+            </div>
+            <div class="tab-grid" id="tabGrid"></div>
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            </div>
+            <div class="nav-item" id="refreshBtn">
+                <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg> 
+            </div>
+            <div class="nav-item" onclick="addNewTab()">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            </div>
+            <div class="nav-item" onclick="toggleTabs()">
+                <div class="tab-counter" id="tabCountBtn">1</div>
+            </div>
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    const PROXY_BASE = "https://proxy.qwksearch.com/?url=https://";
+
+    let tabs = [
+        { id: 101, url: 'google.com', title: 'Google', color: '#4285f4', history: ['google.com'], historyIndex: 0 },
+    ];
+    let activeTabId = 101;
+    let isTabMode = false;
+    let isBlockerActive = true;
+
+    const phone = document.getElementById('phone');
+    const iframe = document.getElementById('mainFrame');
+    const urlInput = document.getElementById('urlInput');
+    const tabGrid = document.getElementById('tabGrid');
+    const tabCountBtn = document.getElementById('tabCountBtn');
+    const blockedCount = document.getElementById('blockedCount');
+    const shieldBtn = document.getElementById('shieldBtn');
+    const adblockModal = document.getElementById('adblockModal');
+    const blockerToggle = document.getElementById('blockerToggle');
+
+    document.getElementById('urlInput').addEventListener('keydown', (event) => {
+  // 3. Check if the pressed key is the 'Enter' key
+  if (event.key === 'Enter') {
+    // Prevent the default action, if necessary (e.g., form submission and page refresh)
+    // event.preventDefault(); 
+    
+    // Perform your desired actions here, such as submitting a form or triggering a function
+    document.getElementById('iframe').src=PROXY_BASE+document.getElementById('urlInput').value
+    // Example: trigger a button click
+    // document.getElementById('myButton').click();
+  }
+});
+
+    function init() {
+        renderTabs();
+        loadTab(activeTabId);
+    }
+
+    function getProxyUrl(domain) {
+        let clean = domain.replace(/^https?:\/\//, '');
+        return PROXY_BASE + clean;
+    }
+
+    function loadTab(id) {
+        const tab = tabs.find(t => t.id === id);
+        if (!tab) return;
+        activeTabId = id;
+
+        urlInput.value = tab.url;
+        iframe.src = getProxyUrl(tab.url);
+
+        tabCountBtn.textContent = tabs.length;
+        renderTabs();
+    }
+
+    function handleUrl(e) {
+        if(e.key === 'Enter') {
+            navigateTo(urlInput.value);
+            urlInput.blur();
+        }
+    }
+
+    function navigateTo(url) {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if(!tab) return;
+
+        tab.history = tab.history.slice(0, tab.historyIndex + 1);
+        tab.history.push(url);
+        tab.historyIndex++;
+
+        tab.url = url;
+        tab.title = url;
+        loadTab(activeTabId);
+    }
+
+    // --- Navigation buttons ---
+    document.getElementById('backBtn').onclick = () => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if(tab && tab.historyIndex > 0) {
+            tab.historyIndex--;
+            tab.url = tab.history[tab.historyIndex];
+            loadTab(activeTabId);
+        }
+    };
+
+    document.getElementById('forwardBtn').onclick = () => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if(tab && tab.historyIndex < tab.history.length - 1) {
+            tab.historyIndex++;
+            tab.url = tab.history[tab.historyIndex];
+            loadTab(activeTabId);
+        }
+    };
+
+    document.getElementById('refreshBtn').onclick = () => {
+        loadTab(activeTabId);
+    };
+
+    // --- Tab management ---
+    function toggleTabs() {
+        isTabMode = !isTabMode;
+        phone.classList.toggle('tabs-active', isTabMode);
+    }
+
+    function addNewTab() {
+        const newId = Date.now();
+        tabs.push({ id: newId, url: 'google.com', title: 'New Tab', color: '#999', history: ['google.com'], historyIndex: 0 });
+        activeTabId = newId;
+        renderTabs();
+        loadTab(newId);
+        if(isTabMode) toggleTabs();
+    }
+
+    function closeTab(e, id) {
+        e.stopPropagation();
+        if(tabs.length === 1) return;
+
+        tabs = tabs.filter(t => t.id !== id);
+        if(activeTabId === id) {
+            activeTabId = tabs[0].id;
+            loadTab(activeTabId);
+        }
+        tabCountBtn.textContent = tabs.length;
+        renderTabs();
+    }
+
+    function renderTabs() {
+        tabGrid.innerHTML = '';
+        tabs.forEach(tab => {
+            const isActive = tab.id === activeTabId;
+            const el = document.createElement('div');
+            el.className = `tab-card ${isActive ? 'active-tab' : ''}`;
+            el.onclick = () => {
+                loadTab(tab.id);
+                toggleTabs();
+            };
+
+            el.innerHTML = `
+                <div class="tab-card-header">
+                    <span style="width:10px; height:10px; background:${tab.color}; border-radius:50%; display:inline-block;"></span>
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${tab.title}</span>
+                    <div onclick="closeTab(event, ${tab.id})">✕</div>
+                </div>
+                <div class="tab-card-preview"></div>
+            `;
+            tabGrid.appendChild(el);
+        });
+    }
+
+    function toggleAdModal() {
+        adblockModal.classList.toggle('active');
+    }
+
+    function toggleBlocker() {
+        isBlockerActive = !isBlockerActive;
+        blockerToggle.classList.toggle('off', !isBlockerActive);
+        shieldBtn.classList.toggle('shield-active', isBlockerActive);
+        blockedCount.innerText = isBlockerActive ? Math.floor(Math.random() * 50) + 5 : "0";
+    }
+
+    init();
+</script>
+
+</body>
+</html>

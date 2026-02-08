@@ -36,7 +36,7 @@ const appDB = {
     'notes': { name: 'Notes', icon: 'fa-sticky-note' },
     'settings': { name: 'Settings', icon: 'fa-cog' },
     'store': { name: 'App Store', icon: 'fa-layer-group' },
-    'browser': { name: 'Browser', icon: 'img:assets/icons/browser.svg', app: 'browser-app.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] },
+    'browser': { name: 'Browser', icon: 'img:assets/icons/browser.svg', app: 'browser/browser-app.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] },
     'music': { name: 'Music', icon: 'fa-music' },
     'files': { name: 'Files', icon: 'fa-folder' },
     //'health': { name: 'Health', icon: 'fa-heart', color: '#FF2D55' },

@@ -203,8 +203,8 @@ function handleDragFrame() {
             if (currentDeltaY >= 0) return;
 
             const progress = clamp(Math.abs(currentDeltaY) / 240, 0, 1);
-            screen.style.transform = `scale(${1 - progress * 0.06})`;
-            screen.style.borderRadius = `${progress * 30}px`;
+            screen.style.transform = `scale(${1 - progress * 0.07})`;
+            screen.style.borderRadius = `${progress * 28}px`;
             break;
         }
 
