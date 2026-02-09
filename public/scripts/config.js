@@ -40,6 +40,7 @@ const appDB = {
     'music': { name: 'Music', icon: 'fa-music' },
     'files': { name: 'Files', icon: 'fa-folder' },
     'compass': { name: 'Compass', icon: 'fa-compass', app: 'compass.htm' },
+    'personalize': { name: 'personalize', icon: 'fa-palette', app: 'personalize.htm' },
     //'health': { name: 'Health', icon: 'fa-heart', color: '#FF2D55' },
     //'wallet': { name: 'Wallet', icon: 'fa-wallet', color: '#000' },
     'test': { name: 'Test App', icon: 'fa-vial', app: 'test.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] }

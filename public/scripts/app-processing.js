@@ -1,3 +1,15 @@
+
+    function closeAppPreviews() {
+        const previewArea = document.getElementById('multiappspreviewarea');
+        previewArea.style.opacity = '0';
+        previewArea.style.pointerEvents = 'none';
+        previewArea.style.zIndex = '-1';
+        previewArea.classList.remove('open');
+        previewArea.innerHTML = '';
+        previewOpen = false; // ✅ ALWAYS reset state
+    }
+
+
 function createIcon(itemData, isDock = false) {
     // ------------------ FOLDER ------------------
     if (typeof itemData === 'object' && itemData.type === 'folder') {
@@ -207,6 +219,7 @@ function createIcon(itemData, isDock = false) {
     el.style.opacity = '';
 }*/
 function openApp(id, data, splitView = false, change = 0, transition = true) {
+    closeAppPreviews()
     console.log(id);
     cancelDrag();
     console.log(splitView);

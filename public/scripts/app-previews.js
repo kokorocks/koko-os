@@ -65,7 +65,7 @@ function openAppPreviews() {
     previewArea.style.display = 'flex';
     previewArea.style.opacity = '1';
     previewArea.style.pointerEvents = 'all';
-    previewArea.style.zIndex = '1000';
+    previewArea.style.zIndex = '499';
     previewArea.classList.add('open');
 
     // Clicking outside closes overlay
