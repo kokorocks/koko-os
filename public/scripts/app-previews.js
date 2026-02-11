@@ -65,7 +65,7 @@ function openAppPreviews() {
     previewArea.style.display = 'flex';
     previewArea.style.opacity = '1';
     previewArea.style.pointerEvents = 'all';
-    previewArea.style.zIndex = '499';
+    previewArea.style.zIndex = '1000';
     previewArea.classList.add('open');
 
     // Clicking outside closes overlay
@@ -135,17 +135,40 @@ function renderAppPreviews() {
     openApps.forEach((app, i) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'app-wrapper';
+        wrapper.id=app.classList[0]
         if (centerThisApp) {
             wrapper.classList.add('centered');
             centerThisApp = false;
         }
     
         // --- Clone iframe (preview) ---
-        const previewClone = app.cloneNode(true);
-        previewClone.id = '';
-        previewClone.classList.remove('closed', 'closing', 'open');
-        previewClone.classList.add('preview');
-        previewClone.style.pointerEvents = 'none';
+        const previewClone = document.createElement('iframe'); // NOTE TO FUTURE ME: THIS IS A FEATURE, U WILL SEE BLACK IF RUN FOMR A FILE, THAT IS A FEATURE, DON'T REMOVE IT
+        previewClone.setAttribute(                             // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          'sandbox',
+          ''
+        );
+
+        previewClone.className = 'preview';
+        previewClone.style.pointerEvents = 'none';             // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        // SAFELY attempt to clone iframe contents
+        try {
+            if (
+                app.contentWindow &&
+                app.contentWindow.document &&
+                app.contentWindow.document.documentElement     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            ) {
+                previewClone.srcdoc =
+                    app.contentWindow.document.documentElement.outerHTML;
+            } else {
+                alert('brutha')
+                //previewClone.src = app.src || 'about:blank';
+            }
+        } catch (e) {
+            alert('bruh, it don\'t work')
+            // Cross-origin or blocked
+            //previewClone.src = app.src || 'about:blank';
+        }
         wrapper.appendChild(previewClone);
     
         // --- Overlay to block interactions ---
@@ -211,9 +234,12 @@ function renderAppPreviews() {
     function closePreviewApp(wrapper) {
         const iframe = wrapper.querySelector('iframe');
         if (!iframe) return;
-
-        const appClass = iframe.classList[0];
-        const realApp = document.querySelector(`.${appClass}`);
+        console.log(wrapper.id.toLowerCase())
+        console.log(wrapper)
+        const appClass = wrapper.id;
+        console.log(appClass)
+        const realApp = document.querySelector(`.${appClass}.all-apps`);
+        console.log(realApp)
         if (realApp) realApp.remove(); // 🔥 delete the real app
 
         wrapper.style.transition = 'transform 0.25s ease, opacity 0.25s ease';

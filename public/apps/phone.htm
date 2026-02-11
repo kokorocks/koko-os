@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Olaz Dialer - Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-teal: #199fb1;
+            --bg-light: #f4f7f8;
+            --text-dark: #333;
+            --text-grey: #8e8e93;
+            --white: #ffffff;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .phone-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Header */
+        .header {
+            padding: 30px 25px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .credits {
+            color: var(--primary-teal);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .get-more {
+            background-color: var(--primary-teal);
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        /* Display */
+        .display-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+        }
+
+        .display-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            cursor: pointer;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .display-btn:hover { background: var(--bg-light); }
+
+        #phone-number {
+            font-size: 1.5rem;
+            font-weight: 500;
+            border: none;
+            background: transparent;
+            text-align: center;
+            width: 100%;
+            outline: none;
+            color: var(--text-dark);
+            letter-spacing: 1px;
+        }
+
+        /* Dialpad */
+        .dialpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding: 0 25px 30px 25px;
+        }
+
+        .key {
+            background-color: var(--bg-light);
+            border: none;
+            border-radius: 18px;
+            height: 72px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+
+        .key:active {
+            background-color: #dce4e6;
+            transform: scale(0.96);
+        }
+
+        .key-num {
+            font-size: 1.7rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            line-height: 1;
+        }
+
+        .key-alpha {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: var(--text-grey);
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            height: 75px;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        .nav-item {
+            color: #555;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active {
+            color: var(--white);
+        }
+
+        .nav-item:hover { color: #aaa; }
+
+    </style>
+</head>
+<body>
+
+<div class="phone-container">
+    <div class="header">
+        <div class="credits">Credits: $10.00</div>
+        <button class="get-more">Get More</button>
+    </div>
+
+    <div class="display-container">
+        <button class="display-btn" onclick="appendDigit('+')"><i class="fas fa-plus"></i></button>
+        <input type="text" id="phone-number" placeholder="(000) 000-0000" readonly>
+        <button class="display-btn" onclick="backspace()"><i class="fas fa-backspace"></i></button>
+    </div>
+
+    <div class="dialpad">
+        <button class="key" onclick="appendDigit('1')"><span class="key-num">1</span><span class="key-alpha">&nbsp;</span></button>
+        <button class="key" onclick="appendDigit('2')"><span class="key-num">2</span><span class="key-alpha">ABC</span></button>
+        <button class="key" onclick="appendDigit('3')"><span class="key-num">3</span><span class="key-alpha">DEF</span></button>
+        
+        <button class="key" onclick="appendDigit('4')"><span class="key-num">4</span><span class="key-alpha">GHI</span></button>
+        <button class="key" onclick="appendDigit('5')"><span class="key-num">5</span><span class="key-alpha">JKL</span></button>
+        <button class="key" onclick="appendDigit('6')"><span class="key-num">6</span><span class="key-alpha">MNO</span></button>
+        
+        <button class="key" onclick="appendDigit('7')"><span class="key-num">7</span><span class="key-alpha">PQRS</span></button>
+        <button class="key" onclick="appendDigit('8')"><span class="key-num">8</span><span class="key-alpha">TUV</span></button>
+        <button class="key" onclick="appendDigit('9')"><span class="key-num">9</span><span class="key-alpha">WXYZ</span></button>
+        
+        <button class="key" onclick="appendDigit('*')"><span class="key-num">*</span><span class="key-alpha">&nbsp;</span></button>
+        <button class="key" onclick="appendDigit('0')"><span class="key-num">0</span><span class="key-alpha">+</span></button>
+        <button class="key" onclick="appendDigit('#')"><span class="key-num">#</span><span class="key-alpha">&nbsp;</span></button>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item"><i class="fas fa-home"></i></div>
+        <div class="nav-item"><i class="fas fa-clock"></i></div>
+        <div class="nav-item active"><i class="fas fa-th"></i></div>
+        <div class="nav-item"><i class="fas fa-user-friends"></i></div>
+        <div class="nav-item"><i class="fas fa-cog"></i></div>
+    </div>
+</div>
+
+<script>
+    const display = document.getElementById('phone-number');
+    let rawInput = ""; // Keeps track of just the digits
+
+    function formatNumber(value) {
+        if (!value) return value;
+        
+        // Remove all non-digits
+        const phoneNumber = value.replace(/[^\d]/g, '');
+        const phoneNumberLength = phoneNumber.length;
+
+        if (phoneNumberLength < 4) return phoneNumber;
+        
+        if (phoneNumberLength < 7) {
+            return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+        }
+        
+        return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+    }
+
+    function appendDigit(val) {
+        // Only format if it's a digit; otherwise just add it (for * or #)
+        if (/\d/.test(val)) {
+            if (rawInput.length <= 10) {
+                rawInput += val;
+                display.value = formatNumber(rawInput);
+            }
+        } else {
+            // Logic for symbols
+            display.value += val;
+        }
+    }
+
+    function backspace() {
+        if (rawInput.length > 0 && /\d/.test(display.value.slice(-1)) || display.value.endsWith(' ')) {
+             rawInput = rawInput.slice(0, -1);
+             display.value = formatNumber(rawInput);
+        } else {
+            display.value = display.value.slice(0, -1);
+        }
+    }
+</script>
+
+</body>
+</html>

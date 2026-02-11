@@ -1,11 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings App</title>
+
+<!-- Font Awesome -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+/>
+
+<style>
+:root {
+    --bg-color: #F2F2F7;
+    --card-bg: #FFFFFF;
+    --text-color: #000000;
+    --sub-text: #8E8E93;
+    --separator: #E5E5EA;
+    --primary: #007AFF;
+    --danger: #FF3B30;
+    --danger-bg: rgba(255, 59, 48, 0.1);
+    --icon-bg: #F2F2F7;
+}
+
+body.dark-mode {
+    --bg-color: #000000;
+    --card-bg: #1C1C1E;
+    --text-color: #FFFFFF;
+    --sub-text: #98989F;
+    --separator: #38383A;
+    --icon-bg: #2C2C2E;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.phone-frame {
+    max-width: 375px;
+    height: 812px;
+    width: 100%;
+    background-color: var(--bg-color);
+    overflow: hidden;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    overflow-y: scroll; /* Ensures scrolling is possible (or 'auto' to only show when needed) */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* Internet Explorer and Edge */
+}
+
+.status-bar {
+    height: 44px;
+    padding: 0 20px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+}
+
+.header h1 {
+    font-size: 17px;
+    color: var(--text-color);
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.content {
+    height: calc(100% - 100px);
+    overflow-y: auto;
+}
+.content::-webkit-scrollbar { width: 0; }
+
+.profile {
+    text-align: center;
+    padding: 20px;
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 12px;
+}
+
+.profile-name {
+    font-size: 20px;
+    color: var(--text-color);
+}
+
+.profile-email {
+    font-size: 14px;
+    color: var(--sub-text);
+    margin-bottom: 16px;
+}
+
+.edit-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.section-title {
+    padding: 0 20px;
+    margin: 24px 0 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    color: var(--sub-text);
+}
+
+.settings-group {
+    background: var(--card-bg);
+    border-radius: 12px;
+    margin: 0 16px;
+    overflow: hidden;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    position: relative;
+}
+
+.setting-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 56px;
+    right: 0;
+    height: 1px;
+    background: var(--separator);
+}
+
+.icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--icon-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    color: var(--text-color);
+}
+
+.icon-box.danger {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.item-label {
+    flex: 1;
+    font-size: 16px;
+    color: var(--text-color);
+}
+
+.item-label.danger {
+    color: var(--danger);
+}
+
+.item-value-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.item-value {
+    color: var(--sub-text);
+}
+
+.chevron {
+    color: #C7C7CC;
+}
+
+.toggle-switch {
+    width: 51px;
+    height: 31px;
+    appearance: none;
+    background: #E9E9EA;
+    border-radius: 20px;
+    position: relative;
+    cursor: pointer;
+}
+
+.toggle-switch:checked {
+    background: var(--primary);
+}
+
+.toggle-switch::after {
+    content: '';
+    width: 27px;
+    height: 27px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: 0.3s;
+}
+
+.toggle-switch:checked::after {
+    transform: translateX(20px);
+}
+
+.home-indicator {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 134px;
+    height: 5px;
+    background: var(--text-color);
+    opacity: 0.4;
+    border-radius: 10px;
+}
+</style>
 </head>
+
 <body>
-    <button data-type="back">X</button>
+
+<div class="phone-frame">
+
+    <div class="header">
+        <button class="back-btn"><i class="fa-solid fa-chevron-left" data-type='back'></i></button>
+        <h1>Settings</h1>
+        <div style="width:24px;"></div>
+    </div>
+
+    <div class="content">
+        <div class="profile">
+            <img class="avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80">
+            <div class="profile-name">Dianne Russell</div>
+            <div class="profile-email">diannerussel@mail.com</div>
+            <button class="edit-btn">Edit profile</button>
+        </div>
+
+        <div class="section-title">Preferences</div>
+        <div class="settings-group">
+            <div class="setting-item">
+                <div class="icon-box"><i class="fa-solid fa-bell"></i></div>
+                <span class="item-label">Notifications and sounds</span>
+                <input type="checkbox" class="toggle-switch">
+            </div>
+
+            <div class="setting-item">
+                <div class="icon-box"><i class="fa-solid fa-globe"></i></div>
+                <span class="item-label">Language</span>
+                <div class="item-value-container">
+                    <span class="item-value">English</span>
+                    <i class="fa-solid fa-chevron-right chevron"></i>
+                </div>
+            </div>
+
+            <div class="setting-item" onclick="toggleTheme()">
+                <div class="icon-box"><i class="fa-solid fa-moon"></i></div>
+                <span class="item-label">Theme</span>
+                <div class="item-value-container">
+                    <span class="item-value" id="theme-text">Light</span>
+                    <i class="fa-solid fa-chevron-right chevron"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">Account</div>
+        <div class="settings-group">
+            <div class="setting-item">
+                <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
+                <span class="item-label">Password</span>
+                <i class="fa-solid fa-chevron-right chevron"></i>
+            </div>
+
+            <div class="setting-item">
+                <div class="icon-box"><i class="fa-solid fa-face-smile"></i></div>
+                <span class="item-label">Login with Face ID</span>
+                <input type="checkbox" class="toggle-switch" checked>
+            </div>
+
+            <div class="setting-item">
+                <div class="icon-box"><i class="fa-solid fa-circle-info"></i></div>
+                <span class="item-label">Support</span>
+                <i class="fa-solid fa-chevron-right chevron"></i>
+            </div>
+
+            <div class="setting-item">
+                <div class="icon-box"><i class="fa-solid fa-trash"></i></div>
+                <span class="item-label">Clear cache</span>
+                <i class="fa-solid fa-chevron-right chevron"></i>
+            </div>
+
+            <div class="setting-item">
+                <div class="icon-box"><i class="fa-solid fa-shield-halved"></i></div>
+                <span class="item-label">Terms and Privacy Policy</span>
+                <i class="fa-solid fa-chevron-right chevron"></i>
+            </div>
+
+            <div class="setting-item">
+                <div class="icon-box danger"><i class="fa-solid fa-right-from-bracket"></i></div>
+                <span class="item-label danger">Logout</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleTheme() {
+    document.body.classList.toggle("dark-mode");
+    document.getElementById("theme-text").textContent =
+        document.body.classList.contains("dark-mode") ? "Dark" : "Light";
+}
+</script>
+
 </body>
 </html>

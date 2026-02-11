@@ -245,9 +245,12 @@ async function loadNewsFromRSS({
 
     console.log("Loaded mixed RSS news:", info.news);
 }
-
+try{
 loadNewsFromRSS({
     categories: ["technology", "science", "business", "ai"],
     articlesPerFeed: 8,
     maxArticles: 50
-});
+});}
+catch(e){
+    null
+}

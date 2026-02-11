@@ -3,7 +3,7 @@
         const previewArea = document.getElementById('multiappspreviewarea');
         previewArea.style.opacity = '0';
         previewArea.style.pointerEvents = 'none';
-        previewArea.style.zIndex = '-1';
+        previewArea.style.zIndex = '550';
         previewArea.classList.remove('open');
         previewArea.innerHTML = '';
         previewOpen = false; // ✅ ALWAYS reset state
@@ -82,6 +82,7 @@ function createIcon(itemData, isDock = false) {
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.pointerEvents = 'none';
+        iframe.style.userSelect = 'none'
         //iframe.allow='scripted;camera;microphone;clipboard-read;clipboard-write;';
 
         container.appendChild(iframe);

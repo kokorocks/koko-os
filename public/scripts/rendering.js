@@ -45,8 +45,12 @@ function initRender() {
 
         for (let i = 0; i < grid; i++) {
             if (occupiedCells.has(i)) continue;
-
-            const item = page[i];
+            
+            //const item = page[i];
+            console.log(item)
+            console.log(isDev)
+            console.log(item.requiresDev)
+            if (item.requiresDev && !isDev) return
             const slot = document.createElement('div');
             slot.className = 'app-slot';
             slot.dataset.loc = 'page';
@@ -111,6 +115,7 @@ function initRender() {
     // ---------- Drawer ----------
     drawerList.innerHTML = '';
     Object.keys(appDB).forEach(key => {
+        if (key.requiresDev && !isDev) return
         const slot = document.createElement('div');
         slot.className = 'app-slot app-drawer';
         slot.setAttribute('draggable', 'true');
@@ -129,6 +134,7 @@ function initRender() {
     const bottomMenu = document.querySelector('.bottom-menu');
     bottomMenu.innerHTML = '';
     Object.keys(appDB).forEach(key => {
+        if (key.requiresDev && !isDev) return
         const slot = document.createElement('div');
         slot.className = 'app-slot';
         slot.dataset.loc = 'split-view';
@@ -371,6 +377,9 @@ function render() {
     /* ---------- Drawer ---------- */
     drawerList.innerHTML = '';
     Object.keys(appDB).forEach(key => {
+        console.log(isDev)
+        //console.log(appDB[key].requiresDev)
+        if (appDB[key].requiresDev && !isDev) return
         const slot = document.createElement('div');
 
         slot.className = 'app-slot app-drawer';

@@ -14,12 +14,12 @@
 
 </head>
 <body>
-    <iframe id="background-services" src="" frameborder="0" style="display: no;"></iframe>
     <div id="fullscreenBtn" title="Fullscreen"><i class="fas fa-expand"></i></div>
     <div id="resetBtn" title="reset to default state"><i class="fa-solid fa-trash-can"></i></div>
 
     <div class="phone-frame">
         <div class="screen-container" id="mainScreen">
+        <iframe id="background-services" src="" frameborder="0" style="display: transparent;position: absolute;"></iframe>
 
         <div id="delete-zone">
         </div>
@@ -200,12 +200,13 @@
 
             <div id="infopopup" class="overlay-panel"></div>
             <div id="multiappsarea"></div>
+
             <div id="multiappspreviewarea"></div>
             <div class="bottom-menu"></div>
             <!--div id="screenshot"><i class="fa-solid fa-border-none"></i> take a screenshot</div-->
 
-           <!--div id="bottom-guard" class="gesture-guard"></div>
-           <div id="top-guard" class="gesture-guard"></div-->
+           <div id="bottom-guard" class="gesture-guard"></div>
+           <!--div id="top-guard" class="gesture-guard"></div-->
            <div id="left-guard" class="gesture-guard"></div>
            <div id="right-guard" class="gesture-guard"></div>
         </div>
@@ -227,5 +228,6 @@
     <script src="scripts/rss.js"></script>
     <script src="scripts/notifs.js"></script>
     <script src="scripts/message-boxes.js"></script>
+    <script src="scripts/extensions.js" type="module"></script>
 </body>
 </html>

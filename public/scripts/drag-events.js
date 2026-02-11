@@ -225,7 +225,7 @@ function handleMove(e) {
         }
         return;
     }else if (dx < MOVE_THRESHOLD || dy < MOVE_THRESHOLD){
-            alert(1)
+            //alert(1)
         }
 
     if (e.cancelable) e.preventDefault();

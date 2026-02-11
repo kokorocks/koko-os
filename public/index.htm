@@ -3,21 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Glassmorphism Lock Screen</title>
+<title>HyperOS Lock Screen V2</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Oswald:wght@200;400;700&family=Outfit:wght@200;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 
 <style>
     :root {
         --font-main: 'Outfit', sans-serif;
-        --glass-high: rgba(255, 255, 255, 0.25);
-        --glass-med: rgba(255, 255, 255, 0.15);
-        --glass-low: rgba(255, 255, 255, 0.05);
-        --glass-border: rgba(255, 255, 255, 0.2);
-        --blur-amount: 25px;
-        --shadow-soft: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        --accent: #a2d2ff;
+        --font-clock: 'Anton', sans-serif;
+        --accent-color: #e0dac3;
+        --clock-size: 160px;
+        --widget-bg: rgba(255, 255, 255, 0.15);
+        --widget-border: rgba(255, 255, 255, 0.1);
     }
 
     * { box-sizing: border-box; user-select: none; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -30,7 +28,7 @@
         overflow: hidden;
     }
 
-    /* --- Phone Hardware --- */
+    /* --- Phone Chassis --- */
     .phone-chassis {
         width: 360px; height: 760px;
         background: #1a1a1a;
@@ -39,209 +37,197 @@
         box-shadow: 0 30px 60px -10px rgba(0,0,0,0.6), inset 0 0 0 2px #333;
         position: relative;
     }
-
-    /* Buttons on side (visual only) */
     .btn-side { position: absolute; background: #222; border-radius: 4px; left: -4px; }
     .vol-up { top: 120px; height: 40px; width: 4px; }
     .vol-down { top: 170px; height: 40px; width: 4px; }
     .pwr-side { top: 240px; height: 60px; width: 4px; right: -4px; left: auto; background: #333; }
 
+    /* --- Screen & Wallpaper --- */
     .screen {
         width: 100%; height: 100%;
-        background: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2670&auto=format&fit=crop') center/cover no-repeat;
+        background-color: #333;
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
         border-radius: 40px;
         position: relative;
         overflow: hidden;
         color: white;
+        transition: background-image 0.5s ease;
     }
 
-    /* Dark Overlay for readability */
-    .screen::before {
+    .screen::after {
         content: ''; position: absolute; inset: 0;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.4));
-        pointer-events: none;
+        background: linear-gradient(to bottom, rgba(0,0,0,0) 60%, rgba(0,0,0,0.4) 100%);
+        pointer-events: none; z-index: 1;
     }
 
     /* --- UI Layer --- */
     .ui-layer {
         position: relative; z-index: 10;
         height: 100%; width: 100%;
-        display: flex; flex-direction: column; align-items: center;
-        padding-top: 45px;
+        display: flex; flex-direction: column;
+        padding: 20px;
     }
 
-
-    /* Clock */
-    .clock-container { text-align: center; margin-bottom: 20px; transition: 0.3s; }
-    .time-huge { font-size: 86px; font-weight: 200; line-height: 1; letter-spacing: -3px; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    .date-text { font-size: 18px; font-weight: 400; opacity: 0.9; margin-top: 5px; }
-
-    /* Notification Stack on Lock Screen */
-    .notification-stack {
-        width: 90%;
-        display: flex; flex-direction: column; gap: 10px;
-        perspective: 1000px;
+    .status-bar {
+        display: flex; justify-content: space-between; font-size: 12px; opacity: 0.8; margin-top: 10px; margin-bottom: 20px;
+        font-weight: 500;
     }
 
-    /* Glass Notification Card */
-    .glass-card {
-        background: var(--glass-med);
-        backdrop-filter: blur(var(--blur-amount));
-        -webkit-backdrop-filter: blur(var(--blur-amount));
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        padding: 14px;
-        display: flex; gap: 12px;
-        color: white;
-        box-shadow: var(--shadow-soft);
-        cursor: pointer;
-        transition: transform 0.2s, background 0.2s;
-        margin-bottom: 0;
-    }
-    .glass-card:active { transform: scale(0.98); background: var(--glass-high); }
-
-    .app-icon {
-        width: 38px; height: 38px; border-radius: 10px;
-        background: white; display: flex; align-items: center; justify-content: center;
-        font-size: 18px; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    .content-box { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .card-header { display: flex; justify-content: space-between; font-size: 12px; opacity: 0.8; margin-bottom: 2px; }
-    .card-title { font-weight: 600; font-size: 15px; }
-    .card-msg { font-size: 13px; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-
-    /* View All Button */
-    .view-all-btn {
-        margin-top: 10px;
-        padding: 8px 20px;
-        background: var(--glass-low);
-        border: 1px solid var(--glass-border);
-        border-radius: 30px;
-        font-size: 12px;
-        backdrop-filter: blur(10px);
-        cursor: pointer;
+    /* --- Configurable Clock Section --- */
+    .clock-section {
+        display: flex; flex-direction: column;
+        align-items: flex-start; 
+        margin-top: 20px;
+        position: relative; z-index: 5;
     }
 
-    /* Bottom Area */
-    .bottom-area {
-        margin-top: auto; margin-bottom: 25px;
-        width: 100%;
-        display: flex; justify-content: space-between; padding: 0 40px; align-items: center;
+    .date-pill {
+        font-size: 16px; font-weight: 500; margin-bottom: 5px;
+        opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;
     }
-    .circle-btn {
-        width: 35px; height: 35px;
-        border-radius: 25%;
-        background: rgba(0,0,0,0.4);
-        backdrop-filter: blur(5px);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 20px; color: white; transition: 0.2s;
+
+    /* The Massive Clock */
+    .huge-clock {
+        font-family: var(--font-clock);
+        font-size: var(--clock-size);
+        line-height: 0.90;
+        display: flex;
+        /* Flex direction handled by JS */
+        gap: 0;
+        color: var(--accent-color);
+        mix-blend-mode: overlay; 
+        opacity: 0.9;
+        text-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        transition: font-size 0.3s ease;
     }
+    .huge-clock.solid { mix-blend-mode: normal; opacity: 1; }
     
-    .circle-btn:active { background: rgba(255,255,255,0.2); }
+    /* Colon for horizontal clock */
+    .clock-sep { display: none; opacity: 0.7; position: relative; top: -10px;} 
 
+    /* --- Widgets --- */
+    .widget-container {
+        display: flex; gap: 12px; margin-top: 20px;
+    }
+
+    .widget {
+        backdrop-filter: blur(10px);
+        background: var(--widget-bg);
+        border: 1px solid var(--widget-border);
+        color: white; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    .widget:active { transform: scale(0.95); }
+    .w-circle { width: 50px; height: 50px; border-radius: 50%; font-size: 20px; }
+    .w-pill { height: 50px; padding: 0 20px; border-radius: 30px; font-size: 16px; gap: 8px; }
+
+    /* --- Bottom Actions --- */
+    .bottom-controls {
+        margin-top: auto; display: flex; justify-content: space-between;
+        padding: 0 10px 25px 10px; z-index: 20;
+    }
+    .action-btn {
+        width: 44px; height: 44px; border-radius: 15px;
+        background: rgba(0,0,0,0.3); backdrop-filter: blur(5px);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 18px; border: 1px solid rgba(255,255,255,0.1);
+        cursor: pointer;
+    }
+
+    .swipe-hint {
+        position: absolute; bottom: 85px; width: 100%; text-align: center; left: 0;
+        font-size: 13px; opacity: 0.7; font-weight: 500;
+        animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
     .home-bar {
         width: 130px; height: 5px; background: white; border-radius: 10px;
         position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
 
-    /* Hint Animation */
-    .swipe-hint {
-        font-size: 12px; opacity: 0.6; position: absolute; bottom: 80px; width: 100%; text-align: center;
-        animation: breathe 3s infinite ease-in-out;
-    }
-    @keyframes breathe { 0%, 100% { opacity: 0.3; transform: translateY(0); } 50% { opacity: 0.8; transform: translateY(-5px); } }
-
-    /* --- Notification Center (Menu) --- */
-    .notif-center {
-        position: absolute; inset: 0;
-        background: rgba(0,0,0,0.6);
-        backdrop-filter: blur(40px);
-        z-index: 50;
-        transform: translateY(100%);
-        transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-        padding: 60px 20px 20px 20px;
-        display: flex; flex-direction: column;
-    }
-    .notif-center.active { transform: translateY(0); }
-    
-    .nc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .nc-title { font-size: 24px; font-weight: 700; }
-    .nc-clear { font-size: 12px; padding: 6px 12px; background: rgba(255,255,255,0.2); border-radius: 15px; cursor: pointer; }
-    
-    .nc-list {
-        flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
-        padding-bottom: 40px;
-    }
-    /* Hide scrollbar */
-    .nc-list::-webkit-scrollbar { display: none; }
-    .nc-close {
-        align-self: center; margin-top: 10px;
-        width: 40px; height: 40px; border-radius: 50%; background: white; color: black;
-        display: flex; align-items: center; justify-content: center; cursor: pointer;
-    }
-
-    /* --- Security Layer --- */
+    /* --- Security Layers --- */
     .security-layer {
-        position: absolute; inset: 0;
-        background: rgba(10, 10, 15, 0.3);
-        backdrop-filter: blur(30px);
-        z-index: 60;
+        position: absolute; inset: 0; z-index: 50;
+        background: rgba(10, 10, 10, 0.6); backdrop-filter: blur(40px);
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        opacity: 0; pointer-events: none;
-        transition: opacity 0.3s;
+        opacity: 0; pointer-events: none; transition: opacity 0.3s;
     }
     .security-layer.active { opacity: 1; pointer-events: all; }
 
-    .switch-auth { display: flex; gap: 15px; margin-bottom: 30px; }
-    .auth-tab { opacity: 0.5; padding-bottom: 5px; cursor: pointer; font-size: 14px; }
-    .auth-tab.active { opacity: 1; border-bottom: 2px solid var(--accent); }
+    /* Auth Views (Hidden by default) */
+    .auth-view { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; }
+    .auth-view.show { display: flex; }
 
-    /* PIN */
-    .pin-wrapper { display: none; flex-direction: column; align-items: center; }
-    .pin-wrapper.show { display: flex; }
-    .pin-dots { display: flex; gap: 20px; margin-bottom: 40px; }
-    .dot { width: 12px; height: 12px; border: 1px solid white; border-radius: 50%; transition: 0.2s; }
-    .dot.filled { background: white; box-shadow: 0 0 10px white; }
-    
-    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
-    .num {
-        width: 70px; height: 70px; border-radius: 50%;
-        background: rgba(255,255,255,0.1);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 24px; cursor: pointer; transition: 0.2s;
+    /* 1. PIN Pad */
+    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; }
+    .num { 
+        width: 70px; height: 70px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2);
+        display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer;
+        background: rgba(255,255,255,0.05); transition: 0.2s;
     }
     .num:active { background: rgba(255,255,255,0.3); }
+    .pin-dots { display: flex; gap: 15px; height: 20px; margin-bottom: 20px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; transition: 0.2s; }
+    .dot.filled { background: white; }
 
-    /* Pattern */
-    .pattern-wrapper { display: none; flex-direction: column; align-items: center; }
-    .pattern-wrapper.show { display: flex; }
-    canvas { touch-action: none; }
-#fullscreenBtn {
-    position: absolute;
-    bottom: 10px;      /* edge padding */
-    right: 10px;       /* edge padding */
-    width: 50px;
-    height: 50px;
-    border-radius: 25px;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-    z-index: 999;
-    transition: background 0.2s;
-}
+    /* 2. Pattern Lock */
+    .pattern-container { position: relative; width: 300px; height: 300px; touch-action: none; }
+    .pattern-grid { width: 100%; height: 100%; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); place-items: center; }
+    .p-dot { 
+        width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.4); 
+        position: relative; transition: 0.3s;
+    }
+    .p-dot.active { background: white; transform: scale(1.5); }
+    .pattern-lines { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; }
+    line { stroke: white; stroke-width: 4px; stroke-linecap: round; opacity: 0.8; }
 
-#fullscreenBtn:hover {
-    background: rgba(0,0,0,0.8);
-}
+    /* 3. Fingerprint */
+    .fingerprint-area {
+        width: 90px; height: 90px; border: 2px solid rgba(255,255,255,0.2);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        position: relative; cursor: pointer;
+        background: rgba(0,0,0,0.2);
+    }
+    .fingerprint-area i { font-size: 45px; opacity: 0.8; }
+    .scan-line {
+        position: absolute; width: 100%; height: 2px; background: #00ffaa;
+        top: 0; opacity: 0; box-shadow: 0 0 10px #00ffaa;
+    }
+    .scanning .scan-line { animation: scan 1.5s ease-in-out infinite; opacity: 1; }
+    @keyframes scan { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
+
+    /* Controls (Top Right) */
+    .controls-wrapper {
+        position: absolute; top: 10px; right: -50px; 
+        display: flex; flex-direction: column; gap: 10px;
+        transition: right 0.3s ease;
+    }
+    .phone-chassis:hover .controls-wrapper { right: 10px; }
+
+    .control-btn {
+        background: #fff; color: #000; padding: 10px; border-radius: 8px; cursor: pointer;
+        font-size: 14px; width: 40px; text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    #fullscreenBtn {
+        position: absolute; bottom: 10px; right: 10px; width: 50px; height: 50px;
+        border-radius: 25px; background: rgba(0,0,0,0.6);
+        display: flex; justify-content: center; align-items: center;
+        color: white; font-size: 20px; cursor: pointer; z-index: 999;
+    }
+    #fullscreenBtn:hover { background: rgba(0,0,0,0.8); }
+
+    .cancel-auth { margin-top: -75px; opacity: 0.6; cursor: pointer; font-size: 14px; }
 
 </style>
 </head>
 <body>
-<!-- Fullscreen Button -->
+
 <div id="fullscreenBtn" title="Fullscreen">
     <i class="fas fa-expand"></i>
 </div>
@@ -250,254 +236,282 @@
     <div class="btn-side vol-up"></div>
     <div class="btn-side vol-down"></div>
     <div class="btn-side pwr-side"></div>
+    
+    <div class="controls-wrapper">
+        <div class="control-btn" onclick="cycleThemes()" title="Change Theme / Clock">
+            <i class="fas fa-palette"></i>
+        </div>
+        <div class="control-btn" onclick="cycleAuth()" title="Change Auth Method">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+    </div>
 
-    <div class="screen" id="mainScreen">
-        <div class="notch"></div>
-
-        <div class="ui-layer" id="lockUI">
-            <div class="clock-container">
-                <i class="fas fa-lock" style="font-size:14px; opacity:0.7; margin-bottom:10px;"></i>
-                <div class="date-text" id="dateText">Monday, Jan 1</div>
-                <div class="time-huge" id="timeText">10:45</div>
-            </div>
-
-            <div class="notification-stack" id="previewStack">
-                </div>
-
-            <div class="view-all-btn" id="viewAllBtn" onclick="openNotificationCenter()">
-                View All Notifications
-            </div>
-
-            <div class="swipe-hint">Swipe up to unlock</div>
-
-            <div class="bottom-area">
-                <div class="circle-btn" onclick="alert('Flashlight Toggled')"><i class="fas fa-flashlight"></i></div>
-                <div class="circle-btn" onclick="alert('Camera Opened')"><i class="fas fa-camera"></i></div>
-            </div>
+    <div class="screen" id="lockScreen">
+        <div class="ui-layer" id="mainUI">
             
+            <div class="status-bar">
+                <span id="carrierText">5G</span>
+                <div style="display:flex; gap:5px">
+                    <i class="fas fa-wifi"></i>
+                    <i class="fas fa-battery-three-quarters"></i>
+                </div>
+            </div>
+
+            <div class="clock-section" id="clockArea">
+                <div class="date-pill" id="dateText">MONDAY 14</div>
+                <div class="huge-clock" id="clockText">
+                    <span id="clockH">09</span>
+                    <span class="clock-sep" id="clockSep">:</span>
+                    <span id="clockM">41</span>
+                </div>
+                
+                <div class="widget-container" id="widgetRow"></div>
+            </div>
+
+            <div class="swipe-hint" id="swipeText">Swipe up to unlock</div>
+
+            <div class="bottom-controls">
+                <div class="action-btn" onclick="alert('Flashlight')"><i class="fas fa-flashlight"></i></div>
+                <div class="action-btn" onclick="alert('Camera')"><i class="fas fa-camera"></i></div>
+            </div>
             <div class="home-bar"></div>
         </div>
 
-        <div class="notif-center" id="notifCenter">
-            <div class="nc-header">
-                <div class="nc-title">Notifications</div>
-                <div class="nc-clear" onclick="clearNotifications()">Clear All</div>
-            </div>
-            <div class="nc-list" id="ncList">
-                </div>
-            <div class="nc-close" onclick="closeNotificationCenter()">
-                <i class="fas fa-chevron-down"></i>
-            </div>
-        </div>
-
         <div class="security-layer" id="securityLayer">
-            <div class="switch-auth">
-                <div class="auth-tab active" id="tabPin" onclick="setAuthMode('pin')">PIN</div>
-                <div class="auth-tab" id="tabPat" onclick="setAuthMode('pattern')">Pattern</div>
-            </div>
-
-            <div class="pin-wrapper show" id="pinUI">
-                <div style="margin-bottom:20px; opacity:0.7;">Enter PIN (1234)</div>
+            
+            <div class="auth-view" id="auth-pin">
+                <div style="margin-bottom:20px; font-size: 14px; opacity: 0.8;">Enter Passcode</div>
                 <div class="pin-dots" id="pinDots">
                     <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
                 </div>
                 <div class="numpad">
-                    <div class="num" onclick="enterPin(1)">1</div>
-                    <div class="num" onclick="enterPin(2)">2</div>
-                    <div class="num" onclick="enterPin(3)">3</div>
-                    <div class="num" onclick="enterPin(4)">4</div>
-                    <div class="num" onclick="enterPin(5)">5</div>
-                    <div class="num" onclick="enterPin(6)">6</div>
-                    <div class="num" onclick="enterPin(7)">7</div>
-                    <div class="num" onclick="enterPin(8)">8</div>
-                    <div class="num" onclick="enterPin(9)">9</div>
-                    <div class="num" style="background:transparent"></div>
+                    <div class="num" onclick="enterPin(1)">1</div><div class="num" onclick="enterPin(2)">2</div><div class="num" onclick="enterPin(3)">3</div>
+                    <div class="num" onclick="enterPin(4)">4</div><div class="num" onclick="enterPin(5)">5</div><div class="num" onclick="enterPin(6)">6</div>
+                    <div class="num" onclick="enterPin(7)">7</div><div class="num" onclick="enterPin(8)">8</div><div class="num" onclick="enterPin(9)">9</div>
+                    <div class="num" style="border:none; background:transparent"></div>
                     <div class="num" onclick="enterPin(0)">0</div>
-                    <div class="num" onclick="enterPin('del')"><i class="fas fa-backspace" style="font-size:18px"></i></div>
+                    <div class="num" style="border:none; background:transparent" onclick="enterPin('del')"><i class="fas fa-backspace"></i></div>
                 </div>
             </div>
 
-            <div class="pattern-wrapper" id="patUI">
-                <div style="margin-bottom:10px; opacity:0.7;">Draw 'Z' Pattern</div>
-                <canvas id="patternCanvas" width="300" height="300"></canvas>
+            <div class="auth-view" id="auth-pattern">
+                <div style="margin-bottom:20px; font-size: 14px; opacity: 0.8;">Draw Pattern</div>
+                <div class="pattern-container" id="patternContainer">
+                    <svg class="pattern-lines" id="patternSvg"></svg>
+                    <div class="pattern-grid">
+                        <div class="p-dot" data-id="0"></div><div class="p-dot" data-id="1"></div><div class="p-dot" data-id="2"></div>
+                        <div class="p-dot" data-id="3"></div><div class="p-dot" data-id="4"></div><div class="p-dot" data-id="5"></div>
+                        <div class="p-dot" data-id="6"></div><div class="p-dot" data-id="7"></div><div class="p-dot" data-id="8"></div>
+                    </div>
+                </div>
             </div>
 
-            <div class="nc-close" style="margin-top:30px; background:rgba(255,255,255,0.2); color:white" onclick="closeSecurity()">
-                <i class="fas fa-times"></i>
+            <div class="auth-view" id="auth-fingerprint">
+                <div style="margin-bottom:40px; font-size: 16px; opacity: 0.9;">Touch Sensor</div>
+                <div class="fingerprint-area" id="fpScanner" onclick="simulateScan()">
+                    <div class="scan-line"></div>
+                    <i class="fas fa-fingerprint"></i>
+                </div>
+                <div style="margin-top:20px; font-size: 12px; opacity: 0.6;">Tap to scan</div>
             </div>
+
+            <div class="cancel-auth" onclick="closeSecurity()">Cancel</div>
         </div>
 
     </div>
 </div>
 
 <script>
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-
-fullscreenBtn.onclick = () => {
-    const el = document.documentElement; // whole page
-    if (!document.fullscreenElement) {
-        // Request fullscreen
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); // Safari
-        else if (el.msRequestFullscreen) el.msRequestFullscreen(); // IE11
-    } else {
-        // Exit fullscreen
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.msExitFullscreen) document.msExitFullscreen();
-    }
-};
     /* ----------------------------------------------------------------
-       1. DATA & STATE MANAGEMENT
+       1. CONFIGURATION SYSTEM
     ---------------------------------------------------------------- */
-    // Initial Notification Data
-    let notifications = [
-        { id: 101, app: 'Message', icon: 'fa-comment', color: '#4caf50', title: 'Tim Cook', msg: 'Check out my new $3500 movie goggles', time: 'Now' },
-        { id: 102, app: 'Mail', icon: 'fa-envelope', color: '#2196f3', title: 'Craig Federighi', msg: 'Subject: Hair Products meeting moved to 4PM.', time: '2m' },
-        { id: 103, app: 'Instagram', icon: 'fa-camera-retro', color: '#e1306c', title: 'Mark Z.', msg: 'liked your photo: "Metaverse is cool!"', time: '15m' },
-        { id: 104, app: 'Bank', icon: 'fa-university', color: '#ff9800', title: 'Chase', msg: 'Large purchase detected: $9.99', time: '1h' },
-        { id: 105, app: 'Home', icon: 'fa-home', color: '#ffc107', title: 'Smart Lock', msg: 'Front door unlocked.', time: '2h' }
+    const themes = [
+        {
+            id: 'nature',
+            wallpaper: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2670&auto=format&fit=crop',
+            font: "'Anton', sans-serif",
+            clockColor: 'rgba(255, 255, 255, 0.95)',
+            fontSize: '160px',
+            clockLayout: 'column', // 'column' (vertical) or 'row' (horizontal)
+            blendMode: 'overlay',
+            alignment: 'flex-start',
+            widgets: [
+                { type: 'pill', icon: 'fa-cloud-sun', text: '72°F', bg: 'rgba(255,255,255,0.1)' },
+                { type: 'circle', icon: 'fa-shoe-prints', text: '', bg: 'rgba(255,255,255,0.1)' }
+            ]
+        },
+        {
+            id: 'urban',
+            wallpaper: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=2444&auto=format&fit=crop',
+            font: "'Bebas Neue', sans-serif",
+            clockColor: '#e0dac3',
+            fontSize: '180px',
+            clockLayout: 'column',
+            blendMode: 'normal',
+            alignment: 'center',
+            widgets: [
+                { type: 'pill', icon: 'fa-music', text: 'Spotify', bg: '#1DB954' },
+                { type: 'circle', icon: 'fa-battery-full', text: '', bg: 'rgba(0,0,0,0.5)' }
+            ]
+        },
+        {
+            id: 'horizontal-minimal',
+            wallpaper: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?q=80&w=2670&auto=format&fit=crop',
+            font: "'Oswald', sans-serif",
+            clockColor: 'white',
+            fontSize: '100px',
+            clockLayout: 'row', // Horizontal Layout
+            blendMode: 'normal',
+            alignment: 'center',
+            widgets: [
+                 { type: 'pill', icon: 'fa-calendar', text: 'Wed 12', bg: 'rgba(0,0,0,0.3)' },
+            ]
+        }
     ];
 
+    const authMethods = ['pin', 'pattern', 'fingerprint'];
+    let currentAuthIndex = 0; // 0 = pin
+    let currentThemeIndex = 0;
+
     /* ----------------------------------------------------------------
-       2. RENDERING LOGIC
+       2. RENDER ENGINE (Theme & Clock)
     ---------------------------------------------------------------- */
-    const previewStack = document.getElementById('previewStack');
-    const ncList = document.getElementById('ncList');
-    const viewAllBtn = document.getElementById('viewAllBtn');
-
-    function renderNotifications() {
-        // Clear current HTML
-        previewStack.innerHTML = '';
-        ncList.innerHTML = '';
-
-        if(notifications.length === 0) {
-            viewAllBtn.style.display = 'none';
-            ncList.innerHTML = '<div style="text-align:center; opacity:0.5; margin-top:50px;">No Notifications</div>';
-            return;
-        }
+    function applyTheme(index) {
+        const config = themes[index];
+        const screen = document.getElementById('lockScreen');
+        const clockArea = document.getElementById('clockArea');
+        const clockText = document.getElementById('clockText');
+        const clockSep = document.getElementById('clockSep');
         
-        viewAllBtn.style.display = 'block';
-        viewAllBtn.innerText = `View All (${notifications.length})`;
+        // 1. Wallpaper
+        screen.style.backgroundImage = `url('${config.wallpaper}')`;
+        
+        // 2. Alignment
+        clockArea.style.alignItems = config.alignment;
+        if(config.alignment === 'center') {
+            clockArea.style.width = '100%';
+            clockText.style.alignItems = 'center';
+        } else {
+            clockText.style.alignItems = 'flex-start';
+        }
 
-        // Render Loop
-        notifications.forEach((notif, index) => {
-            const html = `
-                <div class="glass-card" onclick="alert('Opening ${notif.app}: ${notif.msg}')">
-                    <div class="app-icon" style="color:${notif.color}"><i class="fas ${notif.icon}"></i></div>
-                    <div class="content-box">
-                        <div class="card-header">
-                            <span>${notif.app}</span>
-                            <span>${notif.time}</span>
-                        </div>
-                        <div class="card-title">${notif.title}</div>
-                        <div class="card-msg">${notif.msg}</div>
-                    </div>
-                </div>
-            `;
+        // 3. Font, Color, Size
+        document.documentElement.style.setProperty('--font-clock', config.font);
+        document.documentElement.style.setProperty('--accent-color', config.clockColor);
+        document.documentElement.style.setProperty('--clock-size', config.fontSize);
+        
+        // 4. Blend Mode
+        if(config.blendMode === 'normal') clockText.classList.add('solid');
+        else clockText.classList.remove('solid');
 
-            // Add to Notification Center (All)
-            ncList.innerHTML += html;
+        // 5. Layout (Row vs Column)
+        if(config.clockLayout === 'row') {
+            clockText.style.flexDirection = 'row';
+            clockText.style.gap = '15px';
+            clockSep.style.display = 'inline-block';
+        } else {
+            clockText.style.flexDirection = 'column';
+            clockText.style.gap = '0';
+            clockSep.style.display = 'none';
+        }
 
-            // Add to Lock Screen Preview (First 2 only)
-            if(index < 2) {
-                previewStack.innerHTML += html;
-            }
+        // 6. Widgets
+        const wContainer = document.getElementById('widgetRow');
+        wContainer.innerHTML = '';
+        wContainer.style.justifyContent = config.alignment === 'center' ? 'center' : 'flex-start';
+
+        config.widgets.forEach(w => {
+            let html = w.type === 'pill' 
+                ? `<div class="widget w-pill" style="background:${w.bg}"><i class="fas ${w.icon}"></i> <span>${w.text}</span></div>`
+                : `<div class="widget w-circle" style="background:${w.bg}"><i class="fas ${w.icon}"></i></div>`;
+            wContainer.innerHTML += html;
         });
     }
 
-    function clearNotifications() {
-        notifications = [];
-        renderNotifications();
-        closeNotificationCenter();
-    }
-
-    // Initial Render
-    renderNotifications();
-
-    /* ----------------------------------------------------------------
-       3. INTERACTION & ANIMATION
-    ---------------------------------------------------------------- */
-    // Time Logic
     function updateClock() {
         const d = new Date();
-        const hr = d.getHours();
+        const hr = String(d.getHours() % 12 || 12).padStart(2,'0');
         const min = String(d.getMinutes()).padStart(2,'0');
-        const timeStr = `${hr % 12 || 12}:${min}`;
-        
         const options = { weekday: 'long', month: 'short', day: 'numeric' };
         
-        document.getElementById('timeText').innerText = timeStr;
+        document.getElementById('clockH').innerText = hr;
+        document.getElementById('clockM').innerText = min;
         document.getElementById('dateText').innerText = d.toLocaleDateString('en-US', options);
     }
-    setInterval(updateClock, 1000);
-    updateClock();
 
-    // Notification Center Toggles
-    const notifCenter = document.getElementById('notifCenter');
-    
-    function openNotificationCenter() {
-        notifCenter.classList.add('active');
-    }
-    function closeNotificationCenter() {
-        notifCenter.classList.remove('active');
+    function cycleThemes() {
+        currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+        applyTheme(currentThemeIndex);
     }
 
     /* ----------------------------------------------------------------
-       4. SECURITY & GESTURES
+       3. SECURITY SYSTEM (Orchestrator)
     ---------------------------------------------------------------- */
-    const lockUI = document.getElementById('lockUI');
+    const mainUI = document.getElementById('mainUI');
     const securityLayer = document.getElementById('securityLayer');
     
-    // Hammer.js Swipe Up
-    const hammer = new Hammer(lockUI);
+    // Swipe to Unlock
+    const hammer = new Hammer(mainUI);
     hammer.get('swipe').set({ direction: Hammer.DIRECTION_VERTICAL });
-    
     hammer.on('swipeup', () => {
-        securityLayer.classList.add('active');
+        openSecurity();
     });
+
+    function cycleAuth() {
+        currentAuthIndex = (currentAuthIndex + 1) % authMethods.length;
+        const method = authMethods[currentAuthIndex];
+        const swipeText = document.getElementById('swipeText');
+        
+        if(method === 'pin') swipeText.innerText = "Swipe up for PIN";
+        else if(method === 'pattern') swipeText.innerText = "Swipe up for Pattern";
+        else swipeText.innerText = "Swipe up for Fingerprint";
+    }
+
+    function openSecurity() {
+        securityLayer.classList.add('active');
+        // Hide all views first
+        document.querySelectorAll('.auth-view').forEach(el => el.classList.remove('show'));
+        
+        // Show selected view
+        const method = authMethods[currentAuthIndex];
+        document.getElementById('auth-' + method).classList.add('show');
+    }
 
     function closeSecurity() {
         securityLayer.classList.remove('active');
-        // Reset Inputs
+        // Reset inputs
         currentPin = "";
         updatePinDots();
-        points = [];
-        drawGrid();
+        resetPattern();
     }
 
-    // Auth Switcher
-    function setAuthMode(mode) {
-        document.getElementById('tabPin').classList.toggle('active', mode === 'pin');
-        document.getElementById('tabPat').classList.toggle('active', mode === 'pattern');
-        document.getElementById('pinUI').classList.toggle('show', mode === 'pin');
-        document.getElementById('patUI').classList.toggle('show', mode === 'pattern');
-        if(mode === 'pattern') drawGrid();
+    function unlockSuccess() {
+        // alert("UNLOCKED");
+        closeSecurity();
+        mainUI.style.opacity = "0";
+        setTimeout(() => { alert("Welcome Home"); mainUI.style.opacity = "1"; }, 300);
     }
 
-    // --- PIN LOGIC ---
+    function unlockFail() {
+        const activeView = document.querySelector('.auth-view.show');
+        activeView.style.animation = "shake 0.4s";
+        setTimeout(() => activeView.style.animation = "", 400);
+    }
+
+    /* --- PIN LOGIC --- */
     let currentPin = "";
     const correctPin = "1234";
 
     function enterPin(val) {
-        if(val === 'del') {
-            currentPin = currentPin.slice(0, -1);
-        } else if (currentPin.length < 4) {
-            currentPin += val;
-        }
+        if(val === 'del') currentPin = currentPin.slice(0, -1);
+        else if (currentPin.length < 4) currentPin += val;
+        
         updatePinDots();
 
         if(currentPin.length === 4) {
             setTimeout(() => {
-                if(currentPin === correctPin) {
-                    alert("DEVICE UNLOCKED");
-                    closeSecurity();
-                    window.location.href='home.htm'
-                } else {
-                    alert("Incorrect PIN");
-                    currentPin = "";
-                    updatePinDots();
-                }
+                if(currentPin === correctPin) unlockSuccess();
+                else { unlockFail(); currentPin = ""; updatePinDots(); }
             }, 200);
         }
     }
@@ -505,117 +519,148 @@ fullscreenBtn.onclick = () => {
     function updatePinDots() {
         const dots = document.querySelectorAll('.dot');
         dots.forEach((d, i) => {
-            if(i < currentPin.length) d.classList.add('filled');
-            else d.classList.remove('filled');
+            d.classList.toggle('filled', i < currentPin.length);
         });
     }
 
-    // --- PATTERN LOGIC ---
-    const canvas = document.getElementById('patternCanvas');
-    const ctx = canvas.getContext('2d');
-    const grid = [
-        {x: 50, y: 50}, {x: 150, y: 50}, {x: 250, y: 50},
-        {x: 50, y: 150}, {x: 150, y: 150}, {x: 250, y: 150},
-        {x: 50, y: 250}, {x: 150, y: 250}, {x: 250, y: 250}
-    ];
+    /* --- PATTERN LOGIC --- */
+    // Simple implementation: Connect dots. "Correct" pattern is Z shape: 0->1->2->4->6->7->8 (Simplified Z: 0,1,2,4,6,7,8)
+    // Actually simpler demo: Top row -> Center -> Bottom Row (0,1,2,4,6,7,8) is hard to draw.
+    // Let's do a '7' shape: 0 -> 1 -> 2 -> 4 -> 6
+    const correctPattern = "01246"; 
+    let patternPath = [];
     let isDrawing = false;
-    let points = [];
+    const pContainer = document.getElementById('patternContainer');
+    const pSvg = document.getElementById('patternSvg');
 
-    function drawGrid() {
-        ctx.clearRect(0,0,300,300);
-        
-        // Draw Lines
-        if(points.length > 1) {
-            ctx.beginPath();
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = 'white';
-            
-            const start = grid[points[0]];
-            ctx.moveTo(start.x, start.y);
-            for(let i=1; i<points.length; i++) {
-                const p = grid[points[i]];
-                ctx.lineTo(p.x, p.y);
-            }
-            ctx.stroke();
-            ctx.shadowBlur = 0; // reset
-        }
+    // Add listeners to container
+    pContainer.addEventListener('mousedown', startPattern);
+    pContainer.addEventListener('touchstart', startPattern);
+    window.addEventListener('mouseup', endPattern);
+    window.addEventListener('touchend', endPattern);
+    pContainer.addEventListener('mousemove', movePattern);
+    pContainer.addEventListener('touchmove', movePattern);
 
-        // Draw Dots
-        grid.forEach((p, idx) => {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, points.includes(idx) ? 10 : 6, 0, Math.PI*2);
-            ctx.fillStyle = points.includes(idx) ? '#fff' : 'rgba(255,255,255,0.3)';
-            ctx.fill();
-        });
-    }
-
-    function getTouchIndex(x, y) {
-        const rect = canvas.getBoundingClientRect();
-        const tx = x - rect.left;
-        const ty = y - rect.top;
-        for(let i=0; i<grid.length; i++) {
-            const dist = Math.hypot(tx - grid[i].x, ty - grid[i].y);
-            if(dist < 30) return i;
-        }
-        return -1;
-    }
-
-    function startDraw(e) {
-        e.preventDefault();
+    function startPattern(e) {
         isDrawing = true;
-        points = [];
-        const t = e.touches ? e.touches[0] : e;
-        const idx = getTouchIndex(t.clientX, t.clientY);
-        if(idx !== -1) points.push(idx);
-        drawGrid();
+        patternPath = [];
+        resetPatternVisuals();
+        e.preventDefault(); // prevent scroll
     }
 
-    function moveDraw(e) {
+    function movePattern(e) {
         if(!isDrawing) return;
         e.preventDefault();
-        const t = e.touches ? e.touches[0] : e;
-        const idx = getTouchIndex(t.clientX, t.clientY);
-        if(idx !== -1 && !points.includes(idx)) {
-            points.push(idx);
-            drawGrid();
+        
+        // Get pointer position
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        // Check collision with dots
+        const dots = document.querySelectorAll('.p-dot');
+        dots.forEach(dot => {
+            const rect = dot.getBoundingClientRect();
+            const centerX = rect.left + rect.width/2;
+            const centerY = rect.top + rect.height/2;
+            const dist = Math.hypot(clientX - centerX, clientY - centerY);
+            
+            if(dist < 30) { // Hit radius
+                const id = dot.getAttribute('data-id');
+                if(!patternPath.includes(id)) {
+                    patternPath.push(id);
+                    dot.classList.add('active');
+                    drawPatternLine();
+                }
+            }
+        });
+    }
+
+    function drawPatternLine() {
+        // Draw lines between collected dots
+        pSvg.innerHTML = '';
+        if(patternPath.length < 2) return;
+
+        for(let i=0; i<patternPath.length-1; i++) {
+            const dot1 = document.querySelector(`.p-dot[data-id="${patternPath[i]}"]`);
+            const dot2 = document.querySelector(`.p-dot[data-id="${patternPath[i+1]}"]`);
+            const r1 = dot1.getBoundingClientRect();
+            const r2 = dot2.getBoundingClientRect();
+            const pRect = pContainer.getBoundingClientRect(); // offset
+
+            // Coordinates relative to SVG container
+            const x1 = r1.left + r1.width/2 - pRect.left;
+            const y1 = r1.top + r1.height/2 - pRect.top;
+            const x2 = r2.left + r2.width/2 - pRect.left;
+            const y2 = r2.top + r2.height/2 - pRect.top;
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+            line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+            pSvg.appendChild(line);
         }
     }
 
-    function endDraw() {
+    function endPattern() {
         if(!isDrawing) return;
         isDrawing = false;
+        const result = patternPath.join('');
         
-        // Z pattern is 0,1,2,4,6,7,8
-        const path = points.join('');
-        // Simplified Z (TopL -> TopR -> Center -> BotL -> BotR) -> 0,2,4,6,8 is also commonly accepted as Z
-        // Let's accept strict path 0->1->2->4->6->7->8
-        if(path === "0124678" || path === "02468") { 
-            alert("DEVICE UNLOCKED");
-            closeSecurity();
-            window.location.href='home.htm'
-        } else {
-            // Error visual
-            ctx.strokeStyle = 'red';
-            ctx.stroke();
-            setTimeout(() => {
-                alert("Wrong Pattern");
-                points = [];
-                drawGrid();
-            }, 100);
+        if(result.length > 0) {
+            if(result === correctPattern) unlockSuccess();
+            else {
+                unlockFail();
+                setTimeout(resetPattern, 500);
+            }
         }
     }
 
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', moveDraw);
-    window.addEventListener('mouseup', endDraw);
-    canvas.addEventListener('touchstart', startDraw);
-    canvas.addEventListener('touchmove', moveDraw);
-    window.addEventListener('touchend', endDraw);
+    function resetPattern() {
+        patternPath = [];
+        resetPatternVisuals();
+    }
+    
+    function resetPatternVisuals() {
+        document.querySelectorAll('.p-dot').forEach(d => d.classList.remove('active'));
+        pSvg.innerHTML = '';
+    }
 
+    /* --- FINGERPRINT LOGIC --- */
+    function simulateScan() {
+        const scanner = document.getElementById('fpScanner');
+        if(scanner.classList.contains('scanning')) return;
+        
+        scanner.classList.add('scanning');
+        setTimeout(() => {
+            scanner.classList.remove('scanning');
+            unlockSuccess();
+        }, 1500); // 1.5s scan time
+    }
+
+    /* --- INIT & FULLSCREEN --- */
+    setInterval(updateClock, 1000);
+    applyTheme(0);
+    updateClock();
+
+    document.getElementById('fullscreenBtn').onclick = () => {
+        const el = document.documentElement;
+        if (!document.fullscreenElement) {
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+        }
+    };
 </script>
+
+<style>
+/* Shake Animation for Wrong Password */
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    50% { transform: translateX(10px); }
+    75% { transform: translateX(-10px); }
+    100% { transform: translateX(0); }
+}
+</style>
 </body>
 </html>

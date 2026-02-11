@@ -708,8 +708,8 @@ body {
 
 #bottom-guard {
     position: absolute;
-    left: 0;
-    width: 50%;
+    left: 23%;
+    width: 55%;
     z-index: 2000; /* ABOVE iframe */
     background: transparent;
     pointer-events: all;
@@ -907,7 +907,7 @@ input:checked + .toggle-btn {
 
 
 .app-wrapper {
-    
+    z-index: 999999999999999999999999999;
     pointer-events: auto;
     flex: 0 0 auto;
     scroll-snap-align: center;
@@ -1415,6 +1415,18 @@ input:checked + .qs-btn-round { background: white; color: black; }
     color: rgba(255,255,255,0.6);
 }
 
+#appLiftLayer {
+    position: absolute;
+    inset: 0;
+    z-index: 2000;          /* ABOVE dock */
+    pointer-events: none;
+}
+
+#appLiftLayer.active {
+    pointer-events: auto;
+}
+
+
 /* SYSTEM NOTIFICATIONS - BELOW STATUS BAR WITH ANIMATION */
 .phone-frame .system-notif {
     position: absolute;            /* attached inside phone frame */
@@ -1591,7 +1603,7 @@ input:checked + .qs-btn-round { background: white; color: black; }
 .widget-iframe,
 .widget-iframe *,
 iframe {
-  pointer-events: auto !important;
+  pointer-events: none !important;
 }
 
 

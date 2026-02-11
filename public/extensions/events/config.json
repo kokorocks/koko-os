@@ -1,0 +1,6 @@
+{
+    "file": "events.js",
+    "willChange": ["settings", "quick-settings"],
+    "async": false,
+    "updateUrl": null
+}

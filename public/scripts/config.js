@@ -1,8 +1,8 @@
 let isDragging = false;
 let gestures=true;//false
 let previewOpen=false;
-let colorScheme='dark';//'light';
-
+let isDev=true;
+isDev=true;
 /* =========================================
    1. DATA CONFIGURATION
    ========================================= */
@@ -30,11 +30,12 @@ const appDB = {
     'cal':  { name: 'Calendar', icon: 'fa-calendar-alt' },
     'photos': { name: 'Photos', icon: 'fa-images', app: 'photos-app.htm' },
     'camera': { name: 'Camera', icon: 'fa-camera' },
+    'phone': { name: 'Phone', icon: 'fa fa-phone', app: 'phone.htm' },
     //'maps': { name: 'Maps', icon: 'fa-map-marked-alt', color: '#34C759', app: 'maps-app.htm', installing: true },
     'weather': { name: 'Weather', icon: 'fa-cloud-sun', app: 'weather-app.htm', widgets: [{name: 'weather', widget: 'weather-widget.htm'}, {name: 'forecast', widget: 'forecast-widget.htm'}] },
     'clock': { name: 'Clock', icon: 'fa-clock', app: 'clock-app.htm', widgets: [{name: 'clock', widget: 'clock-widget.htm'}, {name: 'alarm', widget: 'alarm-widget.htm'}] },
     'notes': { name: 'Notes', icon: 'fa-sticky-note' },
-    'settings': { name: 'Settings', icon: 'fa-cog' },
+    'settings': { name: 'Settings', icon: 'fa-cog', app: 'settings-app.htm' },
     'store': { name: 'App Store', icon: 'fa-layer-group' },
     'browser': { name: 'Browser', icon: 'img:assets/icons/browser.svg', app: 'browser/browser-app.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] },
     'music': { name: 'Music', icon: 'fa-music' },
@@ -43,7 +44,8 @@ const appDB = {
     'personalize': { name: 'personalize', icon: 'fa-palette', app: 'personalize.htm' },
     //'health': { name: 'Health', icon: 'fa-heart', color: '#FF2D55' },
     //'wallet': { name: 'Wallet', icon: 'fa-wallet', color: '#000' },
-    'test': { name: 'Test App', icon: 'fa-vial', app: 'test.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] }
+    'test': { name: 'Test App', requiresDev: true, icon: 'fa-vial', app: 'test.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] },
+    'control-panel': { name: 'Control Panel', requiresDev: true, icon: 'fa-brands fa-whmcs', app: 'test.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] }
 };
 
 const defaultPages = [
