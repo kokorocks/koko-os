@@ -307,8 +307,9 @@ function renderAppPreviews() {
             console.log(currentY)
             if (currentY > OPEN_THRESHOLD) {
                 console.log('reopen app')
-                console.log(el.querySelector('iframe').classList[0])
-                openApp(el.querySelector('iframe').classList[0].toLowerCase(), null, false, 0, false);
+                //const realApp = document.querySelector(`.${appClass}.all-apps`);
+                console.log(el)
+                openApp(el.id.toLowerCase(), null, false, 0, false);
                 closeAppPreviews();
                 return;
             }

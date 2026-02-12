@@ -44,7 +44,7 @@ const appDB = {
     'personalize': { name: 'personalize', icon: 'fa-palette', app: 'personalize.htm' },
     //'health': { name: 'Health', icon: 'fa-heart', color: '#FF2D55' },
     //'wallet': { name: 'Wallet', icon: 'fa-wallet', color: '#000' },
-    'test': { name: 'Test App', requiresDev: true, icon: 'fa-vial', app: 'test.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] },
+    'test': { name: 'Test App', requiresDev: true, color: '#000' , icon: 'fa-vial', app: 'test.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] },
     'control-panel': { name: 'Control Panel', requiresDev: true, icon: 'fa-brands fa-whmcs', app: 'test.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] }
 };
 
