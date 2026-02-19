@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Network Monitor</title>
+    
+    <script type="text/javascript" src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
+    <link href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+
+    <style>
+        :root {
+            --bg-color: #242424;
+            --panel-bg: #202124;
+            --text-color: #9aa0a6;
+            --text-primary: #e8eaed;
+            --border-color: #3c4043;
+            --row-hover: #2a2d32;
+            
+            /* Resource Colors */
+            --c-html: #e37400;
+            --c-css: #a76cd6;
+            --c-js: #f2ce5e;
+            --c-img: #81c995;
+            --c-xhr: #fff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 10px; /* Smaller base font for mobile */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Toolbar --- */
+        .toolbar {
+            height: 32px; /* Taller for touch targets */
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            gap: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .toolbar::-webkit-scrollbar { display: none; } /* Hide scrollbar */
+        
+        /* --- Top Timeline Container --- */
+        #timeline-container {
+            height: 150px; /* Reduced height */
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Compact Vis.js Styles */
+        .vis-timeline { border: none; }
+        .vis-time-axis .vis-text { color: #777; font-size: 9px; }
+        .vis-item { border-color: transparent; border-radius: 1px; }
+        
+        /* Resource Colors */
+        .vis-item.type-html { background-color: var(--c-html); }
+        .vis-item.type-css { background-color: var(--c-css); }
+        .vis-item.type-js { background-color: var(--c-js); }
+        .vis-item.type-img { background-color: var(--c-img); }
+        .vis-item.type-xhr { background-color: var(--text-color); }
+
+        /* --- Data Grid --- */
+        .grid-header, .request-row {
+            display: grid;
+            /* Name | Status | Size | Time | Waterfall */
+            grid-template-columns: 2fr 35px 45px 40px 1fr; 
+            gap: 5px;
+            align-items: center;
+            padding: 0 5px;
+        }
+
+        /* Hide specific columns on small screens via media query logic usually, 
+           but here we hardcode a mobile-first grid layout above */
+
+        .grid-header {
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: bold;
+            color: var(--text-primary);
+            height: 24px;
+            font-size: 9px;
+        }
+        
+        #request-list {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+        }
+
+        .request-row {
+            height: 24px; /* Very compact rows */
+            border-bottom: 1px solid #2d2d2d;
+            cursor: pointer;
+        }
+        
+        .cell {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cell.name { color: var(--text-primary); font-weight: 500; }
+        .status-404 { color: #f28b82; }
+        
+        /* Waterfall Visuals */
+        .waterfall-container {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+        .waterfall-bar {
+            height: 6px; /* Thinner bars */
+            border-radius: 2px;
+            position: absolute;
+            opacity: 0.9;
+            min-width: 2px;
+        }
+
+        /* Footer */
+        .status-bar {
+            height: 24px;
+            border-top: 1px solid var(--border-color);
+            background: var(--panel-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px;
+            font-size: 9px;
+            white-space: nowrap;
+        }
+
+        /* Mobile specific adjustments */
+        @media (min-width: 600px) {
+            /* If tablet/desktop, add back columns */
+            .grid-header, .request-row {
+                grid-template-columns: 200px 50px 50px 60px 60px 60px 1fr;
+            }
+            /* Show hidden columns logic would go here if we hid them with display:none */
+        }/* ACTUAL item height */
+        
+        .vis-item {
+          height: 4px !important;
+          min-height: 4px !important;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <span>🔴</span>
+        <span>🚫</span>
+        <label><input type="checkbox" checked> Log</label>
+        <label><input type="checkbox"> Cache</label>
+        <span>No throttle</span>
+    </div>
+
+    <div id="timeline-container"></div>
+
+    <div class="grid-header">
+        <div>Name</div>
+        <div>Stat</div>
+        <div>Size</div>
+        <div>Time</div>
+        <div>Waterfall</div>
+    </div>
+
+    <div id="request-list"></div>
+
+    <div class="status-bar">
+        <span id="req-count">0 req</span>
+        <span id="transferred-size">0 KB</span>
+        <span id="total-time">0ms</span>
+    </div>
+
+<script>
+    // --- Data Generation (Same logic, slightly tighter times) ---
+    const fileTypes = [
+        { ext: 'html', type: 'doc', color: 'type-html' }, // Shortened type names
+        { ext: 'css', type: 'css', color: 'type-css' },
+        { ext: 'js', type: 'js', color: 'type-js' },
+        { ext: 'png', type: 'img', color: 'type-img' },
+        { ext: 'json', type: 'xhr', color: 'type-xhr' }
+    ];
+
+    const generateRequests = (count) => {
+        const requests = [];
+        let timeOffset = 0;
+        for (let i = 0; i < count; i++) {
+            const ft = fileTypes[Math.floor(Math.random() * fileTypes.length)];
+            const duration = Math.floor(Math.random() * 150) + 10; 
+            const size = Math.floor(Math.random() * 100) + 1;
+            const start = timeOffset + Math.floor(Math.random() * 20); // Tighter waterfall
+            timeOffset = start; 
+
+            requests.push({
+                id: i,
+                name: `res_${i}.${ft.ext}`, // Shorter names
+                status: Math.random() > 0.95 ? 404 : 200,
+                type: ft.type,
+                size: size * 1024,
+                start: start,
+                end: start + duration,
+                duration: duration,
+                className: ft.color
+            });
+        }
+        return requests;
+    };
+
+    const allRequests = generateRequests(60);
+    const totalDuration = allRequests[allRequests.length-1].end + 50;
+
+    // --- Timeline Setup ---
+    const container = document.getElementById('timeline-container');
+    const items = new vis.DataSet(
+        allRequests.map(req => ({
+            id: req.id,
+            content: '', 
+            start: req.start,
+            end: req.end,
+            className: req.className,
+            // Force tight packing
+            group: 0
+        }))
+    );
+
+    const options = {
+        stack: true, 
+        start: 0,
+        end: totalDuration,
+        min: 0,
+        max: totalDuration + 200,
+        height: '100%',
+        showCurrentTime: false,
+        zoomMin: 50,
+        // Remove margins to save space
+        margin: {
+            item: { horizontal: 0, vertical: 2 }, // Very tight vertical spacing
+            axis: 2
+        },
+        stack: true,
+        // Make sure it doesn't try to use dates
+        format: {
+            minorLabels: (date) => `${date.valueOf()}`,
+            majorLabels: () => ``
+        }
+    };
+
+    const timeline = new vis.Timeline(container, items, options);
+
+    // --- Grid Rendering ---
+    const gridContainer = document.getElementById('request-list');
+    const fCount = document.getElementById('req-count');
+    const fSize = document.getElementById('transferred-size');
+    const fTime = document.getElementById('total-time');
+
+    function getColorVar(type) {
+        if(type === 'doc') return 'var(--c-html)';
+        if(type === 'css') return 'var(--c-css)';
+        if(type === 'js') return 'var(--c-js)';
+        if(type === 'img') return 'var(--c-img)';
+        return '#fff';
+    }
+
+    function renderGrid(minTime, maxTime) {
+    gridContainer.innerHTML = '';
+    let visibleCount = 0;
+    let visibleSize = 0;
+
+    const totalWindow = maxTime - minTime;
+    const fragment = document.createDocumentFragment();
+
+    allRequests.forEach(req => {
+        if (req.end < minTime || req.start > maxTime) return;
+
+        visibleCount++;
+        visibleSize += req.size;
+
+        const row = document.createElement('div');
+        row.className = 'request-row';
+
+        const leftPercent = Math.max(0, ((req.start - minTime) / totalWindow) * 100);
+        const widthPercent = Math.min(100, (req.duration / totalWindow) * 100);
+        const displayWidth = Math.max(widthPercent, 2); 
+
+        row.innerHTML = `
+            <div class="cell name">${req.name}</div>
+            <div class="cell ${req.status === 404 ? 'status-404' : ''}">${req.status}</div>
+            <div class="cell">${Math.round(req.size/1024)}K</div>
+            <div class="cell">${req.duration}</div>
+            <div class="cell">
+                <div class="waterfall-container">
+                    <div class="waterfall-bar" style="
+                        left: ${leftPercent}%; 
+                        width: ${displayWidth}%; 
+                        background-color: ${getColorVar(req.type)};
+                    "></div>
+                </div>
+            </div>
+        `;
+
+        // --- CLICK EVENT ---
+        row.addEventListener('click', () => {
+            alert(
+                `Request Info:\n` +
+                `Name: ${req.name}\n` +
+                `Status: ${req.status}\n` +
+                `Type: ${req.type}\n` +
+                `Size: ${req.size} bytes\n` +
+                `Start: ${req.start} ms\n` +
+                `End: ${req.end} ms\n` +
+                `Duration: ${req.duration} ms`
+            );
+        });
+
+        fragment.appendChild(row);
+    });
+
+    gridContainer.appendChild(fragment);
+
+    fCount.innerText = `${visibleCount} req`;
+    fSize.innerText = `${(visibleSize/1024).toFixed(0)} KB`;
+    fTime.innerText = `${Math.round(totalWindow)}ms`;
+}
+
+
+    // --- Init & Events ---
+    renderGrid(0, totalDuration);
+
+    timeline.on('rangechanged', function (props) {
+        // Debounce not strictly needed for 60 items, but good for mobile battery
+        requestAnimationFrame(() => {
+            renderGrid(props.start.valueOf(), props.end.valueOf());
+        });
+    });// --- TIMELINE CLICK EVENT ---
+    
+    // --- TIMELINE DOUBLE-CLICK EVENT ---
+    timeline.on('doubleClick', function (props) {
+        if (!props.item) return; // Nothing was clicked
+        const req = allRequests.find(r => r.id === props.item);
+        if (req) {
+            alert(
+                `Request Info:\n` +
+                `Name: ${req.name}\n` +
+                `Status: ${req.status}\n` +
+                `Type: ${req.type}\n` +
+                `Size: ${req.size} bytes\n` +
+                `Start: ${req.start} ms\n` +
+                `End: ${req.end} ms\n` +
+                `Duration: ${req.duration} ms`
+            );
+        }
+    });
+
+</script>
+</body>
+</html>

@@ -45,12 +45,12 @@ const appDB = {
     //'health': { name: 'Health', icon: 'fa-heart', color: '#FF2D55' },
     //'wallet': { name: 'Wallet', icon: 'fa-wallet', color: '#000' },
     'test': { name: 'Test App', requiresDev: true, color: '#000' , icon: 'fa-vial', app: 'test.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] },
-    'control-panel': { name: 'Control Panel', requiresDev: true, icon: 'fa-brands fa-whmcs', app: 'test.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] }
+    'control-panel': { name: 'Control Panel', requiresDev: true, icon: 'fa-brands fa-whmcs', app: 'control.htm', permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'] }
 };
 
 const defaultPages = [
     [{ type: 'widget', app: 'clock', widget: 'full-clock-widget.htm', width: 5, height: 1 }, null, null, null, null, 'weather', 'photos', 'mail', 'cal', 'notes', 'settings', null, null, null, null, null, null, null, null],
-    ['files', 'clock', 'browser', 'store', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+    ['files', 'clock', 'browser', 'store', null, null, null, null, null, { type: 'widget', app: 'clock', widget: 'headphones-widget.htm', width: 2, height: 1 }, null, null, null, null, null, null, null, null, null, null],
     [{ type: 'widget', app: 'weather', widget: 'weather-widget.htm', width: 5, height: 2 }, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 ];
 

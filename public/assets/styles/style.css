@@ -59,6 +59,17 @@ body {
                 inset 0 0 0 2px #333;
 }
 
+.app-slot.app-icon {
+  width: 66px;
+  height: 66px;
+}
+
+.widget-container {
+  width: auto;
+  height: auto;
+}
+
+
 .app-slot {
   touch-action: none;
   user-select: none;
@@ -1601,8 +1612,7 @@ input:checked + .qs-btn-round { background: white; color: black; }
 }
 
 .widget-iframe,
-.widget-iframe *,
-iframe {
+.widget-iframe * {
   pointer-events: none !important;
 }
 

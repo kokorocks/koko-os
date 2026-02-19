@@ -1,13 +1,13 @@
 
-    function closeAppPreviews() {
-        const previewArea = document.getElementById('multiappspreviewarea');
-        previewArea.style.opacity = '0';
-        previewArea.style.pointerEvents = 'none';
-        previewArea.style.zIndex = '550';
-        previewArea.classList.remove('open');
-        previewArea.innerHTML = '';
-        previewOpen = false; // ✅ ALWAYS reset state
-    }
+function closeAppPreviews() {
+    const previewArea = document.getElementById('multiappspreviewarea');
+    previewArea.style.opacity = '0';
+    previewArea.style.pointerEvents = 'none';
+    previewArea.style.zIndex = '550';
+    previewArea.classList.remove('open');
+    previewArea.innerHTML = '';
+    previewOpen = false; // ✅ ALWAYS reset state
+}
 
 
 function createIcon(itemData, isDock = false) {
@@ -219,32 +219,31 @@ function createIcon(itemData, isDock = false) {
     transition ? el.style.transform = '' : el.style.transform = 'translateY(0) scale(1)';
     el.style.opacity = '';
 }*/
+// Global tracker object
+
 function openApp(id, data, splitView = false, change = 0, transition = true) {
-    closeAppPreviews()
-    console.log(id);
+    closeAppPreviews();
     cancelDrag();
-    console.log(splitView);
 
     document.getElementById('appDrawer').style.transform = 'translateY(100%)';
 
     if (!appDB[id] || !appDB[id].app) return;
 
-    let el; // outer variable
-
+    let el; 
     const sanitizedName = appDB[id].name.replace(/\s+/g, '-');
 
-    // ---------- PASS TO requestPermission ----------
+    // Initialize tracker array for this app
+    if (!window.appTracker[id]) window.appTracker[id] = [];
+
     requestPermission(id, function done(grantedPermissions) {
         const permissionsVar = grantedPermissions.length
             ? grantedPermissions.join('; ') + ';'
             : '';
 
-        // Check if iframe exists
         const existing = document.getElementsByClassName(sanitizedName)[0];
 
         if (!existing) {
-            // ---------- CREATE NEW IFRAME ----------
-            el = document.createElement('iframe'); // ✅ assign to outer el
+            el = document.createElement('iframe');
             el.src = 'apps/' + appDB[id].app;
             el.id = 'appFrame';
             el.classList.add(sanitizedName, 'all-apps');
@@ -257,29 +256,117 @@ function openApp(id, data, splitView = false, change = 0, transition = true) {
             } else {
                 document.getElementById('multiappsarea').appendChild(el);
             }
+
+            // --- INJECT MONITOR ---
+            el.addEventListener('load', () => {
+                try {
+                    const win = el.contentWindow;
+                    const doc = el.contentDocument || win.document;
+
+                        // Create a new script element using the iframe's document context
+                    const script = iframeDoc.createElement("script");
+                    script.type = "text/javascript";
+
+                    // Set the source (src) to the external JavaScript file URL
+                    script.src = "app-functionality.js"; // Replace with the actual path
+
+                    // Append the script element to the iframe's head or body
+                    iframeDoc.head.appendChild(script);
+
+                    const log = (msg) => {
+                        window.appTracker[id].push({
+                            time: Date.now(),
+                            message: msg
+                        });
+                        // Optional: also log to console
+                        console.log(`App ${id}: ${msg}`);
+                    };
+
+                    log('Tracker injected!');
+
+                    // --- XHR tracking ---
+                    const origXhr = win.XMLHttpRequest.prototype.open;
+                    win.XMLHttpRequest.prototype.open = function(method, url) {
+                        log(`XHR Request -> ${method} ${url}`);
+                        return origXhr.apply(this, arguments);
+                    };
+
+                    // --- fetch tracking ---
+                    const origFetch = win.fetch;
+                    win.fetch = function(...args) {
+                        log(`fetch Request -> ${args[0]}`);
+                        return origFetch.apply(this, args);
+                    };
+
+                    // --- LocalStorage tracking ---
+                    ['setItem','removeItem','clear'].forEach(fn => {
+                        const origLS = win.localStorage[fn];
+                        win.localStorage[fn] = function(...args) {
+                            log(`localStorage.${fn} -> ${JSON.stringify(args)}`);
+                            return origLS.apply(this, args);
+                        };
+                        const origSS = win.sessionStorage[fn];
+                        win.sessionStorage[fn] = function(...args) {
+                            log(`sessionStorage.${fn} -> ${JSON.stringify(args)}`);
+                            return origSS.apply(this, args);
+                        };
+                    });
+
+                    // --- Monitor dynamic DOM changes ---
+                    const observer = new win.MutationObserver(muts => {
+                        muts.forEach(m => {
+                            if (m.type === 'childList') {
+                                m.addedNodes.forEach(n => {
+                                    if (n.tagName) {
+                                        const tag = n.tagName.toLowerCase();
+                                        if (['img','script','video'].includes(tag)) log(`Element added: <${tag}> src=${n.src||''}`);
+                                        else log(`Element added: <${tag}>`);
+                                    }
+                                });
+                            }
+                            if (m.type === 'attributes') log(`Attribute changed: ${m.target.tagName}[${m.attributeName}]`);
+                        });
+                    });
+                    observer.observe(doc.body, { childList:true, subtree:true, attributes:true });
+
+                    // --- Intercept eval/Function calls ---
+                    const origEval = win.eval;
+                    win.eval = function(code) {
+                        log(`eval called -> ${code.slice(0,100)}`);
+                        return origEval.call(this, code);
+                    };
+                    const OrigFunction = win.Function;
+                    win.Function = function(...args) {
+                        log(`Function constructor called -> ${args.join('; ')}`);
+                        return new OrigFunction(...args);
+                    };
+
+                } catch (err) {
+                    console.error('Error injecting tracker:', err);
+                }
+            });
+
         } else {
-            // ---------- REOPEN EXISTING ----------
-            el = existing; // ✅ assign to outer el
+            el = existing;
             el.id = 'appFrame';
             el.classList.remove('closed', 'closing');
         }
 
-        // ---------- SET GLOBAL ----------
         appopen = el;
 
         // ---------- FORCE START STATE ----------
         el.style.transition = 'none';
         if (transition) el.style.transform = 'translateY(25vh) scale(0.4)';
         el.style.opacity = transition ? '0' : '1';
-        if (transition) el.offsetHeight; // force reflow
+        if (transition) el.offsetHeight;
 
-        // ---------- ANIMATE IN ----------
         el.style.transition = '';
         transition ? el.classList.add('open') : el.classList.add('open-no-transition');
         transition ? el.style.transform = '' : el.style.transform = 'translateY(0) scale(1)';
         el.style.opacity = '';
     });
 }
+
 
 
 function isAppOpen(id) {

@@ -1,0 +1,17 @@
+<style>
+circle-progress::part(value) {
+	stroke-width: 6px;
+	stroke: hsl(39, 100%, 50%);
+}
+circle-progress::part(circle) {
+	stroke-width: 6px;
+	stroke: hsl(39, 100%, 85%);
+}
+circle-progress::part(text) {
+	fill: hsl(39, 100%, 50%);
+}
+</style><circle-progress
+	max="100"
+	value="60"
+	text-format="percent"
+></circle-progress>

@@ -47,10 +47,7 @@ function initRender() {
             if (occupiedCells.has(i)) continue;
             
             //const item = page[i];
-            console.log(item)
-            console.log(isDev)
-            console.log(item.requiresDev)
-            if (item.requiresDev && !isDev) return
+            if (item?.requiresDev && !isDev) continue;
             const slot = document.createElement('div');
             slot.className = 'app-slot';
             slot.dataset.loc = 'page';
@@ -377,9 +374,8 @@ function render() {
     /* ---------- Drawer ---------- */
     drawerList.innerHTML = '';
     Object.keys(appDB).forEach(key => {
-        console.log(isDev)
         //console.log(appDB[key].requiresDev)
-        if (appDB[key].requiresDev && !isDev) return
+        if (appDB[key].requiresDev && !isDev) return;
         const slot = document.createElement('div');
 
         slot.className = 'app-slot app-drawer';

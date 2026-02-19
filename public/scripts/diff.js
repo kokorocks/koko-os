@@ -174,8 +174,6 @@ function beginDrag(e, slot) {
     dragGhost.style.zIndex = '9999';
     dragGhost.style.left = '-9999px';
     dragGhost.style.top = '-9999px';
-    dragSrc._startRect =rect //dragSrc.getBoundingClientRect();
-
 
     const label = dragGhost.querySelector('.app-name');
     if (label) label.style.display = 'none';
@@ -294,30 +292,32 @@ function handleMove(e) {
 
             }
         }
-let pointerX = 0;
-let pointerY = 0;
-
-document.addEventListener('pointermove', e => {
-    pointerX = e.clientX;
-    pointerY = e.clientY;
-});
 
 function handleEnd(e) {
     clearTimeout(pressTimer);
     pendingSlot = null;
-    clearTimeout(dragTimer);
 
+    clearTimeout(dragTimer);
     if (!isDragging) return;
+    
     isDragging = false;
 
+    // 1. Force Ghost Hidden so we can see what's underneath
+    if(dragGhost) dragGhost.style.display = 'none';
+
+    // 2. Detect what is under the finger
     const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
     const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-
-    if (dragGhost) dragGhost.style.display = 'none';
-
     const elBelow = document.elementFromPoint(x, y);
+
+    // 3. Clean up ghost
+    if(dragGhost) {
+        dragGhost.remove();
+        dragGhost = null;
+    }
     document.querySelectorAll('.app-slot').forEach(s => s.style.opacity = '1');
 
+    // 4. Handle Delete Zone
     if (overDeleteZone) {
         deleteZone.classList.remove('active');
         overDeleteZone = false;
@@ -327,72 +327,44 @@ function handleEnd(e) {
             saveState();
             render();
         }
-        cleanupDrag();
         return;
     }
 
-    const targetSlot = elBelow ? elBelow.closest('.app-slot') : null;
+    // 5. Handle Drop
+    if (elBelow) {
+        const targetSlot = elBelow.closest('.app-slot');
+        if (targetSlot) {
+            const tgtLoc = targetSlot.dataset.loc;
+            const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
+            const tgtI = parseInt(targetSlot.dataset.i);
 
-    if (targetSlot) {
-        const tgtLoc = targetSlot.dataset.loc;
-        const tgtP = targetSlot.dataset.p ? parseInt(targetSlot.dataset.p) : 0;
-        const tgtI = parseInt(targetSlot.dataset.i);
-        
-        const tgtItem = getItem({ loc: tgtLoc, p: tgtP, i: tgtI });
-        const srcItem = getItem(dragSrc);
-
-        // --- DISTANCE MATH FOR FOLDERS ---
-        const ghostRect = dragGhost.getBoundingClientRect();
-        const targetRect = targetSlot.getBoundingClientRect();
-
- //const targetRect = targetSlot.getBoundingClientRect();
-
-const targetCenterX = targetRect.left + targetRect.width / 2;
-const targetCenterY = targetRect.top + targetRect.height / 2;
-
-const dist = Math.hypot(
-    pointerX - targetCenterX,
-    pointerY - targetCenterY
-);
-
-const FOLDER_THRESHOLD = 20; // realistic
-console.log('distance:', dist);
-
-        let forceMove = dist > FOLDER_THRESHOLD;
-
-        // Execute drop with the distance context
-        handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI }, forceMove);
-
-    } else {
-        // Handle Drawer-to-Empty-Space logic
-        if (dragSrc.loc === 'drawer') {
-            let emptyIdx = pages[currentPage].findIndex(item => item === null);
-            if (emptyIdx === -1 && pages.length < 13) {
-                pages.push(new Array(grid).fill(null));
-                currentPage = pages.length - 1;
-                slider.style.transform = `translateX(-${currentPage * 100}%)`;
-                emptyIdx = 0;
-            }
-            if (emptyIdx !== -1) {
-                handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
+            handleDrop(dragSrc, { loc: tgtLoc, p: tgtP, i: tgtI });
+        } else {
+            // Logic for dropping on empty page space
+            if (dragSrc.loc === 'folder' && !folderModal.classList.contains('open')) {
+                let emptyIdx = pages[currentPage].findIndex(x => x === null);
+                
+                // If no empty slot on current page, create a new page and drop there
+                if (emptyIdx === -1 && pages.length < 13) {
+                    pages.push(new Array(grid).fill(null));
+                    currentPage = pages.length - 1;
+                    slider.style.transform = `translateX(-${currentPage * 100}%)`;
+                    emptyIdx = 0;
+                }
+                
+                // Drop the app
+                if (emptyIdx !== -1) {
+                    handleDrop(dragSrc, { loc: 'page', p: currentPage, i: emptyIdx });
+                }
             }
         }
     }
 
-    cleanupDrag();
-
-    function cleanupDrag() {
-        if (dragGhost) {
-            dragGhost.remove();
-            dragGhost = null;
-        }
-        window.removeEventListener('mousemove', handleMove);
-        window.removeEventListener('mouseup', handleEnd);
-        window.removeEventListener('touchmove', handleMove);
-        window.removeEventListener('touchend', handleEnd);
-    }
+    window.removeEventListener('mousemove', handleMove);
+    window.removeEventListener('mouseup', handleEnd);
+    window.removeEventListener('touchmove', handleMove);
+    window.removeEventListener('touchend', handleEnd);
 }
-
 function getItem(ref) {
     if (ref.loc === 'page') return pages[ref.p] ? pages[ref.p][ref.i] : null;
     if (ref.loc === 'dock') return dock[ref.i] || null; // Force null if undefined
@@ -403,6 +375,7 @@ function getItem(ref) {
     }
     return null;
 }
+
 function setItem(ref, val) {
     if(ref.loc === 'page') pages[ref.p][ref.i] = val;
     else if(ref.loc === 'dock') dock[ref.i] = val;
@@ -436,53 +409,75 @@ function setItem(ref, val) {
 }
 
 
-function handleDrop(src, tgt, forceMove = false) {
+function handleDrop(src, tgt) {
+    // Prevent drop on self
     if(src.loc === tgt.loc && src.p === tgt.p && src.i === tgt.i) return;
 
     const srcItem = getItem(src);
     const tgtItem = getItem(tgt);
 
-    // 1. Drawer Logic
-    if (src.loc === 'drawer') {
-        if (tgt.loc !== 'page' && tgt.loc !== 'dock') return;
-        if (getItem(tgt)) return; 
-        setItem(tgt, src.key);
-    } 
-    // 2. Target is Empty
-    else if (!tgtItem) {
+    // Logic split based on Target Type
+    
+    // 1. Dropping into Folder (Reordering)
+
+        // DRAWER → GRID
+    // Inside handleDrop(src, tgt)
+if (src.loc === 'drawer') {
+    if (tgt.loc !== 'page' && tgt.loc !== 'dock') return;
+
+    // Use !getItem(tgt) to catch both null AND undefined
+    if (getItem(tgt)) return; 
+
+    setItem(tgt, src.key);
+    saveState();
+    render();
+    return;
+}
+
+    if (tgt.loc === 'folder' && src.loc === 'folder') {
+        // Reorder inside folder
+        const folder = pages[currentOpenFolder.p][currentOpenFolder.i];
+        const item = folder.apps.splice(src.i, 1)[0];
+        folder.apps.splice(tgt.i, 0, item);
+        openFolder(pages[currentOpenFolder.p][currentOpenFolder.i], true);
+        return; // Don't call full render
+    }
+
+    // 2. Standard Swap or Create Folder
+    if (!tgtItem) {
+        // Target is Empty -> Move
         setItem(tgt, srcItem);
         setItem(src, null);
-    } 
-    // 3. Target is Occupied
-    else {
-        // Determine if we should make/add to a folder
-        const isBothApps = (typeof tgtItem === 'string' && typeof srcItem === 'string');
-        const isTargetFolder = (tgtItem && tgtItem.type === 'folder');
-
-        if (!forceMove && isBothApps && tgt.loc !== 'dock') {
-            // App on App Center -> Create Folder
+    } else {
+        // Target is Occupied
+        if (typeof tgtItem === 'string' && typeof srcItem === 'string' && tgt.loc !== 'dock' && src.loc !== 'dock' && tgt.loc !== 'folder') {
+            // App on App (Page only) -> Create Folder
             const folder = { type: 'folder', apps: [tgtItem, srcItem] };
             setItem(tgt, folder);
             setItem(src, null);
         } 
-        else if (!forceMove && isTargetFolder && typeof srcItem === 'string') {
-            // App on Folder Center -> Add to Folder
+        else if (typeof tgtItem === 'object' && tgtItem.type === 'folder' && typeof srcItem === 'string') {
+            // App on Folder -> Add
             tgtItem.apps.push(srcItem);
             setItem(src, null);
         }
         else {
-            // Edge drop or Dock -> Swap positions
-            if (srcItem.type === 'folder' && tgt.loc === 'dock') return; // Restriction
+            // Swap (e.g. Dock reordering or Page reordering)
+            // Note: Can't swap a Folder into the Dock (logic choice)
+            if (srcItem.type === 'folder' && tgt.loc === 'dock') return;
             
             setItem(tgt, srcItem);
             setItem(src, tgtItem);
         }
     }
+        // If dragged from drawer
 
+    //();
     saveState();
-    cleanupEmptyPages();
+    cleanupEmptyPages()
     render();
-    
+    //render()
+    // If we moved something out of a folder, re-render folder modal if open
     if (src.loc === 'folder' && folderModal.classList.contains('open')) {
          openFolder(pages[currentOpenFolder.p][currentOpenFolder.i], true);
     }
@@ -519,7 +514,7 @@ element.addEventListener('touchstart', function(e) {
 
 // Clear the timer on touchend or touchcancel
 element.addEventListener('touchend', function(e) {
-    clearTimeout(pressTimer);y
+    clearTimeout(pressTimer);
     onRelease();
 }, false);
 
