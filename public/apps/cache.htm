@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Offline Web Saver</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      margin: 0;
+      background: #0b0b0b;
+      color: white;
+      font-family: system-ui, sans-serif;
+    }
+
+    header {
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      background: #111;
+    }
+
+    input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+    }
+
+    button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    iframe {
+      width: 100vw;
+      height: calc(100vh - 56px);
+      border: none;
+      background: white;
+    }
+
+    .status {
+      font-size: 12px;
+      opacity: 0.7;
+      padding-left: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <input id="url" placeholder="https://example.com" />
+  <button onclick="loadSite()">Load</button>
+</header>
+<div class="status" id="status"></div>
+
+<iframe id="frame" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
+
+<script>const frame = document.getElementById("frame");
+const statusEl = document.getElementById("status");
+
+function proxy(url) {
+  return `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+}
+
+async function loadSite() {
+  const url = document.getElementById("url").value.trim();
+  if (!url) return;
+
+  const cacheKey = `offline:${url}`;
+  statusEl.textContent = "Loading…";
+
+  try {
+    const res = await fetch(proxy(url));
+    const html = await res.text();
+
+    // Save HTML snapshot
+    localStorage.setItem(cacheKey, html);
+    localStorage.setItem("lastSite", url);
+
+    frame.srcdoc = html;
+    statusEl.textContent = "Loaded online ✓ (cached)";
+  } catch (err) {
+    // Offline fallback
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      frame.srcdoc = cached;
+      statusEl.textContent = "Offline mode ✓ (from cache)";
+    } else {
+      statusEl.textContent = "Failed to load (no cache)";
+    }
+  }
+}
+
+// Auto-load last site when offline
+window.addEventListener("load", () => {
+  const last = localStorage.getItem("lastSite");
+  if (!last) return;
+
+  if (!navigator.onLine) {
+    const cached = localStorage.getItem(`offline:${last}`);
+    if (cached) {
+      frame.srcdoc = cached;
+      statusEl.textContent = "Offline auto-restore ✓";
+    }
+  }
+});</script>
+</body>
+</html>

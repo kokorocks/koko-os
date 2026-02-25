@@ -420,15 +420,14 @@ hammer.on('swipeleft swiperight', (e) => {
         
         // Next Page
         if (currentPage < pages.length - 1 && !infoPopup.classList.contains('open') && noAppOpen()) {
-            currentPage++;
-            render();
+            updatePageView(currentPage + 1);
         } else if (infoPopup.classList.contains('open') && noAppOpen()) {
             infoPopup.classList.remove('open');
         } else if(!noAppOpen()) {
             // Allow swiping through pages even with app open
             if (currentPage < pages.length - 1) {
                 //currentPage++;
-                //render();
+                //updatePageView(currentPage + 1);
             }
 
             // Swipe through apps
@@ -460,8 +459,7 @@ hammer.on('swipeleft swiperight', (e) => {
         
         // Previous Page or Open News
         if (currentPage > 0 && noAppOpen() && !infoPopup.classList.contains('open')) {
-            currentPage--;
-            render();
+            updatePageView(currentPage - 1);
         } else if (infoPopup.classList.contains('open') && noAppOpen()) {
             infoPopup.classList.remove('open');
         } else if (currentPage === 0 && !infoPopup.classList.contains('open') && noAppOpen()) {
@@ -470,7 +468,7 @@ hammer.on('swipeleft swiperight', (e) => {
             // Allow swiping back through pages even with app open
             if (currentPage > 0) {
                 //currentPage--;
-                //render();
+                //updatePageView(currentPage - 1);
             }
 
             // Swipe through apps

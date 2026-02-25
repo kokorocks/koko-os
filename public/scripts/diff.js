@@ -276,18 +276,20 @@ function handleMove(e) {
                 currentPage--;
                 lastEdgeSwitchTime = now;
                 slider.style.transform = `translateX(-${currentPage * 100}%)`;
-                render()
+                updatePageView(currentPage);
             } else if (x > window.innerWidth - EDGE_MARGIN && currentPage < 12) {
                 // If dragging beyond last page → create one
                 if (currentPage === pages.length - 1 && pages.length<13) {
                     pages.push(new Array(grid).fill(null)); // empty page
+                    currentPage++;
+                    lastEdgeSwitchTime = now;
+                    render(); // Need full render because layout changed (new page added)
+                } else {
+                    currentPage++;
+                    lastEdgeSwitchTime = now;
+                    slider.style.transform = `translateX(-${currentPage * 100}%)`;
+                    updatePageView(currentPage);
                 }
-
-                
-                currentPage++;
-                lastEdgeSwitchTime = now;
-                slider.style.transform = `translateX(-${currentPage * 100}%)`;
-                render()
             }
 
             }

@@ -4,6 +4,7 @@
     --app-size: 50px;
     --grid-cols: 5;
     --grid-rows: 6; /* 4x5 Grid */
+    --item-size: 66px;
     --gap: 10px;
     --glass-bg: rgba(255, 255, 255, 0.2);
     --folder-bg: rgba(255, 255, 255, 0.35);
@@ -60,8 +61,8 @@ body {
 }
 
 .app-slot.app-icon {
-  width: 66px;
-  height: 66px;
+  width: var(--item-size);
+  height: var(--item-size);
 }
 
 .widget-container {
@@ -950,7 +951,7 @@ input:checked + .toggle-btn {
 }
 .app-wrapper:not(.centered) {
     opacity: 0.6;
-    transform: scale(0.9);
+    transform: scale(0.945);
 }
 
 /* Dragging state */

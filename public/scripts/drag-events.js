@@ -66,9 +66,12 @@ function onDragIntent(e, slot) {
     dragGhost.style.pointerEvents = 'none';
     dragGhost.style.zIndex = '9999';
 
-
+    // Hide label for cleaner dragging appearance
     const label = dragGhost.querySelector('.app-name');
     if (label) label.style.display = 'none';
+
+    // Trigger haptic feedback on mobile
+    if (navigator.vibrate) navigator.vibrate(10);
 
     document.body.appendChild(dragGhost);
 
@@ -100,12 +103,15 @@ function startDrawerDrag(e, appKey) {
     dragGhost.style.width = rect.width + 'px';
     dragGhost.style.height = rect.height + 'px';
     dragGhost.style.position = 'fixed';
-dragGhost.style.pointerEvents = 'none';
-dragGhost.style.zIndex = '9999';
+    dragGhost.style.pointerEvents = 'none';
+    dragGhost.style.zIndex = '9999';
 
-
+    // Hide label for cleaner dragging appearance
     const label = dragGhost.querySelector('.app-name');
     if (label) label.style.display = 'none';
+
+    // Trigger haptic feedback on mobile
+    if (navigator.vibrate) navigator.vibrate(10);
 
     updateGhostPosition(e);
     document.body.appendChild(dragGhost);
@@ -261,8 +267,9 @@ function handleMove(e) {
         const y = e.touches ? e.touches[0].clientY : e.clientY;
 
         if (dragGhost) {
-            dragGhost.style.left = (x - dragGhost.offsetWidth / 3) + 'px';
-            dragGhost.style.top = (y - dragGhost.offsetHeight / 3) + 'px';
+            // Center the ghost at the touch point
+            dragGhost.style.left = (x - dragGhost.offsetWidth / 2.75) + 'px';
+            dragGhost.style.top = (y - dragGhost.offsetHeight / 2.75) + 'px';
         }
 
         overDeleteZone = y < DELETE_ZONE_HEIGHT;
@@ -278,18 +285,20 @@ function handleMove(e) {
                 currentPage--;
                 lastEdgeSwitchTime = now;
                 slider.style.transform = `translateX(-${currentPage * 100}%)`;
-                render()
+                updatePageView(currentPage);
             } else if (x > window.innerWidth - EDGE_MARGIN && currentPage < 12) {
                 // If dragging beyond last page → create one
                 if (currentPage === pages.length - 1 && pages.length<13) {
                     pages.push(new Array(grid).fill(null)); // empty page
+                    currentPage++;
+                    lastEdgeSwitchTime = now;
+                    render(); // Need full render because layout changed (new page added)
+                } else {
+                    currentPage++;
+                    lastEdgeSwitchTime = now;
+                    slider.style.transform = `translateX(-${currentPage * 100}%)`;
+                    updatePageView(currentPage);
                 }
-
-                
-                currentPage++;
-                lastEdgeSwitchTime = now;
-                slider.style.transform = `translateX(-${currentPage * 100}%)`;
-                render()
             }
 
             }
