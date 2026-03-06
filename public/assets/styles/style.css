@@ -183,6 +183,7 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     position: relative;
     /*border: 1px solid rgba(255,255,255,0.25);*/
+    backdrop-filter: blur(10px);
 }
 
 .installing {
@@ -600,7 +601,7 @@ body {
 
 /* --- Folder Modal --- */
 .folder-modal {
-    position: absolute; inset: 0; z-index: 300;
+    position: absolute; inset: 0; z-index: 500;
     background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     opacity: 0; pointer-events: none; transition: 0.2s;
@@ -651,14 +652,14 @@ body {
 .folder-dots {
     display: flex;
     gap: 8px;
-    margin-top: 20px;
+    margin-top: 6px;
     justify-content: center;
 }
 
 .folder-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+    width: 18px;
+    height: 6px;
+    border-radius: 50px;
     background: rgba(255,255,255,0.4);
     transition: background 0.3s, transform 0.3s;
     cursor: pointer;
@@ -1704,7 +1705,7 @@ input:checked + .qs-btn-round { background: white; color: black; }
 }
 
 .control-btn:hover { transform: scale(1.1); }
-.btn-close { background-color: #ff5f57; color: #fff; }
+.btn-close { background-color: #4c4646; color: #fff; }
 .btn-min { background-color: #ffbd2e; color: #fff; }
 .resize-handle {
     position: absolute;

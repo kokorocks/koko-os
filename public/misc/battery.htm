@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mobile Status Bar</title>
+
+<style>
+
+body{
+    margin:0;
+    background:#e6e6e6;
+    font-family:system-ui;
+}
+
+/* status bar container */
+
+.statusbar{
+    width:520px;
+    margin:40px auto;
+    padding:14px 20px;
+    background:#f5f5f5;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+/* left side icons */
+
+.left{
+    display:flex;
+    align-items:center;
+    gap:16px;
+}
+
+/* icon style */
+
+.icon{
+    width:26px;
+    height:26px;
+    stroke:#111;
+    stroke-width:2;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    fill:none;
+}
+
+/* battery */
+
+.battery{
+    position:relative;
+    width:35px;
+    height:18px;
+    border:2px solid #111;
+    border-radius:6px;
+    padding:2px;
+    box-sizing:border-box;
+}
+
+.battery::after{
+    content:"";
+    position:absolute;
+    right:-4.5px;
+    top:3.5px;
+    width:4px;
+    height:8px;
+    background:#111;
+    border-radius:2px;
+}
+
+.level{
+    height:106%;
+    width:86%;
+    background:#000;
+    border-radius:3px;
+}
+
+/* battery states */
+
+.low .level{
+    background:#ff9f00;
+}
+
+.charging .level{
+    background:#19b44a;
+}
+
+/* text */
+
+.percent{
+    margin-left:8px;
+    font-size:18px;
+}
+
+.time{
+    text-align:right;
+    font-size:18px;
+}
+
+.date{
+    font-size:16px;
+    color:#333;
+}
+
+</style>
+</head>
+<body>
+
+<div class="statusbar">
+
+<div class="left">
+
+
+
+<!-- battery -->
+
+<div style="display:flex;align-items:center">
+
+<div class="battery charging">
+<div class="level"></div>
+</div>
+
+<span class="percent">86%</span>
+
+</div>
+
+</div>
+
+<div class="time">
+<div>12:30 PM</div>
+<div class="date">1/1/2025</div>
+</div>
+
+</div>
+<script type="text/javascript" charset="utf-8">
+  let batteryLevel = 12; // Example battery level
+  const lvl=document.querySelector('.level')
+  const percent=document.querySelector('.percent')
+  percent.textContent = batteryLevel + '%';
+  lvl.style.width = batteryLevel + '%';
+  switch (true) {
+    case batteryLevel < 20:
+      lvl.style.backgroundColor = '#ff0000'; // Low battery color
+      break;
+    case batteryLevel <30:
+      lvl.style.backgroundColor = '#ffcc00'; // Medium battery color
+      break;
+  }
+</script>
+</body>
+</html>

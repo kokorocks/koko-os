@@ -66,17 +66,29 @@ let currentFolderPage = 0;
 const ITEMS_PER_PAGE = 12; // 3 columns x 4 rows
 
 function openFolder(folderData, isRefresh = false) {
-    // Find location of this folder for saving state
     if(!isRefresh) {
         let found = false;
+        
+        // search pages
         pages.forEach((p, pIdx) => {
             p.forEach((item, iIdx) => {
                 if(item === folderData) {
-                    currentOpenFolder = { p: pIdx, i: iIdx };
+                    currentOpenFolder = { p: pIdx, i: iIdx, loc: 'page' };
                     found = true;
                 }
             });
         });
+
+        // search dock
+        if (!found) {
+            dock.forEach((item, iIdx) => {
+                if(item === folderData) {
+                    currentOpenFolder = { p: -1, i: iIdx, loc: 'dock' };
+                    found = true;
+                }
+            });
+        }
+
         if(!found) return;
     }
 
@@ -140,6 +152,7 @@ function goToFolderPage(pageIdx) {
 folderModal.onclick = (e) => {
     if(e.target === folderModal) folderModal.classList.remove('open');
 }
+
 
 setInterval(() => {
     const d = new Date();

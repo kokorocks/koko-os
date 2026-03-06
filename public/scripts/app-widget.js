@@ -161,47 +161,69 @@ window.createWidget = function (
     });
 
     // MOVE
-    document.addEventListener('mousemove', e => {
-        if (!mode) return;
-        isDraggingAW=true;
+// MOVE
+document.addEventListener('mousemove', e => {
+    if (!mode) return;
+    isDraggingAW = true;
 
-        const cRect = container.getBoundingClientRect();
+    const cRect = container.getBoundingClientRect();
+    const wRect = widget.getBoundingClientRect(); // Current widget position
 
-        if (mode === 'drag') {
-            const newLeft = e.clientX - cRect.left - grabOffsetX;
-            const newTop  = e.clientY - cRect.top  - grabOffsetY;
+    if (mode === 'drag') {
+        const newLeft = e.clientX - cRect.left - grabOffsetX;
+        const newTop = e.clientY - cRect.top - grabOffsetY;
+
+        // Clamp dragging within container
+        const maxLeft = cRect.width - widget.offsetWidth;
+        const maxTop = cRect.height - widget.offsetHeight;
+
+        widget.style.left = Math.min(Math.max(0, newLeft), maxLeft) + 'px';
+        widget.style.top = Math.min(Math.max(0, newTop), maxTop) + 'px';
+    }
+
+    if (mode === 'resize-right') {
+        let newW = startW + (e.clientX - startX);
+        let newH = startH + (e.clientY - startY);
+
+        // Clamp width/height based on container edge
+        const currentLeft = widget.offsetLeft;
+        const currentTop = widget.offsetTop;
+        const availW = cRect.width - currentLeft;
+        const availH = cRect.height - currentTop;
+
+        const finalW = Math.min(Math.max(MIN_W, newW), MAX_W, availW);
+        const finalH = Math.min(Math.max(MIN_H, newH), MAX_H, availH);
+
+        widget.style.width = finalW + 'px';
+        widget.style.height = finalH + 'px';
+    }
+
+    if (mode === 'resize-left') {
+        const dx = e.clientX - startX;
         
-            const maxLeft = cRect.width  - widget.offsetWidth;
-            const maxTop  = cRect.height - widget.offsetHeight;
+        // Calculate the maximum the left side can move (cannot go less than 0)
+        const maxLeftShift = -startL; // Negative because moving left is negative dx
+        const clampedDx = Math.max(dx, maxLeftShift);
+
+        let newW = startW - clampedDx;
         
-            widget.style.left = Math.min(Math.max(0, newLeft), maxLeft) + 'px';
-            widget.style.top  = Math.min(Math.max(0, newTop),  maxTop)  + 'px';
+        // Ensure it doesn't shrink smaller than MIN_W
+        if (newW < MIN_W) {
+            newW = MIN_W;
+            // No changes needed to left here, logic handled below
         }
-        
-        if (mode === 'resize-right') {
-            const newW = startW + (e.clientX - startX);
-            const newH = startH + (e.clientY - startY);
-        
-            widget.style.width  = Math.min(Math.max(MIN_W, newW), MAX_W) + 'px';
-            widget.style.height = Math.min(Math.max(MIN_H, newH), MAX_H) + 'px';
-        }
-        
-        if (mode === 'resize-left') {
-            const dx = e.clientX - startX;
-            let newW = startW - dx;
-        
-            if (newW < MIN_W) {
-                newW = MIN_W;
-                dx = startW - MIN_W;
-            }
-        
-            widget.style.width = Math.min(newW, MAX_W) + 'px';
-            widget.style.left  = startL + dx + 'px';
-        
-            const newH = startH + (e.clientY - startY);
-            widget.style.height = Math.min(Math.max(MIN_H, newH), MAX_H) + 'px';
-        }
-    });
+
+        const finalW = Math.min(newW, MAX_W);
+        // Correct Left is start position + (original width - current clamped width)
+        widget.style.left = (startL + (startW - finalW)) + 'px';
+        widget.style.width = finalW + 'px';
+
+        // Vertical Resize (Bottom edge clamping)
+        let newH = startH + (e.clientY - startY);
+        const availH = cRect.height - widget.offsetTop;
+        widget.style.height = Math.min(Math.max(MIN_H, newH), MAX_H, availH) + 'px';
+    }
+});
 
     document.addEventListener('mouseup', () => {
         isDraggingAW=false;

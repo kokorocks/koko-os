@@ -55,17 +55,21 @@ function createIcon(itemData, isDock = false) {
         if (!isDock) wrapper.appendChild(name);
 
         icon.onclick = e => {
+            console.log(isdock)
             if (!isDragging) {
                 cancelDrag();
                 e.stopPropagation();
+                console.log('open folder with data:', itemData);
                 openFolder(itemData);
             }
         };
 
         // in the dock we also need a listener on the wrapper,
         // because the dock renders icons slightly differently
+        console.log('isDock for folder:', isDock);
         if (isDock) {
             icon.parentElement?.addEventListener('click', (e) => {
+                console.log(isDragging, isdock)
                 if (!isDragging) {
                     cancelDrag();
                     e.stopPropagation();

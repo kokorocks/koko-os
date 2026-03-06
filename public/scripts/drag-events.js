@@ -410,6 +410,10 @@ function getItem(ref) {
         const folder = pages[currentOpenFolder.p][currentOpenFolder.i];
         return folder ? folder.apps[ref.i] : null;
     }
+    if (ref.loc === 'drawer') {
+        // drawer entries are stored as simple strings (app keys)
+        return ref.key || null;
+    }
     return null;
 }
 function setItem(ref, val) {
@@ -442,8 +446,8 @@ function setItem(ref, val) {
             folderSlot.apps[ref.i] = val;
         }
     }
+    // we never write back to the drawer
 }
-
 
 function handleDrop(src, tgt, forceMove = false) {
     if (src.loc === tgt.loc && src.p === tgt.p && src.i === tgt.i) return;
@@ -451,11 +455,8 @@ function handleDrop(src, tgt, forceMove = false) {
     const srcItem = getItem(src);
     const tgtItem = getItem(tgt);
 
-    // 1. Drawer logic is now unified with the generic
-    //    “empty target” case – we only special‑case the
-    //    drawer when the target is occupied below.
+    // drawer → empty slot/page/dock
     if (src.loc === 'drawer' && !tgtItem) {
-        // allow placing drawer app on an empty dock slot/page
         if (tgt.loc === 'page' || tgt.loc === 'dock') {
             setItem(tgt, src.key);
             saveState();
@@ -463,19 +464,18 @@ function handleDrop(src, tgt, forceMove = false) {
         return;
     }
 
-    // 2. Target is empty (includes dock and drawer sources)
+    // generic empty‑target case (drawer source is now handled above)
     if (!tgtItem) {
         setItem(tgt, srcItem);
         setItem(src, null);
     }
-    // 3. Target is occupied
     else {
-        const isBothApps = (typeof tgtItem === 'string' && typeof srcItem === 'string');
-        const isTargetFolder = (tgtItem && tgtItem.type === 'folder');
+        const isBothApps =
+            typeof tgtItem === 'string' && typeof srcItem === 'string';
+        const isTargetFolder = tgtItem && tgtItem.type === 'folder';
 
-        // create/augment a folder even in the dock/drawer
         if (!forceMove && isBothApps) {
-            // if target is already a folder we just push, otherwise make a new
+            // app‑onto‑app: make a folder
             if (isTargetFolder) {
                 tgtItem.apps.push(srcItem);
                 setItem(src, null);
@@ -490,7 +490,7 @@ function handleDrop(src, tgt, forceMove = false) {
             setItem(src, null);
         }
         else {
-            // swap; dock folders are valid now so don’t block
+            // swap – dock folders are fine now
             setItem(tgt, srcItem);
             setItem(src, tgtItem);
         }
@@ -501,26 +501,27 @@ function handleDrop(src, tgt, forceMove = false) {
 
     if (src.loc === 'folder' && folderModal.classList.contains('open')) {
          openFolder(pages[currentOpenFolder.p][currentOpenFolder.i], true);
+         console.log('yugdicnibwejncveiufwnj')
     }
-
     render();
 }
 
 // …existing code...
 
-// somewhere in your global event hookups, e.g. in app-functionality.js
+// dock click helper: open folders regardless of DOM nesting
 document.getElementById('dock').addEventListener('click', e => {
-    const slot = e.target.closest('.app-slot, .app-icon');
-    if (!slot) return;
+    // walk up until we find a slot or hit the dock container
+    let el = e.target;
+    while (el && el !== document.getElementById('dock')) {
+        if (el.dataset && el.dataset.loc === 'dock') break;
+        el = el.parentElement;
+    }
+    if (!el || el === document.getElementById('dock')) return;
 
-    const loc = slot.dataset.loc;
-    const idx = parseInt(slot.dataset.i, 10);
-
-    if (loc === 'dock') {
-        const item = dock[idx];
-        if (item && item.type === 'folder') {
-            openFolder(item);
-            e.stopPropagation();
-        }
+    const idx = parseInt(el.dataset.i, 10);
+    const item = dock[idx];
+    if (item && item.type === 'folder') {
+        openFolder(item);
+        e.stopPropagation();
     }
 });
