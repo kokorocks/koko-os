@@ -64,10 +64,10 @@ window.createWidget = function (
         </div>
 
         <div class="resize-handle resize-left">
-            <svg viewBox="0 0 40 40"><path d="M35 15 A30 30 0 0 0 15 35" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 40 40"><path d="M35 15 A22 22 0 0 0 15 35" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
         </div>
         <div class="resize-handle resize-right">
-            <svg viewBox="0 0 40 40"><path d="M5 15 A30 30 0 0 1 25 35" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 40 40"><path d="M5 15 A22 22 0 0 1 25 35" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
         </div>
     `;
     widget.querySelector('.content-iframe').style.cssText =+ css;
