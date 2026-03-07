@@ -1716,6 +1716,7 @@ input:checked + .qs-btn-round { background: white; color: black; }
     color: #1a1a1a;
     filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
     opacity: 0;
+    pointer-events: auto; /* Allow touch on mobile */
 }
 
 .resize-left {
@@ -1732,6 +1733,13 @@ input:checked + .qs-btn-round { background: white; color: black; }
     right: -15px;
     cursor: se-resize;
     z-index: 10000 !important;
+}
+
+/* Show resize handles on mobile/touch devices */
+@media (hover: none) {
+    .resize-handle {
+        opacity: 0.5;
+    }
 }
 
 .resize-handle svg {
