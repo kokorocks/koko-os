@@ -403,10 +403,12 @@ function render() {
 
     /* ---------- Dots ---------- */
     dotsContainer.innerHTML = '';
+    dotEls.length = 0;
     pages.forEach((_, i) => {
         const d = document.createElement('div');
         d.className = `dot ${i === currentPage ? 'active' : ''}`;
         dotsContainer.appendChild(d);
+        dotEls.push(d);
     });
 
     /* ---------- Page Slide ---------- */
