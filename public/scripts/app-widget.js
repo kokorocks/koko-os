@@ -100,7 +100,7 @@ window.createWidget = function (
     const resizeR = widget.querySelector('.resize-right');
 
     if (!draggable) drag.style.display = 'none';
-    //if (!resizable) resizeL.style.display = resizeR.style.display = 'none';
+    if (!resizable) resizeL.style.opacity = resizeR.style.opacity = 0;
 
     let mode = null;
     let startX, startY, startW, startH, startL;
@@ -240,6 +240,7 @@ window.createWidget = function (
 
             widget.style.width = finalW + 'px';
             widget.style.height = finalH + 'px';
+            resizeR.style.opacity = 1
         }
 
         if (mode === 'resize-left') {
@@ -260,6 +261,7 @@ window.createWidget = function (
             let newH = startH + (clientY - startY);
             const availH = cRect.height - widget.offsetTop;
             widget.style.height = Math.min(Math.max(MIN_H, newH), MAX_H, availH) + 'px';
+            resizeL.style.opacity = 1
         }
     };
 
