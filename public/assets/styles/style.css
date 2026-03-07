@@ -1662,6 +1662,7 @@ input:checked + .qs-btn-round { background: white; color: black; }
 }
 
 .drag-handle:active { cursor: grabbing; }
+
 .wdot {
     width: 4px;
     height: 4px;
@@ -1707,6 +1708,9 @@ input:checked + .qs-btn-round { background: white; color: black; }
 .control-btn:hover { transform: scale(1.1); }
 .btn-close { background-color: #4c4646; color: #fff; }
 .btn-min { background-color: #ffbd2e; color: #fff; }
+
+/* --- MOBILE & HOVER RESIZE FIXES BELOW --- */
+
 .resize-handle {
     position: absolute;
     width: 45px;
@@ -1714,9 +1718,10 @@ input:checked + .qs-btn-round { background: white; color: black; }
     z-index: 10000 !important;  /* ← way above everything */
     cursor: pointer;
     color: #1a1a1a;
-    filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+    filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.4)); 
     opacity: 0;
     pointer-events: auto; /* Allow touch on mobile */
+    transition: opacity 0.2s ease;
 }
 
 .resize-left {
@@ -1735,29 +1740,39 @@ input:checked + .qs-btn-round { background: white; color: black; }
     z-index: 10000 !important;
 }
 
-/* Show resize handles on mobile/touch devices */
-@media (hover: none) {
-    .resize-handle {
-        opacity: 0.5;
-    }
-}
-
 .resize-handle svg {
     width: 100%;
     height: 100%;
     stroke: #fff;
     stroke-width: 4;
-    opacity: 0.8;
+    opacity: 0.9;
 }
+
+/* 1. Show handles when hovering over the widget (for Desktop) */
+.widget-wrapper:hover .resize-handle {
+    opacity: 1;
+}
+
+/* 2. Show handles when actively dragging/resizing (from JS class) */
+.widget-wrapper.interacting .resize-handle {
+    opacity: 1 !important;
+}
+
+/* 3. Safely detect mobile/touch screens to keep handles visible */
+@media (pointer: coarse) {
+    .resize-handle {
+        opacity: 0.7; /* Always partially visible on touch screens */
+    }
+    .resize-handle:active {
+        opacity: 1; /* Fully visible when touched */
+    }
+}
+
 .interacting .content-iframe { pointer-events: none; }
 
-.minimized { height: 60px !important; }
+.minimized { height: 60px !important; min-height: 60px !important; }
 .minimized .content-iframe { display: none; }
-/* Show handles on widget hover */
-.resize-handle:hover {
-    opacity: 1;  /* ← visible on hover */
-    pointer-events: auto;  /* ← clickable again */
-}
+.minimized .resize-handle { display: none !important; }
 
 /*.bottom-menu {
     padding: 5px;
