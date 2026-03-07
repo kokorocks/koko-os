@@ -197,7 +197,7 @@ window.createWidget = function (
     resizeL.addEventListener('touchstart', resizeLeftStart, { passive: false });
 
     // Double click to show controls
-    widget.querySelector('.widget-box').addEventListener('dblclick', () => {
+    widget.querySelector('.widget-box').addEventListener('', () => {
         controls.style.display = (controls.style.display === 'flex') ? 'none' : 'flex';
     });
 
