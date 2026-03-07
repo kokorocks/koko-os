@@ -1,6 +1,6 @@
 // Global z-index tracker
 let highestZIndex = 100;
-const container = document.getElementById('mainScreen');
+const container = document.getElementById('mainScreen') || document.body; // Fallback to body if container isn't found
 let isDraggingAW = false;
 
 function lockToContainer(widget) {
@@ -12,13 +12,19 @@ function lockToContainer(widget) {
     widget.style.top  = (wRect.top  - cRect.top ) + 'px';
 }
 
-// Helper to get client coords from mouse or touch event
+// FIX 1: Safer coordinate extraction for mobile touch events
 function getClientX(e) {
-    return e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+    if (e.clientX !== undefined) return e.clientX;
+    if (e.touches && e.touches.length > 0) return e.touches[0].clientX;
+    if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientX;
+    return 0;
 }
 
 function getClientY(e) {
-    return e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
+    if (e.clientY !== undefined) return e.clientY;
+    if (e.touches && e.touches.length > 0) return e.touches[0].clientY;
+    if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientY;
+    return 0;
 }
 
 window.createWidget = function (
@@ -64,13 +70,13 @@ window.createWidget = function (
             <button class="control-btn btn-close">×</button>
         </div>
 
-        <div class="widget-box">
-            <div class="drag-handle">
+        <div class="widget-box" style="height: 100%; width: 100%; position: relative;">
+            <div class="drag-handle" style="cursor: grab;">
                 <div class="wdot"></div>
                 <div class="wdot"></div>
                 <div class="wdot"></div>
             </div>
-            <iframe class="content-iframe" srcdoc="${html}"></iframe>
+            <iframe class="content-iframe" srcdoc="${html}" style="width: 100%; height: 100%; border: none;"></iframe>
         </div>
 
         <div class="resize-handle resize-left">
@@ -80,7 +86,9 @@ window.createWidget = function (
             <svg viewBox="0 0 40 40"><path d="M5 15 A22 22 0 0 1 25 35" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
         </div>
     `;
-    widget.querySelector('.content-iframe').style.cssText += css;
+    
+    const iframe = widget.querySelector('.content-iframe');
+    iframe.style.cssText += css;
 
     container.appendChild(widget);
 
@@ -98,13 +106,10 @@ window.createWidget = function (
     let startX, startY, startW, startH, startL;
     let grabOffsetX, grabOffsetY;
 
-    widget.addEventListener('mousedown', () => {
-        widget.style.zIndex = ++highestZIndex;
-    });
-
-    widget.addEventListener('touchstart', () => {
-        widget.style.zIndex = ++highestZIndex;
-    });
+    // Z-index management
+    const bringToFront = () => widget.style.zIndex = ++highestZIndex;
+    widget.addEventListener('mousedown', bringToFront);
+    widget.addEventListener('touchstart', bringToFront, { passive: true });
 
     closeBtn.onclick = () => widget.remove();
 
@@ -113,12 +118,13 @@ window.createWidget = function (
         minBtn.textContent = widget.classList.contains('minimized') ? '+' : '−';
     };
 
-    // DRAG START – both mouse and touch
+    // DRAG START
     const dragStart = e => {
         if (!draggable) return;
         isDraggingAW = true;
 
-        e.preventDefault();
+        // Prevent text selection/highlighting on start
+        if (e.cancelable) e.preventDefault(); 
         e.stopPropagation();
 
         lockToContainer(widget);
@@ -137,14 +143,18 @@ window.createWidget = function (
 
         mode = 'drag';
         widget.classList.add('interacting');
+        
+        // FIX 2: Disable iframe pointer events so it doesn't swallow touch moves
+        iframe.style.pointerEvents = 'none';
     };
 
     drag.addEventListener('mousedown', dragStart);
-    drag.addEventListener('touchstart', dragStart);
+    drag.addEventListener('touchstart', dragStart, { passive: false });
 
-    // RESIZE RIGHT – both mouse and touch
+    // RESIZE RIGHT
     const resizeRightStart = e => {
         if (!resizable) return;
+        if (e.cancelable) e.preventDefault();
 
         lockToContainer(widget);
 
@@ -155,15 +165,17 @@ window.createWidget = function (
 
         mode = 'resize-right';
         widget.classList.add('interacting');
+        iframe.style.pointerEvents = 'none';
         e.stopPropagation();
     };
 
     resizeR.addEventListener('mousedown', resizeRightStart);
-    resizeR.addEventListener('touchstart', resizeRightStart);
+    resizeR.addEventListener('touchstart', resizeRightStart, { passive: false });
 
-    // RESIZE LEFT – both mouse and touch
+    // RESIZE LEFT
     const resizeLeftStart = e => {
         if (!resizable) return;
+        if (e.cancelable) e.preventDefault();
 
         lockToContainer(widget);
 
@@ -175,11 +187,12 @@ window.createWidget = function (
 
         mode = 'resize-left';
         widget.classList.add('interacting');
+        iframe.style.pointerEvents = 'none';
         e.stopPropagation();
     };
 
     resizeL.addEventListener('mousedown', resizeLeftStart);
-    resizeL.addEventListener('touchstart', resizeLeftStart);
+    resizeL.addEventListener('touchstart', resizeLeftStart, { passive: false });
 
     // Double click to show controls
     widget.querySelector('.widget-box').addEventListener('dblclick', () => {
@@ -189,6 +202,13 @@ window.createWidget = function (
     // MOVE – both mouse and touch
     const onMove = e => {
         if (!mode) return;
+        
+        // FIX 3: CRITICAL FOR MOBILE! 
+        // Prevents the browser from natively scrolling the page when you swipe to move the widget
+        if (e.cancelable) {
+            e.preventDefault();
+        }
+        
         isDraggingAW = true;
 
         const cRect = container.getBoundingClientRect();
@@ -243,18 +263,24 @@ window.createWidget = function (
         }
     };
 
+    // Note: { passive: false } is required here so e.preventDefault() works!
     document.addEventListener('mousemove', onMove);
     document.addEventListener('touchmove', onMove, { passive: false });
 
     // END – both mouse and touch
     const onEnd = () => {
+        if (!mode) return; // Only trigger if we were actually interacting
         isDraggingAW = false;
         mode = null;
         widget.classList.remove('interacting');
+        
+        // Restore iframe pointer events
+        iframe.style.pointerEvents = 'auto';
     };
 
     document.addEventListener('mouseup', onEnd);
     document.addEventListener('touchend', onEnd);
+    document.addEventListener('touchcancel', onEnd); // Failsafe for mobile
 };
 
 // Example
